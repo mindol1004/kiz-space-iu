@@ -3,6 +3,7 @@ import { z } from "zod"
 // User Schema
 export const UserSchema = z.object({
   _id: z.string().optional(),
+  id: z.string().optional(),
   email: z.string().email(),
   nickname: z.string().min(2).max(20),
   avatar: z.string().optional(),
@@ -16,6 +17,7 @@ export const UserSchema = z.object({
 // Child Profile Schema
 export const ChildSchema = z.object({
   _id: z.string().optional(),
+  id: z.string().optional(),
   parentId: z.string(),
   name: z.string().min(1).max(20),
   age: z.number().min(0).max(12),
@@ -27,6 +29,7 @@ export const ChildSchema = z.object({
 // Post Schema
 export const PostSchema = z.object({
   _id: z.string().optional(),
+  id: z.string().optional(),
   authorId: z.string(),
   content: z.string().min(1).max(1000),
   images: z.array(z.string()).default([]),
@@ -43,6 +46,7 @@ export const PostSchema = z.object({
 // Comment Schema
 export const CommentSchema = z.object({
   _id: z.string().optional(),
+  id: z.string().optional(),
   postId: z.string(),
   authorId: z.string(),
   content: z.string().min(1).max(500),
@@ -55,3 +59,16 @@ export type User = z.infer<typeof UserSchema>
 export type Child = z.infer<typeof ChildSchema>
 export type Post = z.infer<typeof PostSchema>
 export type Comment = z.infer<typeof CommentSchema>
+
+// API Response types
+export interface PostWithAuthor extends Post {
+  author: {
+    id: string
+    nickname: string
+    avatar?: string
+  }
+  likesCount: number
+  bookmarksCount: number
+  isLiked?: boolean
+  isBookmarked?: boolean
+}

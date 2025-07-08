@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
+import type { PostWithAuthor } from "@/lib/schemas"
 
 interface PostFilters {
   category?: string
@@ -17,27 +18,8 @@ interface CreatePostData {
   authorId: string
 }
 
-interface Post {
-  id: string
-  content: string
-  images?: string[]
-  category: string
-  ageGroup: string
-  tags: string[]
-  author: {
-    id: string
-    name: string
-    avatar?: string
-  }
-  likes: number
-  comments: number
-  isLiked: boolean
-  isBookmarked: boolean
-  createdAt: string
-}
-
 interface PostsResponse {
-  posts: Post[]
+  posts: PostWithAuthor[]
   hasMore: boolean
   nextPage?: number
   total: number
@@ -89,7 +71,7 @@ export function usePost(postId: string) {
         throw new Error(result.error || "게시글을 불러오는데 실패했습니다")
       }
 
-      return result.post as Post
+      return result.post as PostWithAuthor
     },
     enabled: !!postId,
   })
@@ -113,7 +95,7 @@ export function useCreatePost() {
         throw new Error(result.error || "게시글 작성에 실패했습니다")
       }
 
-      return result.post as Post
+      return result.post as PostWithAuthor
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] })

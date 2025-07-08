@@ -13,25 +13,20 @@ import { formatDate, getAgeGroupLabel, getCategoryLabel } from "@/lib/utils"
 import { PostDetailModal } from "./post-detail-modal"
 import { useLikePost, useBookmarkPost } from "../hooks/use-posts"
 import { useAuthStore } from "@/stores/auth-store"
-import type { Post } from "@/lib/schemas"
+import type { PostWithAuthor } from "@/lib/schemas"
 
 interface PostCardProps {
-  post: Post & {
-    author: {
-      nickname: string
-      avatar?: string
-    }
-  }
+  post: PostWithAuthor
 }
 
 export function PostCard({ post }: PostCardProps) {
-  const [isLiked, setIsLiked] = useState(false)
-  const [isBookmarked, setIsBookmarked] = useState(false)
-  const [likeCount, setLikeCount] = useState(post.likes.length)
+  const [isLiked, setIsLiked] = useState(post.isLiked || false)
+  const [isBookmarked, setIsBookmarked] = useState(post.isBookmarked || false)
+  const [likeCount, setLikeCount] = useState(post.likesCount || 0)
   const [showDetailModal, setShowDetailModal] = useState(false)
 
-  const { toggleLike } = useLikePost()
-  const { toggleBookmark } = useBookmarkPost()
+  const likePostMutation = useLikePost()
+  const bookmarkPostMutation = useBookmarkPost()
   const { user } = useAuthStore()
 
   const handleLike = async (e: React.MouseEvent) => {
@@ -39,9 +34,12 @@ export function PostCard({ post }: PostCardProps) {
     if (!user) return
 
     try {
-      const newIsLiked = await toggleLike(post.id, user.id)
-      setIsLiked(newIsLiked)
-      setLikeCount((prev) => (newIsLiked ? prev + 1 : prev - 1))
+      await likePostMutation.mutateAsync({
+        postId: post.id || post._id || "",
+        userId: user.id || user._id || "",
+      })
+      setIsLiked(!isLiked)
+      setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1))
     } catch (error) {
       // Error is handled in the hook
     }
@@ -52,8 +50,11 @@ export function PostCard({ post }: PostCardProps) {
     if (!user) return
 
     try {
-      const newIsBookmarked = await toggleBookmark(post.id, user.id)
-      setIsBookmarked(newIsBookmarked)
+      await bookmarkPostMutation.mutateAsync({
+        postId: post.id || post._id || "",
+        userId: user.id || user._id || "",
+      })
+      setIsBookmarked(!isBookmarked)
     } catch (error) {
       // Error is handled in the hook
     }
@@ -104,12 +105,12 @@ export function PostCard({ post }: PostCardProps) {
           <CardContent className="pt-0">
             <p className="text-sm text-gray-700 mb-3 leading-relaxed">{post.content}</p>
 
-            {post.images.length > 0 && (
+            {post.images && post.images.length > 0 && (
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {post.images.slice(0, 4).map((image, index) => (
                   <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
                     <img src={image || "/placeholder.svg"} alt="" className="w-full h-full object-cover" />
-                    {index === 3 && post.images.length > 4 && (
+                    {index === 3 && post.images && post.images.length > 4 && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                         <span className="text-white font-medium">+{post.images.length - 4}</span>
                       </div>
@@ -119,7 +120,7 @@ export function PostCard({ post }: PostCardProps) {
               </div>
             )}
 
-            {post.tags.length > 0 && (
+            {post.tags && post.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-3">
                 {post.tags.map((tag, index) => (
                   <span key={index} className="text-xs text-pink-600 bg-pink-50 px-2 py-1 rounded-full">
@@ -135,6 +136,7 @@ export function PostCard({ post }: PostCardProps) {
                   variant="ghost"
                   size="sm"
                   onClick={handleLike}
+                  disabled={likePostMutation.isPending}
                   className={`flex items-center space-x-1 ${isLiked ? "text-red-500" : "text-gray-500"}`}
                 >
                   <motion.div whileTap={{ scale: 0.8 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
@@ -157,6 +159,7 @@ export function PostCard({ post }: PostCardProps) {
                   variant="ghost"
                   size="sm"
                   onClick={handleBookmark}
+                  disabled={bookmarkPostMutation.isPending}
                   className={`${isBookmarked ? "text-yellow-500" : "text-gray-500"}`}
                 >
                   <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} />
