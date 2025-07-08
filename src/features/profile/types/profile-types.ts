@@ -1,8 +1,8 @@
 import type React from "react"
 export interface ProfileUser {
-  _id: string
+  _id?: string
   nickname: string
-  location: string
+  location?: string
   createdAt: Date
   verified: boolean
   interests: string[]

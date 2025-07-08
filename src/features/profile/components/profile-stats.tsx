@@ -2,11 +2,13 @@
 
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
-import { useProfileStats } from "../hooks/use-profile-stats"
+import type { ProfileStat } from "../types/profile-types"
 
-export function ProfileStats() {
-  const { stats } = useProfileStats()
+interface ProfileStatsProps {
+  stats: ProfileStat[]
+}
 
+export function ProfileStats({ stats }: ProfileStatsProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

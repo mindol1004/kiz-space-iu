@@ -4,11 +4,15 @@ import { ProfileStats } from "./profile-stats"
 import { ProfileChildren } from "./profile-children"
 import { ProfileInterests } from "./profile-interests"
 import { ProfileActions } from "./profile-actions"
-import { useAuthStore } from "@/stores/auth-store"
+import type { ProfileUser, ProfileStat, ProfileChild } from "../types/profile-types"
 
-export function ProfileContent() {
-  const { user } = useAuthStore()
+interface ProfileContentProps {
+  user: ProfileUser;
+  userChildren: ProfileChild[];
+  stats: ProfileStat[];
+}
 
+export function ProfileContent({ user, userChildren, stats }: ProfileContentProps) {
   if (!user) {
     return (
       <div className="max-w-md mx-auto p-4 text-center">
@@ -20,8 +24,8 @@ export function ProfileContent() {
   return (
     <div className="max-w-md mx-auto p-4 space-y-6">
       <ProfileHeader user={user} />
-      <ProfileStats />
-      <ProfileChildren user={user} />
+      <ProfileStats stats={stats} />
+      <ProfileChildren user={user} userChildren={userChildren} />
       <ProfileInterests user={user} />
       <ProfileActions />
     </div>
