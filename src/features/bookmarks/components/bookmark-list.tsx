@@ -1,0 +1,110 @@
+"use client"
+
+import { useState } from "react"
+import { Search, Filter, Grid, List } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BookmarkCard } from "./bookmark-card"
+import { BookmarkEmptyState } from "./bookmark-empty-state"
+import { BookmarkFilters } from "./bookmark-filters"
+import { useBookmarks } from "../hooks/use-bookmarks"
+import type { BookmarkCategory } from "../types/bookmark-types"
+
+export function BookmarkList() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState<BookmarkCategory | "all">("all")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [showFilters, setShowFilters] = useState(false)
+
+  const { bookmarks, isLoading } = useBookmarks()
+
+  const filteredBookmarks = bookmarks.filter((bookmark) => {
+    const matchesSearch =
+      bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      bookmark.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      bookmark.author.name.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesCategory = selectedCategory === "all" || bookmark.category === selectedCategory
+
+    return matchesSearch && matchesCategory
+  })
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">북마크</h1>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+              <Filter className="h-4 w-4 mr-2" />
+              필터
+            </Button>
+            <div className="flex items-center border rounded-lg">
+              <Button variant={viewMode === "grid" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("grid")}>
+                <Grid className="h-4 w-4" />
+              </Button>
+              <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("list")}>
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="북마크 검색..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Filters */}
+        {showFilters && <BookmarkFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />}
+      </div>
+
+      {/* Category Tabs */}
+      <Tabs value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as BookmarkCategory | "all")}>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="all">전체</TabsTrigger>
+          <TabsTrigger value="pregnancy">임신</TabsTrigger>
+          <TabsTrigger value="newborn">신생아</TabsTrigger>
+          <TabsTrigger value="education">교육</TabsTrigger>
+          <TabsTrigger value="health">건강</TabsTrigger>
+          <TabsTrigger value="tips">팁</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={selectedCategory} className="mt-6">
+          {filteredBookmarks.length === 0 ? (
+            <BookmarkEmptyState hasSearch={searchQuery.length > 0} searchQuery={searchQuery} />
+          ) : (
+            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+              {filteredBookmarks.map((bookmark, index) => (
+                <BookmarkCard key={bookmark.id} bookmark={bookmark} viewMode={viewMode} index={index} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Stats */}
+      {filteredBookmarks.length > 0 && (
+        <div className="text-sm text-gray-500 text-center">총 {filteredBookmarks.length}개의 북마크</div>
+      )}
+    </div>
+  )
+}

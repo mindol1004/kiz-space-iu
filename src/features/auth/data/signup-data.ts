@@ -1,14 +1,4 @@
-"use client"
-import SignupForm from "@/features/auth/components/signup-form"
-
-interface Child {
-  id: string
-  name: string
-  age: string
-  gender: "boy" | "girl"
-}
-
-const INTEREST_TAGS = [
+export const INTEREST_TAGS = [
   "신생아케어",
   "유아놀이",
   "초등교육",
@@ -27,7 +17,7 @@ const INTEREST_TAGS = [
   "요리활동",
 ]
 
-const REGIONS = [
+export const REGIONS = [
   "서울특별시",
   "부산광역시",
   "대구광역시",
@@ -46,7 +36,3 @@ const REGIONS = [
   "경상남도",
   "제주특별자치도",
 ]
-
-export default function SignupPage() {
-  return <SignupForm />
-}
