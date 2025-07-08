@@ -14,112 +14,509 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================================
+// USER & AUTH MODELS
+// ============================================================================
+
 model User {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  email     String    @unique
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
   nickname  String
   avatar    String?
   location  String?
   interests String[]
-  verified  Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  children  Child[]
-  posts     Post[]
-  comments  Comment[]
+  verified  Boolean  @default(false)
+  bio       String?
+  
+  // Stats (denormalized for performance)
+  postsCount     Int @default(0)
+  followersCount Int @default(0)
+  followingCount Int @default(0)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastSeenAt DateTime @default(now())
+  
+  // Relations
+  children      Child[]
+  posts         Post[]
+  comments      Comment[]
+  likes         Like[]
+  bookmarks     Bookmark[]
+  chatRooms     ChatParticipant[]
+  sentMessages  Message[]
+  groupMembers  GroupMember[]
+  notifications Notification[]
+  reports       Report[]
+  followers     Follow[] @relation("UserFollowers")
+  following     Follow[] @relation("UserFollowing")
+  
+  @@map("users")
 }
 
 model Child {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  parentId  String    @db.ObjectId
-  parent    User      @relation(fields: [parentId], references: [id])
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  parentId String @db.ObjectId
+  parent   User   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  
   name      String
   age       Int
-  gender    String // enum: 'male', 'female'
+  gender    Gender
   avatar    String?
-  createdAt DateTime  @default(now())
+  birthDate DateTime?
+  
+  createdAt DateTime @default(now())
+  
+  @@map("children")
 }
 
+// ============================================================================
+// POST & CONTENT MODELS
+// ============================================================================
+
 model Post {
-  id           String       @id @default(auto()) @map("_id") @db.ObjectId
-  authorId     String       @db.ObjectId
-  author       User         @relation(fields: [authorId], references: [id])
-  content      String
-  images       String[]
-  category     CategoryEnum
-  ageGroup     AgeGroupEnum
-  tags         String[]
-  likes        String[]     @db.ObjectId // Array of User IDs who liked the post
-  bookmarks    String[]     @db.ObjectId // Array of User IDs who bookmarked the post
-  commentCount Int          @default(0)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  comments     Comment[]
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  authorId String @db.ObjectId
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  content  String
+  images   String[]
+  category PostCategory
+  ageGroup AgeGroup
+  tags     String[]
+  
+  // Engagement (denormalized for performance)
+  likesCount     Int @default(0)
+  commentsCount  Int @default(0)
+  bookmarksCount Int @default(0)
+  viewsCount     Int @default(0)
+  
+  // Status
+  isPublished Boolean @default(true)
+  isPinned    Boolean @default(false)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
+  reports   Report[]
+  
+  @@map("posts")
 }
 
 model Comment {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  postId      String    @db.ObjectId
-  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  authorId    String    @db.ObjectId
-  author      User      @relation(fields: [authorId], references: [id])
-  content     String
-  parentId    String?   @db.ObjectId // For replies
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  postId   String @db.ObjectId
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId String @db.ObjectId
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  content String
+  
+  // For nested comments
+  parentId      String?   @db.ObjectId
   parentComment Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  replies     Comment[] @relation("CommentReplies")
-  likes       String[]  @db.ObjectId // Array of User IDs who liked the comment
-  createdAt   DateTime  @default(now())
+  replies       Comment[] @relation("CommentReplies")
+  
+  // Engagement
+  likesCount Int @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  likes   Like[]
+  reports Report[]
+  
+  @@map("comments")
 }
 
-model Tag {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  name      String    @unique
-  createdAt DateTime  @default(now())
+model Like {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Polymorphic relation - can like posts or comments
+  postId    String?  @db.ObjectId
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId String?  @db.ObjectId
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@map("likes")
 }
+
+model Bookmark {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId String @db.ObjectId
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  // Optional categorization
+  category String?
+  notes    String?
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, postId])
+  @@map("bookmarks")
+}
+
+// ============================================================================
+// CHAT & MESSAGING MODELS
+// ============================================================================
+
+model ChatRoom {
+  id   String       @id @default(auto()) @map("_id") @db.ObjectId
+  name String?
+  type ChatRoomType
+  
+  // Group chat specific
+  description String?
+  avatar      String?
+  isPrivate   Boolean @default(false)
+  
+  // Last message info (denormalized for performance)
+  lastMessageId      String?   @db.ObjectId
+  lastMessageContent String?
+  lastMessageAt      DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  participants ChatParticipant[]
+  messages     Message[]
+  
+  @@map("chat_rooms")
+}
+
+model ChatParticipant {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  chatRoomId String   @db.ObjectId
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  userId     String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  role ChatRole @default(MEMBER)
+  
+  // Read status
+  lastReadAt      DateTime?
+  unreadCount     Int       @default(0)
+  notificationsOn Boolean   @default(true)
+  
+  joinedAt DateTime @default(now())
+  leftAt   DateTime?
+  
+  @@unique([chatRoomId, userId])
+  @@map("chat_participants")
+}
+
+model Message {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  chatRoomId String   @db.ObjectId
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  senderId   String   @db.ObjectId
+  sender     User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  
+  content String
+  type    MessageType @default(TEXT)
+  
+  // File attachments
+  attachments Json[]
+  
+  // Message status
+  isEdited  Boolean @default(false)
+  isDeleted Boolean @default(false)
+  
+  // Reply to another message
+  replyToId String?  @db.ObjectId
+  replyTo   Message? @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies   Message[] @relation("MessageReplies")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("messages")
+}
+
+// ============================================================================
+// COMMUNITY & SOCIAL MODELS
+// ============================================================================
 
 model Group {
-  id        String        @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  members   Int
-  category  GroupCategoryEnum
-  createdAt DateTime      @default(now())
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  avatar      String?
+  banner      String?
+  category    GroupCategory
+  
+  // Settings
+  isPrivate   Boolean @default(false)
+  isVerified  Boolean @default(false)
+  
+  // Stats (denormalized)
+  membersCount Int @default(0)
+  postsCount   Int @default(0)
+  
+  // Location-based groups
+  location String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  members GroupMember[]
+  events  Event[]
+  
+  @@map("groups")
+}
+
+model GroupMember {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  groupId String @db.ObjectId
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId  String @db.ObjectId
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  role GroupRole @default(MEMBER)
+  
+  joinedAt DateTime @default(now())
+  
+  @@unique([groupId, userId])
+  @@map("group_members")
 }
 
 model Event {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   description String?
-  date        DateTime
-  location    String?
-  type        EventTypeEnum
-  createdAt   DateTime  @default(now())
+  
+  // Event details
+  startDate DateTime
+  endDate   DateTime?
+  location  String?
+  type      EventType
+  
+  // Organization
+  organizerId String? @db.ObjectId
+  groupId     String? @db.ObjectId
+  group       Group?  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  
+  // Settings
+  maxParticipants Int?
+  isPublic        Boolean @default(true)
+  requiresApproval Boolean @default(false)
+  
+  // Stats
+  participantsCount Int @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  participants EventParticipant[]
+  
+  @@map("events")
 }
 
-enum CategoryEnum {
-  play
-  health
-  education
-  food
-  products
-  advice
+model EventParticipant {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  eventId String @db.ObjectId
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  String @db.ObjectId
+  
+  status ParticipationStatus @default(GOING)
+  
+  registeredAt DateTime @default(now())
+  
+  @@unique([eventId, userId])
+  @@map("event_participants")
 }
 
-enum AgeGroupEnum {
-  _0_2 @map("0-2")
-  _3_5 @map("3-5")
-  _6_8 @map("6-8")
-  _9_12 @map("9-12")
-  all
+// ============================================================================
+// SOCIAL & ENGAGEMENT MODELS
+// ============================================================================
+
+model Follow {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  followerId  String @db.ObjectId
+  follower    User   @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String @db.ObjectId
+  following   User   @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([followerId, followingId])
+  @@map("follows")
 }
 
-enum GroupCategoryEnum {
-  지역
-  교육
-  라이프
-  연령별
+model Notification {
+  id     String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId String           @db.ObjectId
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type    NotificationType
+  title   String
+  content String
+  
+  // Related entities
+  relatedUserId String? @db.ObjectId
+  relatedPostId String? @db.ObjectId
+  relatedEventId String? @db.ObjectId
+  
+  // Status
+  isRead Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  
+  @@map("notifications")
 }
 
-enum EventTypeEnum {
-  온라인
-  오프라인
+model Report {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  reporterId String     @db.ObjectId
+  reporter   User       @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  
+  type   ReportType
+  reason String
+  
+  // Reported content (polymorphic)
+  postId    String?  @db.ObjectId
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId String?  @db.ObjectId
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  
+  status ReportStatus @default(PENDING)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("reports")
+}
+
+model Tag {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  name  String @unique
+  color String?
+  
+  // Stats
+  usageCount Int @default(0)
+  
+  createdAt DateTime @default(now())
+  
+  @@map("tags")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum PostCategory {
+  PREGNANCY     // 임신
+  NEWBORN       // 신생아
+  HEALTH        // 건강
+  EDUCATION     // 교육
+  FOOD          // 음식
+  PLAY          // 놀이
+  PRODUCTS      // 제품
+  ADVICE        // 조언
+  LIFESTYLE     // 라이프스타일
+}
+
+enum AgeGroup {
+  PREGNANCY     // 임신
+  NEWBORN_0_6M  // 신생아 (0-6개월)
+  INFANT_6_12M  // 영아 (6-12개월)
+  TODDLER_1_3Y  // 유아 (1-3세)
+  PRESCHOOL_3_5Y // 유치원 (3-5세)
+  SCHOOL_5_8Y   // 초등 저학년 (5-8세)
+  TWEEN_8_12Y   // 초등 고학년 (8-12세)
+  ALL           // 전체
+}
+
+enum ChatRoomType {
+  DIRECT // 1:1 채팅
+  GROUP  // 그룹 채팅
+}
+
+enum ChatRole {
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  VOICE
+  SYSTEM
+}
+
+enum GroupCategory {
+  REGION    // 지역
+  EDUCATION // 교육
+  LIFESTYLE // 라이프스타일
+  AGE       // 연령별
+  INTEREST  // 관심사
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+enum EventType {
+  ONLINE
+  OFFLINE
+  HYBRID
+}
+
+enum ParticipationStatus {
+  GOING
+  MAYBE
+  NOT_GOING
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+  MESSAGE
+  EVENT_REMINDER
+  GROUP_INVITATION
+  SYSTEM
+}
+
+enum ReportType {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  MISINFORMATION
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
 }

@@ -3,15 +3,20 @@
 import { motion } from "framer-motion"
 import { PostCard } from "@/features/posts/components/post-card"
 import { PostFilters } from "@/features/posts/components/post-filters"
+import { CreatePostDialog } from "@/features/posts/components/create-post-dialog"
 import { usePosts } from "@/hooks/use-posts"
 import { Loader2 } from "lucide-react"
 
-export default function HomePage() {
+export default function FeedPage() {
   const { data, isLoading, error } = usePosts()
 
   if (isLoading) {
     return (
       <div className="max-w-md mx-auto p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-bold">피드</h1>
+          <CreatePostDialog />
+        </div>
         <PostFilters />
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-pink-500" />
@@ -24,6 +29,10 @@ export default function HomePage() {
   if (error) {
     return (
       <div className="max-w-md mx-auto p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-bold">피드</h1>
+          <CreatePostDialog />
+        </div>
         <PostFilters />
         <div className="text-center py-8">
           <p className="text-red-500">게시글을 불러오는데 실패했습니다.</p>
@@ -37,6 +46,11 @@ export default function HomePage() {
 
   return (
     <div className="max-w-md mx-auto">
+      <div className="flex justify-between items-center p-4">
+        <h1 className="text-xl font-bold">피드</h1>
+        <CreatePostDialog />
+      </div>
+
       <div className="p-4">
         <PostFilters />
       </div>
@@ -47,7 +61,7 @@ export default function HomePage() {
           <p className="text-gray-500 text-sm mt-2">다른 카테고리나 연령대를 선택해보세요!</p>
         </div>
       ) : (
-        <div className="space-y-4 px-4">
+        <div className="space-y-4 px-4 pb-20">
           {posts.map((post: any, index: number) => (
             <motion.div
               key={post._id}
