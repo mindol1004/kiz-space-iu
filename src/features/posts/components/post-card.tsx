@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -9,6 +11,8 @@ import { Badge } from "@/components/ui/badge"
 import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal } from "lucide-react"
 import { formatDate, getAgeGroupLabel, getCategoryLabel } from "@/lib/utils"
 import { PostDetailModal } from "./post-detail-modal"
+import { useLikePost, useBookmarkPost } from "../hooks/use-posts"
+import { useAuthStore } from "@/stores/auth-store"
 import type { Post } from "@/lib/schemas"
 
 interface PostCardProps {
@@ -26,13 +30,33 @@ export function PostCard({ post }: PostCardProps) {
   const [likeCount, setLikeCount] = useState(post.likes.length)
   const [showDetailModal, setShowDetailModal] = useState(false)
 
-  const handleLike = () => {
-    setIsLiked(!isLiked)
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1))
+  const { toggleLike } = useLikePost()
+  const { toggleBookmark } = useBookmarkPost()
+  const { user } = useAuthStore()
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!user) return
+
+    try {
+      const newIsLiked = await toggleLike(post.id, user.id)
+      setIsLiked(newIsLiked)
+      setLikeCount((prev) => (newIsLiked ? prev + 1 : prev - 1))
+    } catch (error) {
+      // Error is handled in the hook
+    }
   }
 
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked)
+  const handleBookmark = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!user) return
+
+    try {
+      const newIsBookmarked = await toggleBookmark(post.id, user.id)
+      setIsBookmarked(newIsBookmarked)
+    } catch (error) {
+      // Error is handled in the hook
+    }
   }
 
   const handleCardClick = () => {
@@ -110,10 +134,7 @@ export function PostCard({ post }: PostCardProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleLike()
-                  }}
+                  onClick={handleLike}
                   className={`flex items-center space-x-1 ${isLiked ? "text-red-500" : "text-gray-500"}`}
                 >
                   <motion.div whileTap={{ scale: 0.8 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
@@ -135,10 +156,7 @@ export function PostCard({ post }: PostCardProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleBookmark()
-                  }}
+                  onClick={handleBookmark}
                   className={`${isBookmarked ? "text-yellow-500" : "text-gray-500"}`}
                 >
                   <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} />

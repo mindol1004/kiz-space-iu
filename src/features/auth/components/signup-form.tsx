@@ -10,12 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Heart, Baby, Users, Shield, ArrowLeft, Plus, X } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import type { SignupFormData, Child } from "../types/auth-types"
 import { INTEREST_TAGS, REGIONS } from "../data/signup-data"
+import { useAuth } from "../hooks/use-auth"
 
 export default function SignupForm() {
-  const router = useRouter()
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState<SignupFormData>({
     email: "",
@@ -32,6 +31,8 @@ export default function SignupForm() {
     age: "",
     gender: "boy" as "boy" | "girl",
   })
+
+  const { register, isLoading } = useAuth()
 
   const handleInterestToggle = (interest: string) => {
     setFormData((prev) => ({
@@ -63,9 +64,14 @@ export default function SignupForm() {
     }))
   }
 
-  const handleSubmit = () => {
-    // 회원가입 로직 (현재는 메인 페이지로 이동)
-    router.push("/(main)")
+  const handleSubmit = async () => {
+    await register({
+      email: formData.email,
+      password: formData.password,
+      nickname: formData.nickname,
+      location: formData.region,
+      interests: formData.interests,
+    })
   }
 
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 4))
@@ -355,10 +361,11 @@ export default function SignupForm() {
                   <Button
                     type="button"
                     onClick={handleSubmit}
+                    disabled={isLoading}
                     className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
                   >
                     <Users className="w-4 h-4 mr-2" />
-                    가입 완료
+                    {isLoading ? "가입 중..." : "가입 완료"}
                   </Button>
                 )}
               </div>

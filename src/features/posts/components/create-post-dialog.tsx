@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Plus, ImageIcon, X } from "lucide-react"
-import { useCreatePost } from "@/hooks/use-posts"
-import { useToast } from "@/hooks/use-toast"
+import { useCreatePost } from "../hooks/use-posts"
+import { useAuthStore } from "@/stores/auth-store"
 
 export function CreatePostDialog() {
   const [open, setOpen] = useState(false)
@@ -19,8 +19,8 @@ export function CreatePostDialog() {
   const [ageGroup, setAgeGroup] = useState("")
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
-  const createPost = useCreatePost()
-  const { toast } = useToast()
+  const { createPost, isLoading } = useCreatePost()
+  const { user } = useAuthStore()
 
   const categories = [
     { value: "play", label: "놀이/활동" },
@@ -51,17 +51,15 @@ export function CreatePostDialog() {
   }
 
   const handleSubmit = async () => {
+    if (!user) return
+
     try {
-      await createPost.mutateAsync({
+      await createPost({
         content,
         category,
         ageGroup,
         tags,
-      })
-
-      toast({
-        title: "게시글 작성 완료",
-        description: "새 게시글이 성공적으로 작성되었습니다.",
+        authorId: user.id,
       })
 
       setOpen(false)
@@ -71,11 +69,7 @@ export function CreatePostDialog() {
       setAgeGroup("")
       setTags([])
     } catch (error) {
-      toast({
-        title: "게시글 작성 실패",
-        description: "게시글 작성 중 오류가 발생했습니다.",
-        variant: "destructive",
-      })
+      // Error is handled in the hook
     }
   }
 
@@ -177,10 +171,10 @@ export function CreatePostDialog() {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!content.trim() || !category || !ageGroup || createPost.isPending}
+              disabled={!content.trim() || !category || !ageGroup || isLoading}
               className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
             >
-              {createPost.isPending ? "게시 중..." : "게시하기"}
+              {isLoading ? "게시 중..." : "게시하기"}
             </Button>
           </div>
         </motion.div>

@@ -1,25 +1,37 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { mockBookmarks } from "../data/mock-bookmark-data"
-import type { BookmarkItem, BookmarkCategory } from "../types/bookmark-types"
+import { useState, useEffect } from "react"
 
-export function useBookmarks() {
-  const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([])
+export function useBookmarks(userId: string) {
+  const [bookmarks, setBookmarks] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    // Simulate API call
-    const loadBookmarks = async () => {
-      setIsLoading(true)
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setBookmarks(mockBookmarks)
+  const fetchBookmarks = async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/bookmarks?userId=${userId}`)
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "북마크를 불러오는데 실패했습니다")
+      }
+
+      setBookmarks(result.bookmarks)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다")
+    } finally {
       setIsLoading(false)
     }
+  }
 
-    loadBookmarks()
-  }, [])
+  useEffect(() => {
+    if (userId) {
+      fetchBookmarks()
+    }
+  }, [userId])
 
   const removeBookmark = (bookmarkId: string) => {
     setBookmarks((prev) => prev.filter((bookmark) => bookmark.id !== bookmarkId))
@@ -39,34 +51,12 @@ export function useBookmarks() {
     )
   }
 
-  const getBookmarksByCategory = (category: BookmarkCategory | "all") => {
-    if (category === "all") return bookmarks
-    return bookmarks.filter((bookmark) => bookmark.category === category)
-  }
-
-  const bookmarkStats = useMemo(() => {
-    const stats = {
-      total: bookmarks.length,
-      pregnancy: 0,
-      newborn: 0,
-      education: 0,
-      health: 0,
-      tips: 0,
-    }
-
-    bookmarks.forEach((bookmark) => {
-      stats[bookmark.category]++
-    })
-
-    return stats
-  }, [bookmarks])
-
   return {
     bookmarks,
     isLoading,
+    error,
     removeBookmark,
     toggleLike,
-    getBookmarksByCategory,
-    bookmarkStats,
+    refetch: fetchBookmarks,
   }
 }
