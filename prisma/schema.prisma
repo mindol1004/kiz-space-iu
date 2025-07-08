@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  email     String    @unique
+  nickname  String
+  avatar    String?
+  location  String?
+  interests String[]
+  verified  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  children  Child[]
+  posts     Post[]
+  comments  Comment[]
+}
+
+model Child {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  parentId  String    @db.ObjectId
+  parent    User      @relation(fields: [parentId], references: [id])
+  name      String
+  age       Int
+  gender    String // enum: 'male', 'female'
+  avatar    String?
+  createdAt DateTime  @default(now())
+}
+
+model Post {
+  id           String       @id @default(auto()) @map("_id") @db.ObjectId
+  authorId     String       @db.ObjectId
+  author       User         @relation(fields: [authorId], references: [id])
+  content      String
+  images       String[]
+  category     CategoryEnum
+  ageGroup     AgeGroupEnum
+  tags         String[]
+  likes        String[]     @db.ObjectId // Array of User IDs who liked the post
+  bookmarks    String[]     @db.ObjectId // Array of User IDs who bookmarked the post
+  commentCount Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  comments     Comment[]
+}
+
+model Comment {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  postId      String    @db.ObjectId
+  post        Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId    String    @db.ObjectId
+  author      User      @relation(fields: [authorId], references: [id])
+  content     String
+  parentId    String?   @db.ObjectId // For replies
+  parentComment Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies     Comment[] @relation("CommentReplies")
+  likes       String[]  @db.ObjectId // Array of User IDs who liked the comment
+  createdAt   DateTime  @default(now())
+}
+
+model Tag {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String    @unique
+  createdAt DateTime  @default(now())
+}
+
+model Group {
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  members   Int
+  category  GroupCategoryEnum
+  createdAt DateTime      @default(now())
+}
+
+model Event {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  date        DateTime
+  location    String?
+  type        EventTypeEnum
+  createdAt   DateTime  @default(now())
+}
+
+enum CategoryEnum {
+  play
+  health
+  education
+  food
+  products
+  advice
+}
+
+enum AgeGroupEnum {
+  _0_2 @map("0-2")
+  _3_5 @map("3-5")
+  _6_8 @map("6-8")
+  _9_12 @map("9-12")
+  all
+}
+
+enum GroupCategoryEnum {
+  지역
+  교육
+  라이프
+  연령별
+}
+
+enum EventTypeEnum {
+  온라인
+  오프라인
+}
