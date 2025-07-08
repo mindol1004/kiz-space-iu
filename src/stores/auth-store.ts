@@ -1,15 +1,33 @@
-"use client"
-
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { User } from "@/lib/schemas"
+
+interface User {
+  id: string
+  email: string
+  name: string
+  avatar?: string
+  bio?: string
+  location?: string
+  interests: string[]
+  children: Array<{
+    id: string
+    name: string
+    birthDate: string
+    gender: string
+  }>
+  followersCount: number
+  followingCount: number
+  postsCount: number
+  isFollowing?: boolean
+  createdAt: string
+}
 
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
   login: (user: User) => void
   logout: () => void
-  updateUser: (userData: Partial<User>) => void
+  updateUser: (updates: Partial<User>) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,9 +37,9 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       login: (user) => set({ user, isAuthenticated: true }),
       logout: () => set({ user: null, isAuthenticated: false }),
-      updateUser: (userData) =>
+      updateUser: (updates) =>
         set((state) => ({
-          user: state.user ? { ...state.user, ...userData } : null,
+          user: state.user ? { ...state.user, ...updates } : null,
         })),
     }),
     {

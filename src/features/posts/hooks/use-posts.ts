@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
-import type { PostWithAuthor } from "@/lib/schemas"
 
 interface PostFilters {
   category?: string
@@ -16,6 +15,28 @@ interface CreatePostData {
   ageGroup: string
   tags: string[]
   authorId: string
+}
+
+interface PostWithAuthor {
+  id: string
+  content: string
+  images: string[]
+  category: string
+  ageGroup: string
+  tags: string[]
+  authorId: string
+  author: {
+    id: string
+    name: string
+    avatar?: string
+  }
+  likesCount: number
+  bookmarksCount: number
+  commentCount: number
+  isLiked: boolean
+  isBookmarked: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 interface PostsResponse {
@@ -81,7 +102,7 @@ export function useCreatePost() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (data: CreatePostData) => {
       const response = await fetch("/api/posts", {
         method: "POST",
@@ -112,6 +133,12 @@ export function useCreatePost() {
       })
     },
   })
+
+  return {
+    createPost: mutation.mutateAsync,
+    isLoading: mutation.isPending,
+    ...mutation,
+  }
 }
 
 export function useLikePost() {

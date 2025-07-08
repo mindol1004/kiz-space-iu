@@ -60,6 +60,7 @@ export function CreatePostDialog() {
         ageGroup,
         tags,
         authorId: user.id,
+        images: [],
       })
 
       setOpen(false)
@@ -70,6 +71,7 @@ export function CreatePostDialog() {
       setTags([])
     } catch (error) {
       // Error is handled in the hook
+      console.error("Failed to create post:", error)
     }
   }
 
