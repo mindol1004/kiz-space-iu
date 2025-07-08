@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 
 interface CreateGroupData {
@@ -12,15 +12,9 @@ interface CreateGroupData {
 }
 
 export function useGroups() {
-  const [groups, setGroups] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchGroups = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
+  return useQuery({
+    queryKey: ["groups"],
+    queryFn: async () => {
       const response = await fetch("/api/groups")
       const result = await response.json()
 
@@ -28,33 +22,34 @@ export function useGroups() {
         throw new Error(result.error || "그룹을 불러오는데 실패했습니다")
       }
 
-      setGroups(result.groups)
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+      return result.groups
+    },
+  })
+}
 
-  useEffect(() => {
-    fetchGroups()
-  }, [])
+export function useGroup(groupId: string) {
+  return useQuery({
+    queryKey: ["group", groupId],
+    queryFn: async () => {
+      const response = await fetch(`/api/groups/${groupId}`)
+      const result = await response.json()
 
-  return {
-    groups,
-    isLoading,
-    error,
-    refetch: fetchGroups,
-  }
+      if (!response.ok) {
+        throw new Error(result.error || "그룹 정보를 불러오는데 실패했습니다")
+      }
+
+      return result.group
+    },
+    enabled: !!groupId,
+  })
 }
 
 export function useCreateGroup() {
-  const [isLoading, setIsLoading] = useState(false)
+  const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const createGroup = async (data: CreateGroupData) => {
-    setIsLoading(true)
-    try {
+  return useMutation({
+    mutationFn: async (data: CreateGroupData) => {
       const response = await fetch("/api/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,37 +62,31 @@ export function useCreateGroup() {
         throw new Error(result.error || "그룹 생성에 실패했습니다")
       }
 
+      return result.group
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["groups"] })
       toast({
         title: "그룹 생성 완료",
         description: "새 그룹이 성공적으로 생성되었습니다.",
       })
-
-      return result.group
-    } catch (error) {
+    },
+    onError: (error) => {
       toast({
         title: "그룹 생성 실패",
-        description: error instanceof Error ? error.message : "그룹 생성 중 오류가 발생했습니다",
+        description: error.message,
         variant: "destructive",
       })
-      throw error
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  return {
-    createGroup,
-    isLoading,
-  }
+    },
+  })
 }
 
 export function useJoinGroup() {
-  const [isLoading, setIsLoading] = useState(false)
+  const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const joinGroup = async (groupId: string, userId: string) => {
-    setIsLoading(true)
-    try {
+  return useMutation({
+    mutationFn: async ({ groupId, userId }: { groupId: string; userId: string }) => {
       const response = await fetch(`/api/groups/${groupId}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -110,26 +99,22 @@ export function useJoinGroup() {
         throw new Error(result.error || "그룹 가입에 실패했습니다")
       }
 
+      return result
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["group", variables.groupId] })
+      queryClient.invalidateQueries({ queryKey: ["groups"] })
       toast({
-        title: result.joined ? "그룹 가입 완료" : "그룹 탈퇴 완료",
-        description: result.joined ? "그룹에 성공적으로 가입했습니다." : "그룹에서 탈퇴했습니다.",
+        title: data.joined ? "그룹 가입 완료" : "그룹 탈퇴 완료",
+        description: data.joined ? "그룹에 성공적으로 가입했습니다." : "그룹에서 탈퇴했습니다.",
       })
-
-      return result.joined
-    } catch (error) {
+    },
+    onError: (error) => {
       toast({
         title: "오류",
-        description: error instanceof Error ? error.message : "그룹 가입/탈퇴 중 오류가 발생했습니다",
+        description: error.message,
         variant: "destructive",
       })
-      throw error
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  return {
-    joinGroup,
-    isLoading,
-  }
+    },
+  })
 }

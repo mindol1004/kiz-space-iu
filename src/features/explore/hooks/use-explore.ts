@@ -1,69 +1,90 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { TRENDING_TAGS, POPULAR_GROUPS, WEEKLY_EVENTS } from "../data/explore-data"
+import { useQuery } from "@tanstack/react-query"
 
-export function useExplore() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+interface PopularGroup {
+  id: string
+  name: string
+  description: string
+  memberCount: number
+  category: string
+  isPrivate: boolean
+}
 
-  const filteredGroups = useMemo(() => {
-    let filtered = POPULAR_GROUPS
+interface TrendingTag {
+  id: string
+  name: string
+  postCount: number
+  trend: "up" | "down" | "stable"
+}
 
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (group) =>
-          group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          group.category.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    }
+interface WeeklyEvent {
+  id: string
+  title: string
+  description: string
+  date: string
+  location: string
+  participantCount: number
+}
 
-    if (selectedCategory) {
-      filtered = filtered.filter((group) => group.category === selectedCategory)
-    }
+export function usePopularGroups() {
+  return useQuery({
+    queryKey: ["popularGroups"],
+    queryFn: async (): Promise<PopularGroup[]> => {
+      const response = await fetch("/api/explore/groups")
+      const result = await response.json()
 
-    return filtered
-  }, [searchQuery, selectedCategory])
+      if (!response.ok) {
+        throw new Error(result.error || "인기 그룹을 불러오는데 실패했습니다")
+      }
 
-  const filteredTags = useMemo(() => {
-    if (!searchQuery) return TRENDING_TAGS
+      return result.groups
+    },
+  })
+}
 
-    return TRENDING_TAGS.filter((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  }, [searchQuery])
+export function useTrendingTags() {
+  return useQuery({
+    queryKey: ["trendingTags"],
+    queryFn: async (): Promise<TrendingTag[]> => {
+      const response = await fetch("/api/explore/tags")
+      const result = await response.json()
 
-  const categories = useMemo(() => {
-    const uniqueCategories = [...new Set(POPULAR_GROUPS.map((group) => group.category))]
-    return uniqueCategories
-  }, [])
+      if (!response.ok) {
+        throw new Error(result.error || "트렌딩 태그를 불러오는데 실패했습니다")
+      }
 
-  const stats = useMemo(
-    () => ({
-      totalGroups: POPULAR_GROUPS.length,
-      totalMembers: POPULAR_GROUPS.reduce((sum, group) => sum + group.members, 0),
-      totalTags: TRENDING_TAGS.length,
-      totalEvents: WEEKLY_EVENTS.length,
-    }),
-    [],
-  )
+      return result.tags
+    },
+  })
+}
+
+export function useWeeklyEvents() {
+  return useQuery({
+    queryKey: ["weeklyEvents"],
+    queryFn: async (): Promise<WeeklyEvent[]> => {
+      const response = await fetch("/api/explore/events")
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "주간 이벤트를 불러오는데 실패했습니다")
+      }
+
+      return result.events
+    },
+  })
+}
+
+export function useExploreContent() {
+  const popularGroups = usePopularGroups()
+  const trendingTags = useTrendingTags()
+  const weeklyEvents = useWeeklyEvents()
 
   return {
-    // Data
-    trendingTags: filteredTags,
-    popularGroups: filteredGroups,
-    weeklyEvents: WEEKLY_EVENTS,
-    categories,
-    stats,
-
-    // State
-    searchQuery,
-    selectedCategory,
-
-    // Actions
-    setSearchQuery,
-    setSelectedCategory,
-    clearFilters: () => {
-      setSearchQuery("")
-      setSelectedCategory(null)
-    },
+    popularGroups: popularGroups.data || [],
+    trendingTags: trendingTags.data || [],
+    weeklyEvents: weeklyEvents.data || [],
+    isLoading: popularGroups.isLoading || trendingTags.isLoading || weeklyEvents.isLoading,
+    error: popularGroups.error || trendingTags.error || weeklyEvents.error,
   }
 }

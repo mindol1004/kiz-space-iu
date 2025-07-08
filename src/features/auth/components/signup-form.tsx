@@ -1,40 +1,84 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Heart, Baby, Users, Shield, ArrowLeft, Plus, X } from "lucide-react"
-import Link from "next/link"
+import { Progress } from "@/components/ui/progress"
+import { ChevronLeft, ChevronRight, User, MapPin, Baby, Heart } from "lucide-react"
+import { useSignup } from "../hooks/use-signup"
+import { regions, interests, ageGroups } from "../data/signup-data"
 import type { SignupFormData, Child } from "../types/auth-types"
-import { INTEREST_TAGS, REGIONS } from "../data/signup-data"
-import { useAuth } from "../hooks/use-auth"
 
-export default function SignupForm() {
-  const [step, setStep] = useState(1)
+export function SignupForm() {
+  const { signup, validateStep, validateEmail, validatePassword, validateNickname, isLoading, error, reset } =
+    useSignup()
+  const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState<SignupFormData>({
     email: "",
     password: "",
     confirmPassword: "",
     nickname: "",
     region: "",
-    interests: [],
     children: [],
+    interests: [],
+    profileImage: "",
+    bio: "",
   })
 
-  const [newChild, setNewChild] = useState({
-    name: "",
-    age: "",
-    gender: "boy" as "boy" | "girl",
-  })
+  const totalSteps = 4
+  const progress = (currentStep / totalSteps) * 100
 
-  const { register, isLoading } = useAuth()
+  const handleNext = () => {
+    if (validateStep(currentStep, formData)) {
+      setCurrentStep((prev) => Math.min(prev + 1, totalSteps))
+    }
+  }
 
-  const handleInterestToggle = (interest: string) => {
+  const handlePrev = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1))
+  }
+
+  const handleSubmit = async () => {
+    if (validateStep(currentStep, formData)) {
+      await signup(formData)
+    }
+  }
+
+  const addChild = () => {
+    const newChild: Child = {
+      id: Date.now().toString(),
+      name: "",
+      birthDate: "",
+      gender: "",
+      ageGroup: "",
+    }
+    setFormData((prev) => ({
+      ...prev,
+      children: [...prev.children, newChild],
+    }))
+  }
+
+  const updateChild = (id: string, field: keyof Child, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      children: prev.children.map((child) => (child.id === id ? { ...child, [field]: value } : child)),
+    }))
+  }
+
+  const removeChild = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      children: prev.children.filter((child) => child.id !== id),
+    }))
+  }
+
+  const toggleInterest = (interest: string) => {
     setFormData((prev) => ({
       ...prev,
       interests: prev.interests.includes(interest)
@@ -43,359 +87,305 @@ export default function SignupForm() {
     }))
   }
 
-  const handleAddChild = () => {
-    if (newChild.name && newChild.age) {
-      const child: Child = {
-        id: Date.now().toString(),
-        ...newChild,
-      }
-      setFormData((prev) => ({
-        ...prev,
-        children: [...prev.children, child],
-      }))
-      setNewChild({ name: "", age: "", gender: "boy" })
-    }
-  }
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <User className="w-5 h-5 text-pink-500" />
+              <h3 className="text-lg font-semibold">기본 정보</h3>
+            </div>
 
-  const handleRemoveChild = (id: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      children: prev.children.filter((c) => c.id !== id),
-    }))
-  }
-
-  const handleSubmit = async () => {
-    await register({
-      email: formData.email,
-      password: formData.password,
-      nickname: formData.nickname,
-      location: formData.region,
-      interests: formData.interests,
-    })
-  }
-
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, 4))
-  const prevStep = () => setStep((prev) => Math.max(prev - 1, 1))
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 flex items-center justify-center p-4">
-      {/* 배경 장식 */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          className="absolute -top-40 -right-40 w-80 h-80 bg-pink-200 rounded-full opacity-20"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-        />
-        <motion.div
-          className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-200 rounded-full opacity-20"
-          animate={{ rotate: -360 }}
-          transition={{ duration: 25, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-        />
-      </div>
-
-      <div className="w-full max-w-md relative z-10">
-        {/* 헤더 */}
-        <motion.div
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <Link href="/" className="inline-flex items-center gap-2 text-pink-600 hover:text-pink-700 mb-4">
-            <ArrowLeft className="w-4 h-4" />
-            홈으로 돌아가기
-          </Link>
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Heart className="w-8 h-8 text-pink-500" />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-              KIZ-SPACE
-            </h1>
-          </div>
-          <p className="text-gray-600">안전한 육아 커뮤니티에 참여하세요</p>
-        </motion.div>
-
-        {/* 진행 단계 표시 */}
-        <motion.div
-          className="flex justify-center mb-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          {[1, 2, 3, 4].map((num) => (
-            <div key={num} className="flex items-center">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                  step >= num ? "bg-pink-500 text-white" : "bg-gray-200 text-gray-500"
-                }`}
-              >
-                {num}
-              </div>
-              {num < 4 && (
-                <div className={`w-8 h-0.5 transition-colors ${step > num ? "bg-pink-500" : "bg-gray-200"}`} />
+            <div className="space-y-2">
+              <Label htmlFor="email">이메일</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="example@email.com"
+                value={formData.email}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                className={!validateEmail(formData.email) && formData.email ? "border-red-500" : ""}
+              />
+              {!validateEmail(formData.email) && formData.email && (
+                <p className="text-sm text-red-500">올바른 이메일 형식을 입력해주세요.</p>
               )}
             </div>
-          ))}
-        </motion.div>
 
-        {/* 회원가입 폼 */}
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Card className="backdrop-blur-sm bg-white/80 border-0 shadow-xl">
-            <CardHeader className="text-center">
-              <CardTitle className="text-xl">
-                {step === 1 && "계정 정보"}
-                {step === 2 && "기본 정보"}
-                {step === 3 && "자녀 정보"}
-                {step === 4 && "관심사 선택"}
-              </CardTitle>
-              <CardDescription>
-                {step === 1 && "로그인에 사용할 계정 정보를 입력해주세요"}
-                {step === 2 && "프로필에 표시될 기본 정보를 입력해주세요"}
-                {step === 3 && "자녀 정보를 추가해주세요 (선택사항)"}
-                {step === 4 && "관심있는 육아 주제를 선택해주세요"}
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {/* Step 1: 계정 정보 */}
-              {step === 1 && (
-                <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <div>
-                    <Label htmlFor="email">이메일</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="example@email.com"
-                      value={formData.email}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="password">비밀번호</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="8자 이상 입력해주세요"
-                      value={formData.password}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="confirmPassword">비밀번호 확인</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="비밀번호를 다시 입력해주세요"
-                      value={formData.confirmPassword}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                    />
-                  </div>
-                </motion.div>
+            <div className="space-y-2">
+              <Label htmlFor="password">비밀번호</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="8자 이상, 영문+숫자 조합"
+                value={formData.password}
+                onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                className={!validatePassword(formData.password) && formData.password ? "border-red-500" : ""}
+              />
+              {!validatePassword(formData.password) && formData.password && (
+                <p className="text-sm text-red-500">8자 이상, 영문과 숫자를 포함해주세요.</p>
               )}
+            </div>
 
-              {/* Step 2: 기본 정보 */}
-              {step === 2 && (
-                <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <div>
-                    <Label htmlFor="nickname">닉네임</Label>
-                    <Input
-                      id="nickname"
-                      placeholder="커뮤니티에서 사용할 닉네임"
-                      value={formData.nickname}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, nickname: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="region">거주지역</Label>
-                    <Select
-                      value={formData.region}
-                      onValueChange={(value) => setFormData((prev) => ({ ...prev, region: value }))}
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="비밀번호를 다시 입력해주세요"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                className={
+                  formData.password !== formData.confirmPassword && formData.confirmPassword ? "border-red-500" : ""
+                }
+              />
+              {formData.password !== formData.confirmPassword && formData.confirmPassword && (
+                <p className="text-sm text-red-500">비밀번호가 일치하지 않습니다.</p>
+              )}
+            </div>
+          </div>
+        )
+
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin className="w-5 h-5 text-pink-500" />
+              <h3 className="text-lg font-semibold">프로필 정보</h3>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="nickname">닉네임</Label>
+              <Input
+                id="nickname"
+                placeholder="2-20자 이내로 입력해주세요"
+                value={formData.nickname}
+                onChange={(e) => setFormData((prev) => ({ ...prev, nickname: e.target.value }))}
+                className={!validateNickname(formData.nickname) && formData.nickname ? "border-red-500" : ""}
+              />
+              {!validateNickname(formData.nickname) && formData.nickname && (
+                <p className="text-sm text-red-500">2-20자 이내로 입력해주세요.</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>지역</Label>
+              <Select
+                value={formData.region}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, region: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="거주 지역을 선택해주세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((region) => (
+                    <SelectItem key={region} value={region}>
+                      {region}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio">자기소개 (선택)</Label>
+              <Textarea
+                id="bio"
+                placeholder="간단한 자기소개를 작성해주세요"
+                value={formData.bio}
+                onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
+                rows={3}
+              />
+            </div>
+          </div>
+        )
+
+      case 3:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Baby className="w-5 h-5 text-pink-500" />
+              <h3 className="text-lg font-semibold">자녀 정보 (선택)</h3>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              자녀 정보를 등록하면 연령대에 맞는 콘텐츠를 추천받을 수 있어요.
+            </p>
+
+            {formData.children.map((child, index) => (
+              <Card key={child.id} className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">자녀 {index + 1}</h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeChild(child.id)}
+                      className="text-red-500 hover:text-red-700"
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="거주지역을 선택해주세요" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {REGIONS.map((region) => (
-                          <SelectItem key={region} value={region}>
-                            {region}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 3: 자녀 정보 */}
-              {step === 3 && (
-                <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <div className="border rounded-lg p-4 space-y-3">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Baby className="w-4 h-4" />
-                      자녀 추가
-                    </h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="childName">이름</Label>
-                        <Input
-                          id="childName"
-                          placeholder="자녀 이름"
-                          value={newChild.name}
-                          onChange={(e) => setNewChild((prev) => ({ ...prev, name: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="childAge">나이</Label>
-                        <Select
-                          value={newChild.age}
-                          onValueChange={(value) => setNewChild((prev) => ({ ...prev, age: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="나이" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 13 }, (_, i) => (
-                              <SelectItem key={i} value={`${i}세`}>
-                                {i}세
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Label>성별</Label>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant={newChild.gender === "boy" ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setNewChild((prev) => ({ ...prev, gender: "boy" }))}
-                        >
-                          남아
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={newChild.gender === "girl" ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setNewChild((prev) => ({ ...prev, gender: "girl" }))}
-                        >
-                          여아
-                        </Button>
-                      </div>
-                    </div>
-                    <Button type="button" onClick={handleAddChild} className="w-full" size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      자녀 추가
+                      삭제
                     </Button>
                   </div>
 
-                  {/* 추가된 자녀 목록 */}
-                  {formData.children.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="font-medium">추가된 자녀</h4>
-                      {formData.children.map((child) => (
-                        <div key={child.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div>
-                            <span className="font-medium">{child.name}</span>
-                            <span className="text-sm text-gray-500 ml-2">
-                              {child.age} • {child.gender === "boy" ? "남아" : "여아"}
-                            </span>
-                          </div>
-                          <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveChild(child.id)}>
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>이름</Label>
+                      <Input
+                        placeholder="자녀 이름"
+                        value={child.name}
+                        onChange={(e) => updateChild(child.id, "name", e.target.value)}
+                      />
                     </div>
-                  )}
-                </motion.div>
-              )}
-
-              {/* Step 4: 관심사 선택 */}
-              {step === 4 && (
-                <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <div>
-                    <h4 className="font-medium mb-3">관심있는 육아 주제를 선택해주세요</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      {INTEREST_TAGS.map((tag) => (
-                        <motion.div key={tag} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                          <Badge
-                            variant={formData.interests.includes(tag) ? "default" : "outline"}
-                            className={`cursor-pointer p-2 justify-center transition-colors ${
-                              formData.interests.includes(tag) ? "bg-pink-500 hover:bg-pink-600" : "hover:bg-pink-50"
-                            }`}
-                            onClick={() => handleInterestToggle(tag)}
-                          >
-                            {tag}
-                          </Badge>
-                        </motion.div>
-                      ))}
+                    <div>
+                      <Label>생년월일</Label>
+                      <Input
+                        type="date"
+                        value={child.birthDate}
+                        onChange={(e) => updateChild(child.id, "birthDate", e.target.value)}
+                      />
                     </div>
-                    <p className="text-sm text-gray-500 mt-2">선택한 관심사: {formData.interests.length}개</p>
                   </div>
-                </motion.div>
-              )}
 
-              {/* 버튼 */}
-              <div className="flex gap-2 pt-4">
-                {step > 1 && (
-                  <Button type="button" variant="outline" onClick={prevStep} className="flex-1 bg-transparent">
-                    이전
-                  </Button>
-                )}
-                {step < 4 ? (
-                  <Button
-                    type="button"
-                    onClick={nextStep}
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                  >
-                    다음
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={isLoading}
-                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    {isLoading ? "가입 중..." : "가입 완료"}
-                  </Button>
-                )}
-              </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>성별</Label>
+                      <Select value={child.gender} onValueChange={(value) => updateChild(child.id, "gender", value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="성별 선택" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">남자</SelectItem>
+                          <SelectItem value="female">여자</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>연령대</Label>
+                      <Select
+                        value={child.ageGroup}
+                        onValueChange={(value) => updateChild(child.id, "ageGroup", value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="연령대 선택" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ageGroups.map((group) => (
+                            <SelectItem key={group} value={group}>
+                              {group}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
 
-              {/* 로그인 링크 */}
-              <div className="text-center pt-4 border-t">
-                <p className="text-sm text-gray-600">
-                  이미 계정이 있으신가요?{" "}
-                  <Link href="/(auth)/login" className="text-pink-600 hover:text-pink-700 font-medium">
-                    로그인하기
-                  </Link>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* 하단 안내 */}
-        <motion.div
-          className="text-center mt-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-            <Shield className="w-4 h-4" />
-            <span>안전하고 신뢰할 수 있는 육아 커뮤니티</span>
+            <Button variant="outline" onClick={addChild} className="w-full border-dashed bg-transparent">
+              자녀 추가
+            </Button>
           </div>
-        </motion.div>
-      </div>
-    </div>
+        )
+
+      case 4:
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Heart className="w-5 h-5 text-pink-500" />
+              <h3 className="text-lg font-semibold">관심사 선택 (선택)</h3>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">관심 있는 주제를 선택하면 맞춤 콘텐츠를 추천받을 수 있어요.</p>
+
+            <div className="grid grid-cols-2 gap-2">
+              {interests.map((interest) => (
+                <div
+                  key={interest}
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                    formData.interests.includes(interest)
+                      ? "bg-pink-50 border-pink-200"
+                      : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                  }`}
+                  onClick={() => toggleInterest(interest)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={formData.interests.includes(interest)}
+                      onChange={() => toggleInterest(interest)}
+                    />
+                    <span className="text-sm">{interest}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {formData.interests.length > 0 && (
+              <div className="mt-4">
+                <p className="text-sm font-medium mb-2">선택된 관심사:</p>
+                <div className="flex flex-wrap gap-2">
+                  {formData.interests.map((interest) => (
+                    <Badge key={interest} variant="secondary">
+                      {interest}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
+
+  return (
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle className="text-center">KIZ-SPACE 회원가입</CardTitle>
+        <CardDescription className="text-center">
+          단계 {currentStep} / {totalSteps}
+        </CardDescription>
+        <Progress value={progress} className="w-full" />
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        {error && <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">{error}</div>}
+
+        {renderStep()}
+
+        <div className="flex justify-between pt-4">
+          <Button
+            variant="outline"
+            onClick={handlePrev}
+            disabled={currentStep === 1}
+            className="flex items-center gap-2 bg-transparent"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            이전
+          </Button>
+
+          {currentStep < totalSteps ? (
+            <Button
+              onClick={handleNext}
+              disabled={!validateStep(currentStep, formData)}
+              className="flex items-center gap-2"
+            >
+              다음
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSubmit}
+              disabled={!validateStep(currentStep, formData) || isLoading}
+              className="flex items-center gap-2"
+            >
+              {isLoading ? "가입 중..." : "가입 완료"}
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   )
 }

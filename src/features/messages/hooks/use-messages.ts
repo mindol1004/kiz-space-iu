@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 
 interface SendMessageData {
@@ -12,15 +12,9 @@ interface SendMessageData {
 }
 
 export function useMessages(chatId: string, type: "direct" | "group") {
-  const [messages, setMessages] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchMessages = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
+  return useQuery({
+    queryKey: ["messages", chatId, type],
+    queryFn: async () => {
       const params = new URLSearchParams()
       params.append("chatId", chatId)
       params.append("type", type)
@@ -32,35 +26,19 @@ export function useMessages(chatId: string, type: "direct" | "group") {
         throw new Error(result.error || "메시지를 불러오는데 실패했습니다")
       }
 
-      setMessages(result.messages)
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (chatId) {
-      fetchMessages()
-    }
-  }, [chatId, type])
-
-  return {
-    messages,
-    isLoading,
-    error,
-    refetch: fetchMessages,
-  }
+      return result.messages
+    },
+    enabled: !!chatId,
+    refetchInterval: 3000, // 3초마다 새로고침
+  })
 }
 
 export function useSendMessage() {
-  const [isLoading, setIsLoading] = useState(false)
+  const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const sendMessage = async (data: SendMessageData) => {
-    setIsLoading(true)
-    try {
+  return useMutation({
+    mutationFn: async (data: SendMessageData) => {
       const response = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -74,20 +52,17 @@ export function useSendMessage() {
       }
 
       return result.message
-    } catch (error) {
+    },
+    onSuccess: (message) => {
+      queryClient.invalidateQueries({ queryKey: ["messages"] })
+      queryClient.invalidateQueries({ queryKey: ["chatRooms"] })
+    },
+    onError: (error) => {
       toast({
         title: "메시지 전송 실패",
-        description: error instanceof Error ? error.message : "메시지 전송 중 오류가 발생했습니다",
+        description: error.message,
         variant: "destructive",
       })
-      throw error
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  return {
-    sendMessage,
-    isLoading,
-  }
+    },
+  })
 }

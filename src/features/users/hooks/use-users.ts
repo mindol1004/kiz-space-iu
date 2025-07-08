@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 
 interface UpdateUserData {
@@ -12,50 +12,44 @@ interface UpdateUserData {
 }
 
 export function useUser(userId: string) {
-  const [user, setUser] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  return useQuery({
+    queryKey: ["user", userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${userId}`)
+      const result = await response.json()
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      setIsLoading(true)
-      setError(null)
-
-      try {
-        const response = await fetch(`/api/users/${userId}`)
-        const result = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.error || "사용자 정보를 불러오는데 실패했습니다")
-        }
-
-        setUser(result.user)
-      } catch (error) {
-        setError(error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다")
-      } finally {
-        setIsLoading(false)
+      if (!response.ok) {
+        throw new Error(result.error || "사용자 정보를 불러오는데 실패했습니다")
       }
-    }
 
-    if (userId) {
-      fetchUser()
-    }
-  }, [userId])
+      return result.user
+    },
+    enabled: !!userId,
+  })
+}
 
-  return {
-    user,
-    isLoading,
-    error,
-  }
+export function useCurrentUser() {
+  return useQuery({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      const response = await fetch("/api/auth/me")
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "사용자 정보를 불러오는데 실패했습니다")
+      }
+
+      return result.user
+    },
+  })
 }
 
 export function useUpdateUser() {
-  const [isLoading, setIsLoading] = useState(false)
+  const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const updateUser = async (userId: string, data: UpdateUserData) => {
-    setIsLoading(true)
-    try {
+  return useMutation({
+    mutationFn: async ({ userId, data }: { userId: string; data: UpdateUserData }) => {
       const response = await fetch(`/api/users/${userId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -68,26 +62,60 @@ export function useUpdateUser() {
         throw new Error(result.error || "사용자 정보 수정에 실패했습니다")
       }
 
+      return result.user
+    },
+    onSuccess: (user, variables) => {
+      queryClient.setQueryData(["user", variables.userId], user)
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] })
       toast({
         title: "프로필 수정 완료",
         description: "프로필이 성공적으로 수정되었습니다.",
       })
-
-      return result.user
-    } catch (error) {
+    },
+    onError: (error) => {
       toast({
         title: "프로필 수정 실패",
-        description: error instanceof Error ? error.message : "프로필 수정 중 오류가 발생했습니다",
+        description: error.message,
         variant: "destructive",
       })
-      throw error
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    },
+  })
+}
 
-  return {
-    updateUser,
-    isLoading,
-  }
+export function useFollowUser() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: async ({ userId, targetUserId }: { userId: string; targetUserId: string }) => {
+      const response = await fetch(`/api/users/${targetUserId}/follow`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "팔로우 처리에 실패했습니다")
+      }
+
+      return result
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["user", variables.targetUserId] })
+      queryClient.invalidateQueries({ queryKey: ["user", variables.userId] })
+      toast({
+        title: data.isFollowing ? "팔로우 완료" : "언팔로우 완료",
+        description: data.isFollowing ? "사용자를 팔로우했습니다." : "사용자를 언팔로우했습니다.",
+      })
+    },
+    onError: (error) => {
+      toast({
+        title: "오류",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
+  })
 }

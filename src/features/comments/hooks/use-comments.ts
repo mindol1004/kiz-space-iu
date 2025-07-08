@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 
 interface CreateCommentData {
@@ -11,15 +11,9 @@ interface CreateCommentData {
 }
 
 export function useComments(postId: string) {
-  const [comments, setComments] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchComments = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
+  return useQuery({
+    queryKey: ["comments", postId],
+    queryFn: async () => {
       const response = await fetch(`/api/comments?postId=${postId}`)
       const result = await response.json()
 
@@ -27,35 +21,18 @@ export function useComments(postId: string) {
         throw new Error(result.error || "댓글을 불러오는데 실패했습니다")
       }
 
-      setComments(result.comments)
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (postId) {
-      fetchComments()
-    }
-  }, [postId])
-
-  return {
-    comments,
-    isLoading,
-    error,
-    refetch: fetchComments,
-  }
+      return result.comments
+    },
+    enabled: !!postId,
+  })
 }
 
 export function useCreateComment() {
-  const [isLoading, setIsLoading] = useState(false)
+  const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const createComment = async (data: CreateCommentData) => {
-    setIsLoading(true)
-    try {
+  return useMutation({
+    mutationFn: async (data: CreateCommentData) => {
       const response = await fetch("/api/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,26 +45,56 @@ export function useCreateComment() {
         throw new Error(result.error || "댓글 작성에 실패했습니다")
       }
 
+      return result.comment
+    },
+    onSuccess: (comment) => {
+      queryClient.invalidateQueries({ queryKey: ["comments", comment.postId] })
+      queryClient.invalidateQueries({ queryKey: ["post", comment.postId] })
       toast({
         title: "댓글 작성 완료",
         description: "댓글이 성공적으로 작성되었습니다.",
       })
-
-      return result.comment
-    } catch (error) {
+    },
+    onError: (error) => {
       toast({
         title: "댓글 작성 실패",
-        description: error instanceof Error ? error.message : "댓글 작성 중 오류가 발생했습니다",
+        description: error.message,
         variant: "destructive",
       })
-      throw error
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    },
+  })
+}
 
-  return {
-    createComment,
-    isLoading,
-  }
+export function useDeleteComment() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: async (commentId: string) => {
+      const response = await fetch(`/api/comments/${commentId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.error || "댓글 삭제에 실패했습니다")
+      }
+
+      return commentId
+    },
+    onSuccess: (commentId) => {
+      queryClient.invalidateQueries({ queryKey: ["comments"] })
+      toast({
+        title: "댓글 삭제 완료",
+        description: "댓글이 삭제되었습니다.",
+      })
+    },
+    onError: (error) => {
+      toast({
+        title: "댓글 삭제 실패",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
+  })
 }

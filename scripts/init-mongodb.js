@@ -35,7 +35,7 @@ async function initializeDatabase() {
     await commentsCollection.createIndex({ postId: 1 })
     await commentsCollection.createIndex({ authorId: 1 })
     await commentsCollection.createIndex({ createdAt: -1 })
-    console.log("💬 Comments 컬렉션 및 인덱스 생성 완료")
+    console.log("💬 Comments 컬렉션 및 인덱스 생성 완���")
 
     // Children 컬렉션
     const childrenCollection = db.collection("children")

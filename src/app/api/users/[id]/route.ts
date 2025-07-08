@@ -61,3 +61,20 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    // 사용자와 관련된 모든 데이터 삭제 (CASCADE)
+    await prisma.user.delete({
+      where: { id: params.id },
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: "User account deleted successfully",
+    })
+  } catch (error) {
+    console.error("Error deleting user:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

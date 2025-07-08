@@ -1,49 +1,93 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import type { ChatRoom } from "../types/chat-types"
-import { mockChatRooms } from "../data/mock-chat-data"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useToast } from "@/hooks/use-toast"
 
-export function useChat() {
-  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([])
-  const [loading, setLoading] = useState(true)
+interface ChatRoom {
+  id: string
+  name: string
+  type: "direct" | "group"
+  participants: any[]
+  lastMessage?: any
+  unreadCount: number
+  createdAt: string
+  updatedAt: string
+}
 
-  useEffect(() => {
-    // Simulate API call
-    const loadChatRooms = async () => {
-      setLoading(true)
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setChatRooms(mockChatRooms)
-      setLoading(false)
-    }
+interface CreateChatRoomData {
+  name?: string
+  type: "direct" | "group"
+  participantIds: string[]
+  creatorId: string
+}
 
-    loadChatRooms()
-  }, [])
+export function useChatRooms(userId: string) {
+  return useQuery({
+    queryKey: ["chatRooms", userId],
+    queryFn: async (): Promise<ChatRoom[]> => {
+      const response = await fetch(`/api/chat?userId=${userId}`)
+      const result = await response.json()
 
-  const markAsRead = (chatRoomId: string) => {
-    setChatRooms((prev) => prev.map((room) => (room.id === chatRoomId ? { ...room, unreadCount: 0 } : room)))
-  }
+      if (!response.ok) {
+        throw new Error(result.error || "채팅방을 불러오는데 실패했습니다")
+      }
 
-  const updateLastMessage = (chatRoomId: string, message: string) => {
-    setChatRooms((prev) =>
-      prev.map((room) =>
-        room.id === chatRoomId
-          ? {
-              ...room,
-              lastMessage: message,
-              lastMessageTime: "방금 전",
-              unreadCount: room.unreadCount + 1,
-            }
-          : room,
-      ),
-    )
-  }
+      return result.chatRooms
+    },
+    enabled: !!userId,
+  })
+}
 
-  return {
-    chatRooms,
-    loading,
-    markAsRead,
-    updateLastMessage,
-  }
+export function useChatRoom(roomId: string) {
+  return useQuery({
+    queryKey: ["chatRoom", roomId],
+    queryFn: async (): Promise<ChatRoom> => {
+      const response = await fetch(`/api/chat/${roomId}`)
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "채팅방 정보를 불러오는데 실패했습니다")
+      }
+
+      return result.chatRoom
+    },
+    enabled: !!roomId,
+  })
+}
+
+export function useCreateChatRoom() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: async (data: CreateChatRoomData): Promise<ChatRoom> => {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "채팅방 생성에 실패했습니다")
+      }
+
+      return result.chatRoom
+    },
+    onSuccess: (chatRoom) => {
+      queryClient.invalidateQueries({ queryKey: ["chatRooms"] })
+      toast({
+        title: "채팅방 생성 완료",
+        description: "새 채팅방이 생성되었습니다.",
+      })
+    },
+    onError: (error) => {
+      toast({
+        title: "채팅방 생성 실패",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
+  })
 }
