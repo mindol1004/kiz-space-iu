@@ -1,39 +1,91 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getPosts, createPost } from "@/lib/db-operations"
-import { PostSchema } from "@/lib/schemas"
+import { prisma } from "@/lib/prisma"
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const category = searchParams.get("category") || undefined
-    const ageGroup = searchParams.get("ageGroup") || undefined
+    const category = searchParams.get("category")
+    const ageGroup = searchParams.get("ageGroup")
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")
 
-    const result = await getPosts({ category, ageGroup, page, limit })
+    const where: any = {}
+    if (category && category !== "all") {
+      where.category = category
+    }
+    if (ageGroup && ageGroup !== "all") {
+      where.ageGroup = ageGroup
+    }
 
-    return NextResponse.json(result)
+    const posts = await prisma.post.findMany({
+      where,
+      include: {
+        author: {
+          select: {
+            id: true,
+            nickname: true,
+            avatar: true,
+          },
+        },
+        _count: {
+          select: {
+            comments: true,
+            likes: true,
+            bookmarks: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    })
+
+    return NextResponse.json({
+      posts: posts.map((post) => ({
+        ...post,
+        commentCount: post._count.comments,
+        likesCount: post._count.likes,
+        bookmarksCount: post._count.bookmarks,
+      })),
+      hasMore: posts.length === limit,
+    })
   } catch (error) {
-    console.error("Error in GET /api/posts:", error)
+    console.error("Error fetching posts:", error)
     return NextResponse.json({ error: "Failed to fetch posts" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const { content, images, category, ageGroup, tags, authorId } = await request.json()
 
-    // Validate the post data
-    const validatedPost = PostSchema.parse({
-      ...body,
-      authorId: body.authorId || "temp-user-id", // TODO: Get from auth session
+    if (!content || !authorId) {
+      return NextResponse.json({ error: "Content and author ID are required" }, { status: 400 })
+    }
+
+    const post = await prisma.post.create({
+      data: {
+        content,
+        images: images || [],
+        category: category || "general",
+        ageGroup: ageGroup || "all",
+        tags: tags || [],
+        authorId,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            nickname: true,
+            avatar: true,
+          },
+        },
+      },
     })
 
-    const result = await createPost(validatedPost)
-
-    return NextResponse.json(result)
+    return NextResponse.json({ success: true, post })
   } catch (error) {
-    console.error("Error in POST /api/posts:", error)
+    console.error("Error creating post:", error)
     return NextResponse.json({ error: "Failed to create post" }, { status: 500 })
   }
 }

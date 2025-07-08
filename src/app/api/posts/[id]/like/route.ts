@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { likePost } from "@/lib/db-operations"
+import { prisma } from "@/lib/prisma"
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -9,11 +9,39 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
-    const result = await likePost(params.id, userId)
+    // Check if like already exists
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId: params.id,
+        },
+      },
+    })
 
-    return NextResponse.json(result)
+    if (existingLike) {
+      // Unlike
+      await prisma.like.delete({
+        where: {
+          userId_postId: {
+            userId,
+            postId: params.id,
+          },
+        },
+      })
+      return NextResponse.json({ success: true, isLiked: false })
+    } else {
+      // Like
+      await prisma.like.create({
+        data: {
+          userId,
+          postId: params.id,
+        },
+      })
+      return NextResponse.json({ success: true, isLiked: true })
+    }
   } catch (error) {
-    console.error("Error in POST /api/posts/[id]/like:", error)
+    console.error("Error toggling like:", error)
     return NextResponse.json({ error: "Failed to toggle like" }, { status: 500 })
   }
 }

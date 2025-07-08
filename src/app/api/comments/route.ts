@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createComment, getCommentsByPostId } from "@/lib/db-operations"
-import { CommentSchema } from "@/lib/schemas"
+import { prisma } from "@/lib/prisma"
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,30 +10,55 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Post ID is required" }, { status: 400 })
     }
 
-    const comments = await getCommentsByPostId(postId)
+    const comments = await prisma.comment.findMany({
+      where: { postId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            nickname: true,
+            avatar: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    })
 
     return NextResponse.json({ comments })
   } catch (error) {
-    console.error("Error in GET /api/comments:", error)
+    console.error("Error fetching comments:", error)
     return NextResponse.json({ error: "Failed to fetch comments" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const { content, postId, authorId } = await request.json()
 
-    // Validate the comment data
-    const validatedComment = CommentSchema.parse({
-      ...body,
-      authorId: body.authorId || "temp-user-id", // TODO: Get from auth session
+    if (!content || !postId || !authorId) {
+      return NextResponse.json({ error: "Content, post ID, and author ID are required" }, { status: 400 })
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        content,
+        postId,
+        authorId,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            nickname: true,
+            avatar: true,
+          },
+        },
+      },
     })
 
-    const result = await createComment(validatedComment)
-
-    return NextResponse.json(result)
+    return NextResponse.json({ success: true, comment })
   } catch (error) {
-    console.error("Error in POST /api/comments:", error)
+    console.error("Error creating comment:", error)
     return NextResponse.json({ error: "Failed to create comment" }, { status: 500 })
   }
 }
