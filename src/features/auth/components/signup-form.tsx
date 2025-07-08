@@ -12,12 +12,17 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { ChevronLeft, ChevronRight, User, MapPin, Baby, Heart } from "lucide-react"
 import { useSignup } from "../hooks/use-signup"
-import { regions, interests, ageGroups } from "../data/signup-data"
+import { REGIONS, INTEREST_TAGS, AGE_GROUPS } from "@/shared/constants/common-data"
 import type { SignupFormData, Child } from "../types/auth-types"
+import { useValidateStep, useValidateEmail, useValidatePassword, useValidateNickname } from "@/features/auth/hooks/use-validation"
 
 export function SignupForm() {
-  const { signup, validateStep, validateEmail, validatePassword, validateNickname, isLoading, error, reset } =
-    useSignup()
+  const { signup, isLoading, error, reset } = useSignup()
+  const { validateStep } = useValidateStep()
+  const { validateEmail } = useValidateEmail()
+  const { validatePassword } = useValidatePassword()
+  const { validateNickname } = useValidateNickname()
+
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState<SignupFormData>({
     email: "",
@@ -57,6 +62,7 @@ export function SignupForm() {
       birthDate: "",
       gender: "",
       ageGroup: "",
+      age: ""
     }
     setFormData((prev) => ({
       ...prev,
@@ -178,7 +184,7 @@ export function SignupForm() {
                   <SelectValue placeholder="거주 지역을 선택해주세요" />
                 </SelectTrigger>
                 <SelectContent>
-                  {regions.map((region) => (
+                  {REGIONS.map((region) => (
                     <SelectItem key={region} value={region}>
                       {region}
                     </SelectItem>
@@ -269,9 +275,9 @@ export function SignupForm() {
                           <SelectValue placeholder="연령대 선택" />
                         </SelectTrigger>
                         <SelectContent>
-                          {ageGroups.map((group) => (
-                            <SelectItem key={group} value={group}>
-                              {group}
+                          {AGE_GROUPS.map((group) => (
+                            <SelectItem key={group.value} value={group.value}>
+                              {group.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -299,7 +305,7 @@ export function SignupForm() {
             <p className="text-sm text-gray-600 mb-4">관심 있는 주제를 선택하면 맞춤 콘텐츠를 추천받을 수 있어요.</p>
 
             <div className="grid grid-cols-2 gap-2">
-              {interests.map((interest) => (
+              {INTEREST_TAGS.map((interest) => (
                 <div
                   key={interest}
                   className={`p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -351,7 +357,7 @@ export function SignupForm() {
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {error && <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">{error}</div>}
+        {error && <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">{error.message}</div>}
 
         {renderStep()}
 

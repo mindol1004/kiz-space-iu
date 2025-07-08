@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Plus, ImageIcon, X } from "lucide-react"
 import { useCreatePost } from "../hooks/use-posts"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthStore } from "@/shared/stores/auth-store"
 
 export function CreatePostDialog() {
   const [open, setOpen] = useState(false)

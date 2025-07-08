@@ -10,6 +10,7 @@ import { BookmarkEmptyState } from "./bookmark-empty-state"
 import { BookmarkFilters } from "./bookmark-filters"
 import { useBookmarks } from "../hooks/use-bookmarks"
 import type { BookmarkCategory } from "../types/bookmark-types"
+import { useAuthStore } from "@/shared/stores/auth-store"
 
 export function BookmarkList() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -17,7 +18,8 @@ export function BookmarkList() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [showFilters, setShowFilters] = useState(false)
 
-  const { bookmarks, isLoading } = useBookmarks()
+  const { user } = useAuthStore();
+  const { bookmarks, isLoading } = useBookmarks(user?.id);
 
   const filteredBookmarks = bookmarks.filter((bookmark) => {
     const matchesSearch =

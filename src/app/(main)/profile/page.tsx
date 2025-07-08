@@ -1,7 +1,7 @@
 "use client"
 
 import { Edit, Heart, MessageCircle, Bookmark } from "lucide-react"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthStore } from "@/shared/stores/auth-store"
 import { mockChildren } from "@/lib/mock-data"
 import { ProfileContent } from "@/features/profile/components/profile-content"
 

@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search } from "lucide-react"
 import { NotificationCenter } from "@/features/notifications/components/notification-center"
 import { SearchModal } from "@/features/search/components/search-modal"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthStore } from "@/shared/stores/auth-store"
 import Link from "next/link"
 
 export function TopNav() {

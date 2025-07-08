@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { usePostStore } from "@/stores/post-store"
+import { usePostStore } from "@/shared/stores/post-store"
 
 export function PostFilters() {
   const { selectedCategory, selectedAgeGroup, setSelectedCategory, setSelectedAgeGroup } = usePostStore()

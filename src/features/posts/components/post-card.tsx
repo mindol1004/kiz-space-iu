@@ -12,7 +12,7 @@ import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal } from "lucide-r
 import { formatDate, getAgeGroupLabel, getCategoryLabel } from "@/lib/utils"
 import { PostDetailModal } from "./post-detail-modal"
 import { useLikePost, useBookmarkPost } from "../hooks/use-posts"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthStore } from "@/shared/stores/auth-store"
 import type { PostWithAuthor } from "@/lib/schemas"
 
 interface PostCardProps {

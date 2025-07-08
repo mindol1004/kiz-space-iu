@@ -12,6 +12,7 @@ export const UserSchema = z.object({
   verified: z.boolean().default(false),
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
+  bio: z.string().optional()
 })
 
 // Child Profile Schema

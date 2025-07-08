@@ -1,8 +1,6 @@
-"use client"
-
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthStore } from "@/shared/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
 
 interface LoginData {
@@ -20,11 +18,11 @@ interface RegisterData {
 
 export function useLogin() {
   const router = useRouter()
-  const { setUser } = useAuthStore()
+  const { login: authStoreLogin } = useAuthStore() // 이름 충돌을 피하기 위해 변경
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (data: LoginData) => {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -41,7 +39,7 @@ export function useLogin() {
       return result.user
     },
     onSuccess: (user) => {
-      setUser(user)
+      authStoreLogin(user) // 변경된 이름 사용
       queryClient.setQueryData(["currentUser"], user)
       toast({
         title: "로그인 성공",
@@ -57,15 +55,20 @@ export function useLogin() {
       })
     },
   })
+
+  return {
+    login: mutation.mutateAsync, // mutateAsync를 'login'으로 반환
+    isPending: mutation.isPending, // isPending을 반환
+  }
 }
 
 export function useRegister() {
   const router = useRouter()
-  const { setUser } = useAuthStore()
+  const { login } = useAuthStore()
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (data: RegisterData) => {
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -82,7 +85,7 @@ export function useRegister() {
       return result.user
     },
     onSuccess: (user) => {
-      setUser(user)
+      login(user)
       queryClient.setQueryData(["currentUser"], user)
       toast({
         title: "회원가입 성공",
@@ -98,22 +101,32 @@ export function useRegister() {
       })
     },
   })
+
+  return {
+    register: mutation.mutateAsync, // mutateAsync를 'register'로 반환
+    isPending: mutation.isPending,
+  }
 }
 
 export function useLogout() {
   const router = useRouter()
-  const { setUser } = useAuthStore()
+  const { logout: authStoreLogout } = useAuthStore() // 이름 충돌을 피하기 위해 변경
   const queryClient = useQueryClient()
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async () => {
       // 로그아웃 API 호출 (필요한 경우)
       await fetch("/api/auth/logout", { method: "POST" })
     },
     onSuccess: () => {
-      setUser(null)
+      authStoreLogout() // 변경된 이름 사용
       queryClient.clear()
       router.push("/")
     },
   })
+
+  return {
+    logout: mutation.mutateAsync, // mutateAsync를 'logout'으로 반환
+    isPending: mutation.isPending,
+  }
 }

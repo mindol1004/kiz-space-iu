@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthStore } from "@/shared/stores/auth-store"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Heart, Users, MessageCircle, Star } from "lucide-react"

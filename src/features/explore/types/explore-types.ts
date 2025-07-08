@@ -18,7 +18,9 @@ export interface WeeklyEvent {
   id: string
   title: string
   description: string
-  date: Date
+  date: string
   participants: number
   category: string
+  bgColor: string
+  textColor: string
 }

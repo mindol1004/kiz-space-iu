@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Heart, Mail, Lock } from "lucide-react"
-import { useAuth } from "../hooks/use-auth"
+import { useLogin } from "../hooks/use-auth"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const { login, isLoading } = useAuth()
+  const { login, isPending } = useLogin()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,9 +82,9 @@ export function LoginForm() {
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                disabled={isLoading}
+                disabled={isPending}
               >
-                {isLoading ? "로그인 중..." : "로그인"}
+                {isPending ? "로그인 중..." : "로그인"}
               </Button>
             </form>
             <div className="mt-6 text-center">

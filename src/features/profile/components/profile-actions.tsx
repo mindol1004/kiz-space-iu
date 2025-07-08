@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useProfileActions } from "../hooks/use-profile-actions"
 
 export function ProfileActions() {
-  const { handleSettings, handleSchedule, handleLogout } = useProfileActions()
+  const { navigateToSettings, navigateToSchedule, logout } = useProfileActions()
 
   return (
     <motion.div
@@ -15,17 +15,17 @@ export function ProfileActions() {
       transition={{ delay: 0.4 }}
       className="space-y-3"
     >
-      <Button variant="outline" className="w-full justify-start bg-transparent" onClick={handleSettings}>
+      <Button variant="outline" className="w-full justify-start bg-transparent" onClick={navigateToSettings}>
         <Settings className="h-4 w-4 mr-2" />
         설정
       </Button>
-      <Button variant="outline" className="w-full justify-start bg-transparent" onClick={handleSchedule}>
+      <Button variant="outline" className="w-full justify-start bg-transparent" onClick={navigateToSchedule}>
         <Calendar className="h-4 w-4 mr-2" />내 일정 관리
       </Button>
       <Button
         variant="outline"
         className="w-full justify-start text-red-600 hover:text-red-700 bg-transparent"
-        onClick={handleLogout}
+        onClick={logout}
       >
         로그아웃
       </Button>

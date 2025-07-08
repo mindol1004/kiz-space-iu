@@ -13,7 +13,7 @@ export const TRENDING_TAGS: string[] = [
   "성장발달",
 ]
 
-export const POPULAR_GROUPS: PopularGroup[] = [
+export const POPULAR_GROUPS = [
   { name: "서울 강남구 엄마들", members: 1234, category: "지역" },
   { name: "홈스쿨링 모임", members: 856, category: "교육" },
   { name: "워킹맘 소통방", members: 2341, category: "라이프" },
@@ -28,6 +28,8 @@ export const WEEKLY_EVENTS: WeeklyEvent[] = [
     date: "1월 20일 오후 2시",
     bgColor: "bg-gradient-to-r from-pink-50 to-purple-50",
     textColor: "text-pink-600",
+    participants: 0,
+    category: ""
   },
   {
     id: "2",
@@ -36,5 +38,7 @@ export const WEEKLY_EVENTS: WeeklyEvent[] = [
     date: "1월 22일 오전 10시",
     bgColor: "bg-gradient-to-r from-blue-50 to-cyan-50",
     textColor: "text-blue-600",
+    participants: 0,
+    category: ""
   },
 ]

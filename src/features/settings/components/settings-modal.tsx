@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Bell, Shield, Eye, HelpCircle, LogOut } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useAuthStore } from "@/stores/auth-store"
+import { useAuthStore } from "@/shared/stores/auth-store"
 import { useRouter } from "next/navigation"
 
 interface SettingsModalProps {

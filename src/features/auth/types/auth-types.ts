@@ -2,7 +2,9 @@ export interface Child {
   id: string
   name: string
   age: string
-  gender: "boy" | "girl"
+  birthDate: string
+  gender: "boy" | "girl" | ""
+  ageGroup: string
 }
 
 export interface SignupFormData {
@@ -13,6 +15,8 @@ export interface SignupFormData {
   region: string
   interests: string[]
   children: Child[]
+  bio: string
+  profileImage: string
 }
 
 export interface LoginFormData {

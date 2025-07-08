@@ -2,22 +2,54 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
+import { useAuthStore } from "@/shared/stores/auth-store"
 
-export function useBookmarks(userId: string) {
-  return useQuery({
-    queryKey: ["bookmarks", userId],
+export function useBookmarks(userIdFromProps?: string) {
+  const { toast } = useToast()
+  const { user } = useAuthStore()
+
+  const currentUserId = userIdFromProps || user?.id;
+
+  const {
+    data: bookmarks,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<any[], Error>({
+    queryKey: ["bookmarks", currentUserId],
     queryFn: async () => {
-      const response = await fetch(`/api/bookmarks?userId=${userId}`)
-      const result = await response.json()
+      if (!currentUserId) {
+        throw new Error("User not authenticated.");
+      }
+      const response = await fetch(`/api/bookmarks?userId=${currentUserId}`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
-        throw new Error(result.error || "북마크를 불러오는데 실패했습니다")
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch bookmarks");
       }
-
-      return result.bookmarks
+      return response.json();
     },
-    enabled: !!userId,
-  })
+    enabled: !!currentUserId, // Only run the query if userId is available
+  });
+
+  if (error) {
+    toast({
+      title: "북마크 불러오기 실패",
+      description: error.message,
+      variant: "destructive",
+    });
+  }
+
+  return {
+    bookmarks: bookmarks || [],
+    isLoading,
+    error,
+    refetch,
+  };
 }
 
 export function useRemoveBookmark() {
