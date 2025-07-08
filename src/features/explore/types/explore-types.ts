@@ -1,20 +1,24 @@
 export interface PopularGroup {
+  id: string
   name: string
-  members: number
+  description: string
+  memberCount: number
   category: string
+  isJoined: boolean
+}
+
+export interface TrendingTag {
+  id: string
+  name: string
+  count: number
+  growth: number
 }
 
 export interface WeeklyEvent {
   id: string
   title: string
   description: string
-  date: string
-  bgColor: string
-  textColor: string
-}
-
-export interface ExploreData {
-  trendingTags: string[]
-  popularGroups: PopularGroup[]
-  weeklyEvents: WeeklyEvent[]
+  date: Date
+  participants: number
+  category: string
 }

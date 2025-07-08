@@ -9,82 +9,82 @@ export function useChatRoom(roomId: string) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Mock data - 실제로는 API 호출
-    const mockRoom: ChatRoom = {
-      id: roomId,
-      name: "신생아 케어 모임",
-      type: "group",
-      avatar: "/placeholder.svg",
-      lastMessage: "안녕하세요! 처음 인사드립니다.",
-      lastMessageTime: new Date(),
-      unreadCount: 0,
-      participantCount: 24,
-      isOnline: true,
-      participants: [],
-    }
+    // 실제로는 API에서 데이터를 가져옴
+    const fetchRoomData = async () => {
+      setIsLoading(true)
 
-    const mockMessages: Message[] = [
-      {
-        id: "1",
-        content: "안녕하세요! 처음 인사드립니다.",
-        type: "text",
-        senderId: "user1",
-        sender: {
-          id: "user1",
-          name: "김엄마",
-          avatar: "/placeholder.svg",
-        },
-        createdAt: new Date(Date.now() - 1000 * 60 * 30),
-        isRead: true,
-      },
-      {
-        id: "2",
-        content: "반갑습니다! 저도 신생아 엄마예요 ㅎㅎ",
-        type: "text",
-        senderId: "user2",
-        sender: {
-          id: "user2",
-          name: "이엄마",
-          avatar: "/placeholder.svg",
-        },
-        createdAt: new Date(Date.now() - 1000 * 60 * 25),
-        isRead: true,
-      },
-      {
-        id: "3",
-        content: "혹시 신생아 수면 패턴에 대해 궁금한 게 있어서요...",
-        type: "text",
-        senderId: "current-user-id",
-        sender: {
-          id: "current-user-id",
-          name: "나",
-          avatar: "/placeholder.svg",
-        },
-        createdAt: new Date(Date.now() - 1000 * 60 * 20),
-        isRead: true,
-      },
-    ]
+      // Mock data
+      const mockRoom: ChatRoom = {
+        id: roomId,
+        name: roomId === "1" ? "신생아 케어 모임" : "김민지",
+        type: roomId === "1" ? "group" : "direct",
+        lastMessage: "안녕하세요!",
+        lastMessageTime: "방금 전",
+        unreadCount: 0,
+        participants: roomId === "1" ? 24 : 2,
+        avatar: "/placeholder.svg",
+        isOnline: true,
+      }
 
-    setTimeout(() => {
+      const mockMessages: Message[] = [
+        {
+          id: "1",
+          content: "안녕하세요! 신생아 케어에 대해 질문이 있어요.",
+          type: "text",
+          senderId: "other-user",
+          sender: {
+            id: "other-user",
+            nickname: "김엄마",
+            avatar: "/placeholder.svg",
+          },
+          createdAt: new Date(Date.now() - 1000 * 60 * 30),
+        },
+        {
+          id: "2",
+          content: "네, 무엇이든 물어보세요!",
+          type: "text",
+          senderId: "current-user",
+          sender: {
+            id: "current-user",
+            nickname: "나",
+            avatar: "/placeholder.svg",
+          },
+          createdAt: new Date(Date.now() - 1000 * 60 * 25),
+        },
+        {
+          id: "3",
+          content: "아기가 밤에 자주 깨는데 어떻게 해야 할까요?",
+          type: "text",
+          senderId: "other-user",
+          sender: {
+            id: "other-user",
+            nickname: "김엄마",
+            avatar: "/placeholder.svg",
+          },
+          createdAt: new Date(Date.now() - 1000 * 60 * 20),
+        },
+      ]
+
       setRoom(mockRoom)
       setMessages(mockMessages)
       setIsLoading(false)
-    }, 1000)
+    }
+
+    fetchRoomData()
   }, [roomId])
 
-  const sendMessage = (content: string) => {
+  const sendMessage = (content: string, type: "text" | "image" | "file" = "text") => {
     const newMessage: Message = {
       id: Date.now().toString(),
       content,
-      type: "text",
-      senderId: "current-user-id",
+      type,
+      senderId: "current-user",
       sender: {
-        id: "current-user-id",
-        name: "나",
+        id: "current-user",
+        nickname: "나",
         avatar: "/placeholder.svg",
       },
       createdAt: new Date(),
-      isRead: false,
     }
 
     setMessages((prev) => [...prev, newMessage])
@@ -93,7 +93,7 @@ export function useChatRoom(roomId: string) {
   return {
     room,
     messages,
-    sendMessage,
     isLoading,
+    sendMessage,
   }
 }

@@ -9,7 +9,7 @@ export function BottomNav() {
   const pathname = usePathname()
 
   const navItems = [
-    { href: "/", icon: Home, label: "홈" },
+    { href: "/feed", icon: Home, label: "홈" },
     { href: "/explore", icon: Search, label: "탐색" },
     { href: "/chat", icon: MessageCircle, label: "채팅" },
     { href: "/bookmarks", icon: Bookmark, label: "북마크" },
@@ -20,7 +20,7 @@ export function BottomNav() {
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50">
       <div className="flex justify-around items-center max-w-md mx-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.href
+          const isActive = pathname === item.href || (item.href === "/feed" && pathname === "/")
           const Icon = item.icon
 
           return (

@@ -12,20 +12,16 @@ export interface ChatRoom {
 
 export interface Message {
   id: string
-  chatRoomId: string
-  senderId: string
-  senderName: string
-  senderAvatar?: string
   content: string
-  timestamp: string
   type: "text" | "image" | "file"
-  isRead: boolean
-}
-
-export interface ChatUser {
-  id: string
-  name: string
-  avatar?: string
-  isOnline: boolean
-  lastSeen?: string
+  senderId: string
+  sender: {
+    id: string
+    nickname: string
+    avatar?: string
+  }
+  createdAt: Date
+  imageUrl?: string
+  fileName?: string
+  fileSize?: string
 }

@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Bell, Shield, Eye, HelpCircle, LogOut } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useAuthStore } from "@/stores/auth-store"
+import { useRouter } from "next/navigation"
 
 interface SettingsModalProps {
   open: boolean
@@ -37,6 +39,8 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
     },
   })
   const { toast } = useToast()
+  const { logout } = useAuthStore()
+  const router = useRouter()
 
   const updateSetting = (category: string, key: string, value: any) => {
     setSettings((prev) => ({
@@ -54,6 +58,16 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
       description: "설정이 성공적으로 저장되었습니다.",
     })
     onOpenChange(false)
+  }
+
+  const handleLogout = () => {
+    logout()
+    onOpenChange(false)
+    router.push("/")
+    toast({
+      title: "로그아웃 완료",
+      description: "성공적으로 로그아웃되었습니다.",
+    })
   }
 
   const settingSections = [
@@ -231,7 +245,12 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
               <HelpCircle className="h-4 w-4 mr-2" />
               도움말 및 지원
             </Button>
-            <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700" size="sm">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-red-600 hover:text-red-700"
+              size="sm"
+              onClick={handleLogout}
+            >
               <LogOut className="h-4 w-4 mr-2" />
               로그아웃
             </Button>

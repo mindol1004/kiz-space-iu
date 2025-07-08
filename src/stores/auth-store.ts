@@ -1,20 +1,31 @@
-// Mock 사용자로 초기화
+"use client"
+
 import { create } from "zustand"
+import { persist } from "zustand/middleware"
 import type { User } from "@/lib/schemas"
-import { mockUsers } from "@/lib/mock-data"
 
 interface AuthState {
   user: User | null
-  isLoading: boolean
-  setUser: (user: User | null) => void
-  setLoading: (loading: boolean) => void
+  isAuthenticated: boolean
+  login: (user: User) => void
   logout: () => void
+  updateUser: (userData: Partial<User>) => void
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: mockUsers[0], // 기본적으로 첫 번째 사용자로 로그인된 상태
-  isLoading: false,
-  setUser: (user) => set({ user }),
-  setLoading: (isLoading) => set({ isLoading }),
-  logout: () => set({ user: null }),
-}))
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      isAuthenticated: false,
+      login: (user) => set({ user, isAuthenticated: true }),
+      logout: () => set({ user: null, isAuthenticated: false }),
+      updateUser: (userData) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...userData } : null,
+        })),
+    }),
+    {
+      name: "auth-storage",
+    },
+  ),
+)
