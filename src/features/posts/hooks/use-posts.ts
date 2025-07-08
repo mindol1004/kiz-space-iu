@@ -17,8 +17,34 @@ interface CreatePostData {
   authorId: string
 }
 
+interface Post {
+  id: string
+  content: string
+  images?: string[]
+  category: string
+  ageGroup: string
+  tags: string[]
+  author: {
+    id: string
+    name: string
+    avatar?: string
+  }
+  likes: number
+  comments: number
+  isLiked: boolean
+  isBookmarked: boolean
+  createdAt: string
+}
+
+interface PostsResponse {
+  posts: Post[]
+  hasMore: boolean
+  nextPage?: number
+  total: number
+}
+
 export function usePosts(filters: PostFilters = {}) {
-  return useInfiniteQuery({
+  const query = useInfiniteQuery({
     queryKey: ["posts", filters],
     queryFn: async ({ pageParam = 1 }) => {
       const params = new URLSearchParams()
@@ -34,13 +60,22 @@ export function usePosts(filters: PostFilters = {}) {
         throw new Error(result.error || "게시글을 불러오는데 실패했습니다")
       }
 
-      return result
+      return result as PostsResponse
     },
     getNextPageParam: (lastPage) => {
       return lastPage.hasMore ? lastPage.nextPage : undefined
     },
     initialPageParam: 1,
   })
+
+  // 모든 페이지의 posts를 평면화
+  const posts = query.data?.pages.flatMap((page) => page.posts) || []
+
+  return {
+    ...query,
+    posts,
+    hasMore: query.data?.pages[query.data.pages.length - 1]?.hasMore || false,
+  }
 }
 
 export function usePost(postId: string) {
@@ -54,7 +89,7 @@ export function usePost(postId: string) {
         throw new Error(result.error || "게시글을 불러오는데 실패했습니다")
       }
 
-      return result.post
+      return result.post as Post
     },
     enabled: !!postId,
   })
@@ -78,7 +113,7 @@ export function useCreatePost() {
         throw new Error(result.error || "게시글 작성에 실패했습니다")
       }
 
-      return result.post
+      return result.post as Post
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] })

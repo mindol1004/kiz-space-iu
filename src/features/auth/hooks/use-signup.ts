@@ -1,115 +1,142 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
-import { toast } from "sonner"
-import type { SignupFormData } from "../types/auth-types"
+import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
+
+interface SignupData {
+  email: string
+  password: string
+  name: string
+  nickname: string
+  birthDate: string
+  children: Array<{
+    name: string
+    birthDate: string
+    gender: "male" | "female"
+  }>
+  interests: string[]
+  location?: string
+  agreeToTerms: boolean
+  agreeToPrivacy: boolean
+  agreeToMarketing?: boolean
+}
 
 interface SignupResponse {
-  success: boolean
-  message: string
-  user?: {
+  user: {
     id: string
     email: string
+    name: string
     nickname: string
   }
+  token: string
 }
 
 export function useSignup() {
+  const { toast } = useToast()
   const router = useRouter()
-  const [error, setError] = useState<string | null>(null)
 
-  const signupMutation = useMutation({
-    mutationFn: async (formData: SignupFormData): Promise<SignupResponse> => {
+  return useMutation({
+    mutationFn: async (data: SignupData): Promise<SignupResponse> => {
+      // 데이터 검증
+      if (!data.email || !data.password || !data.name || !data.nickname) {
+        throw new Error("필수 정보를 모두 입력해주세요")
+      }
+
+      if (!data.email.includes("@")) {
+        throw new Error("올바른 이메일 형식을 입력해주세요")
+      }
+
+      if (data.password.length < 8) {
+        throw new Error("비밀번호는 8자 이상이어야 합니다")
+      }
+
+      if (!/^(?=.*[A-Za-z])(?=.*\d)/.test(data.password)) {
+        throw new Error("비밀번호는 영문과 숫자를 포함해야 합니다")
+      }
+
+      if (data.nickname.length < 2 || data.nickname.length > 20) {
+        throw new Error("닉네임은 2-20자 사이여야 합니다")
+      }
+
+      if (!data.agreeToTerms || !data.agreeToPrivacy) {
+        throw new Error("필수 약관에 동의해주세요")
+      }
+
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          nickname: formData.nickname,
-          region: formData.region,
-          children: formData.children,
-          interests: formData.interests,
-          profileImage: formData.profileImage,
-          bio: formData.bio,
-        }),
+        body: JSON.stringify(data),
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "회원가입 중 오류가 발생했습니다.")
+        throw new Error(result.error || "회원가입에 실패했습니다")
       }
 
-      return response.json()
+      return result
     },
     onSuccess: (data) => {
-      toast.success("회원가입이 완료되었습니다!")
-      setError(null)
-      // 성공 시 로그인 페이지로 이동
-      router.push("/login")
+      // 토큰 저장
+      localStorage.setItem("auth-token", data.token)
+
+      toast({
+        title: "회원가입 완료! 🎉",
+        description: `${data.user.name}님, KIZ-SPACE에 오신 것을 환영합니다!`,
+      })
+
+      // 온보딩 페이지로 이동
+      router.push("/onboarding")
     },
-    onError: (error: Error) => {
-      const errorMessage = error.message || "회원가입 중 오류가 발생했습니다."
-      setError(errorMessage)
-      toast.error(errorMessage)
+    onError: (error) => {
+      toast({
+        title: "회원가입 실패",
+        description: error.message,
+        variant: "destructive",
+      })
     },
   })
+}
 
-  const signup = async (formData: SignupFormData) => {
-    setError(null)
-    signupMutation.mutate(formData)
-  }
+export function useCheckEmailAvailability() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const response = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
 
-  const validateStep = (step: number, formData: SignupFormData): boolean => {
-    switch (step) {
-      case 1:
-        return !!(
-          formData.email &&
-          formData.password &&
-          formData.confirmPassword &&
-          formData.password === formData.confirmPassword &&
-          formData.password.length >= 8 &&
-          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-        )
-      case 2:
-        return !!(formData.nickname && formData.region && formData.nickname.length >= 2)
-      case 3:
-        return true // 자녀 정보는 선택사항
-      case 4:
-        return true // 관심사도 선택사항
-      default:
-        return false
-    }
-  }
+      const result = await response.json()
 
-  const validateEmail = (email: string): boolean => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  }
+      if (!response.ok) {
+        throw new Error(result.error || "이메일 확인에 실패했습니다")
+      }
 
-  const validatePassword = (password: string): boolean => {
-    return password.length >= 8 && /^(?=.*[a-zA-Z])(?=.*\d)/.test(password)
-  }
-
-  const validateNickname = (nickname: string): boolean => {
-    return nickname.length >= 2 && nickname.length <= 20
-  }
-
-  return {
-    signup,
-    validateStep,
-    validateEmail,
-    validatePassword,
-    validateNickname,
-    isLoading: signupMutation.isPending,
-    error: error || signupMutation.error?.message,
-    isSuccess: signupMutation.isSuccess,
-    reset: () => {
-      setError(null)
-      signupMutation.reset()
+      return result.available
     },
-  }
+  })
+}
+
+export function useCheckNicknameAvailability() {
+  return useMutation({
+    mutationFn: async (nickname: string) => {
+      const response = await fetch("/api/auth/check-nickname", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nickname }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "닉네임 확인에 실패했습니다")
+      }
+
+      return result.available
+    },
+  })
 }
