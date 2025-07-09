@@ -50,6 +50,11 @@ export function PostCard({ post }: PostCardProps) {
       return
     }
 
+    // 이미 요청 중이면 무시
+    if (likePostMutation.isPending) {
+      return
+    }
+
     const previousIsLiked = isLiked
     const previousLikeCount = likeCount
 
@@ -58,10 +63,14 @@ export function PostCard({ post }: PostCardProps) {
     setLikeCount(prev => isLiked ? prev - 1 : prev + 1)
 
     try {
-      await likePostMutation.mutateAsync({
+      const result = await likePostMutation.mutateAsync({
         postId: post.id,
         userId: user.id,
       })
+      
+      // API 응답으로 정확한 상태 업데이트
+      setIsLiked(result.liked)
+      setLikeCount(result.likesCount)
     } catch (error) {
       // 에러 발생 시 원래 상태로 롤백
       setIsLiked(previousIsLiked)

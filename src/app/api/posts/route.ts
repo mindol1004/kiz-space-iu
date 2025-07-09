@@ -43,9 +43,19 @@ export async function GET(request: NextRequest) {
 
     const total = await prisma.post.count({ where })
 
-    // 현재 로그인한 사용자 ID (실제로는 JWT에서 가져와야 함)
-    // 임시로 헤더에서 가져오거나 기본값 사용
-    const currentUserId = request.headers.get('x-user-id') || null
+    // 현재 로그인한 사용자 ID를 쿠키에서 가져오기
+    const cookies = request.headers.get('cookie') || ''
+    const userCookie = cookies.split(';').find(c => c.trim().startsWith('user='))
+    let currentUserId = null
+    
+    if (userCookie) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(userCookie.split('=')[1]))
+        currentUserId = userData.id
+      } catch (error) {
+        console.log('Failed to parse user cookie:', error)
+      }
+    }
 
     // 게시글 데이터 변환
     const transformedPosts = posts.map(post => ({

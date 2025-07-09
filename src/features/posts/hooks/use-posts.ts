@@ -179,7 +179,29 @@ export function useLikePost() {
 
       return response.json()
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // 특정 게시글의 좋아요 상태를 즉시 업데이트
+      queryClient.setQueryData(["posts"], (oldData: any) => {
+        if (!oldData) return oldData
+        
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            posts: page.posts.map((post: any) => 
+              post.id === variables.postId 
+                ? { 
+                    ...post, 
+                    isLiked: data.liked,
+                    likesCount: data.likesCount 
+                  }
+                : post
+            )
+          }))
+        }
+      })
+      
+      // 백그라운드에서 전체 데이터 새로고침
       queryClient.invalidateQueries({ queryKey: ["posts"] })
     },
   })
