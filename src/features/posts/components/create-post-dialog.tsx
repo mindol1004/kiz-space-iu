@@ -22,7 +22,7 @@ export function CreatePostDialog() {
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
   const [images, setImages] = useState<string[]>([])
-  const { createPost, isLoading } = useCreatePost()
+  const { mutateAsync: createPost, isPending: isLoading } = useCreatePost()
   const { user } = useAuthStore()
   const { toast } = useToast()
 
