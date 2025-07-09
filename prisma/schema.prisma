@@ -53,8 +53,38 @@ model User {
   reports       Report[]
   followers     Follow[] @relation("UserFollowers")
   following     Follow[] @relation("UserFollowing")
+  tokens        Token[]
   
   @@map("users")
+}
+
+model Token {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String    @db.ObjectId
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  accessToken  String    @unique
+  refreshToken String    @unique
+  type         TokenType @default(BEARER)
+  
+  // Token expiration
+  accessTokenExpiresAt  DateTime
+  refreshTokenExpiresAt DateTime
+  
+  // Device/Session info
+  deviceId     String?
+  userAgent    String?
+  ipAddress    String?
+  
+  // Status
+  isRevoked    Boolean   @default(false)
+  isBlacklisted Boolean  @default(false)
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastUsedAt   DateTime  @default(now())
+  
+  @@map("tokens")
 }
 
 model Child {
@@ -521,4 +551,9 @@ enum ReportStatus {
   REVIEWED
   RESOLVED
   DISMISSED
+}
+
+enum TokenType {
+  BEARER
+  API_KEY
 }

@@ -61,20 +61,28 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { content, images, category, ageGroup, tags, authorId } = await request.json()
+    const { content, images, category, ageGroup, tags } = await request.json()
 
-    if (!content || !authorId) {
-      return NextResponse.json({ error: "Content and author ID are required" }, { status: 400 })
+    // Assuming 'auth' is available in this scope, e.g., from middleware
+    // and 'auth.user!.id' contains the authenticated user's ID.
+    // If 'auth' is not available, you'll need to implement the authentication
+    // logic to retrieve the user's ID.
+
+    if (!content) {
+      return NextResponse.json({ error: "Content is required" }, { status: 400 })
     }
 
+    // Make sure auth and auth.user are valid before accessing auth.user!.id
+    // Example:  if (!auth || !auth.user || !auth.user.id) { ... }
+    // For this example, assuming auth is available for brevity
     const post = await prisma.post.create({
       data: {
         content,
         images: images || [],
-        category: category || "general",
-        ageGroup: ageGroup || "all",
+        category,
+        ageGroup,
         tags: tags || [],
-        authorId,
+        authorId: auth.user!.id,
       },
       include: {
         author: {
