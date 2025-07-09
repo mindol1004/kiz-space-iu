@@ -15,6 +15,7 @@ interface User {
   followersCount: number
   followingCount: number
   createdAt: Date
+  updatedAt: Date
   lastSeenAt: Date
 }
 
