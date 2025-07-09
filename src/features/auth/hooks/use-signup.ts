@@ -62,7 +62,7 @@ export function useSignup() {
       })
 
       // 온보딩 페이지로 이동
-      router.push("/onboarding")
+      router.push("/login")
     },
     onError: (error) => {
       toast({

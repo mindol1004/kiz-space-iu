@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ChevronLeft, ChevronRight, User, MapPin, Baby, Heart } from "lucide-react"
+import { ChevronLeft, ChevronRight, User, Heart, Mail, Lock } from "lucide-react"
 import { useSignup } from "../hooks/use-signup"
 import { REGIONS, INTEREST_TAGS, AGE_GROUPS } from "@/shared/constants/common-data"
 import type { SignupFormData, Child } from "../types/auth-types"
@@ -98,21 +99,19 @@ export function SignupForm() {
       case 1:
         return (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <User className="w-5 h-5 text-pink-500" />
-              <h3 className="text-lg font-semibold">기본 정보</h3>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="example@email.com"
-                value={formData.email}
-                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                className={!validateEmail(formData.email) && formData.email ? "border-red-500" : ""}
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="example@email.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                  className={`pl-10 ${!validateEmail(formData.email) && formData.email ? "border-red-500" : ""}`}
+                />
+              </div>
               {!validateEmail(formData.email) && formData.email && (
                 <p className="text-sm text-red-500">올바른 이메일 형식을 입력해주세요.</p>
               )}
@@ -120,14 +119,17 @@ export function SignupForm() {
 
             <div className="space-y-2">
               <Label htmlFor="password">비밀번호</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="8자 이상, 영문+숫자 조합"
-                value={formData.password}
-                onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                className={!validatePassword(formData.password) && formData.password ? "border-red-500" : ""}
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="8자 이상, 영문+숫자 조합"
+                  value={formData.password}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
+                  className={`pl-10 ${!validatePassword(formData.password) && formData.password ? "border-red-500" : ""}`}
+                />
+              </div>
               {!validatePassword(formData.password) && formData.password && (
                 <p className="text-sm text-red-500">8자 이상, 영문과 숫자를 포함해주세요.</p>
               )}
@@ -135,16 +137,19 @@ export function SignupForm() {
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">비밀번호 확인</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="비밀번호를 다시 입력해주세요"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                className={
-                  formData.password !== formData.confirmPassword && formData.confirmPassword ? "border-red-500" : ""
-                }
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="비밀번호를 다시 입력해주세요"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                  className={`pl-10 ${
+                    formData.password !== formData.confirmPassword && formData.confirmPassword ? "border-red-500" : ""
+                  }`}
+                />
+              </div>
               {formData.password !== formData.confirmPassword && formData.confirmPassword && (
                 <p className="text-sm text-red-500">비밀번호가 일치하지 않습니다.</p>
               )}
@@ -155,20 +160,18 @@ export function SignupForm() {
       case 2:
         return (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <MapPin className="w-5 h-5 text-pink-500" />
-              <h3 className="text-lg font-semibold">프로필 정보</h3>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="nickname">닉네임</Label>
-              <Input
-                id="nickname"
-                placeholder="2-20자 이내로 입력해주세요"
-                value={formData.nickname}
-                onChange={(e) => setFormData((prev) => ({ ...prev, nickname: e.target.value }))}
-                className={!validateNickname(formData.nickname) && formData.nickname ? "border-red-500" : ""}
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="nickname"
+                  placeholder="2-20자 이내로 입력해주세요"
+                  value={formData.nickname}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, nickname: e.target.value }))}
+                  className={`pl-10 ${!validateNickname(formData.nickname) && formData.nickname ? "border-red-500" : ""}`}
+                />
+              </div>
               {!validateNickname(formData.nickname) && formData.nickname && (
                 <p className="text-sm text-red-500">2-20자 이내로 입력해주세요.</p>
               )}
@@ -209,11 +212,6 @@ export function SignupForm() {
       case 3:
         return (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Baby className="w-5 h-5 text-pink-500" />
-              <h3 className="text-lg font-semibold">자녀 정보 (선택)</h3>
-            </div>
-
             <p className="text-sm text-gray-600 mb-4">
               자녀 정보를 등록하면 연령대에 맞는 콘텐츠를 추천받을 수 있어요.
             </p>
@@ -297,11 +295,6 @@ export function SignupForm() {
       case 4:
         return (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="w-5 h-5 text-pink-500" />
-              <h3 className="text-lg font-semibold">관심사 선택 (선택)</h3>
-            </div>
-
             <p className="text-sm text-gray-600 mb-4">관심 있는 주제를 선택하면 맞춤 콘텐츠를 추천받을 수 있어요.</p>
 
             <div className="grid grid-cols-2 gap-2">
@@ -347,51 +340,82 @@ export function SignupForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="text-center">KIZ-SPACE 회원가입</CardTitle>
-        <CardDescription className="text-center">
-          단계 {currentStep} / {totalSteps}
-        </CardDescription>
-        <Progress value={progress} className="w-full" />
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {error && <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">{error.message}</div>}
-
-        {renderStep()}
-
-        <div className="flex justify-between pt-4">
-          <Button
-            variant="outline"
-            onClick={handlePrev}
-            disabled={currentStep === 1}
-            className="flex items-center gap-2 bg-transparent"
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        <div className="text-center mb-8">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full mb-4"
           >
-            <ChevronLeft className="w-4 h-4" />
-            이전
-          </Button>
-
-          {currentStep < totalSteps ? (
-            <Button
-              onClick={handleNext}
-              disabled={!validateStep(currentStep, formData)}
-              className="flex items-center gap-2"
-            >
-              다음
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={!validateStep(currentStep, formData) || isLoading}
-              className="flex items-center gap-2"
-            >
-              {isLoading ? "가입 중..." : "가입 완료"}
-            </Button>
-          )}
+            <Heart className="w-8 h-8 text-white" />
+          </motion.div>
+          <h1 className="text-3xl font-bold text-gray-900">KIZ-SPACE</h1>
+          <p className="text-gray-600 mt-2">안전한 육아 커뮤니티에 오신 것을 환영합니다</p>
         </div>
-      </CardContent>
-    </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-center">KIZ-SPACE 회원가입</CardTitle>
+            <CardDescription className="text-center">
+              단계 {currentStep} / {totalSteps}
+            </CardDescription>
+            <Progress value={progress} className="w-full" />
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            {error && <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">{error.message}</div>}
+
+            {renderStep()}
+
+            <div className="flex justify-between pt-4">
+              <Button
+                variant="outline"
+                onClick={handlePrev}
+                disabled={currentStep === 1}
+                className="flex items-center gap-2 bg-transparent"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                이전
+              </Button>
+
+              {currentStep < totalSteps ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={!validateStep(currentStep, formData)}
+                  className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
+                >
+                  다음
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!validateStep(currentStep, formData) || isLoading}
+                  className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
+                >
+                  {isLoading ? "가입 중..." : "가입 완료"}
+                </Button>
+              )}
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                이미 계정이 있으신가요?{" "}
+                <a href="/login" className="text-pink-500 hover:text-pink-600 font-medium">
+                  로그인
+                </a>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   )
 }

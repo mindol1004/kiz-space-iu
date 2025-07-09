@@ -65,7 +65,7 @@ export function ProfileContent({ user, userChildren, stats }: ProfileContentProp
           </div>
           <h1 className="text-xl font-bold">{user.nickname}</h1>
           <p className="text-gray-600 text-sm">
-            {user.location} • 가입일: {user.createdAt.toLocaleDateString()}
+            {user.location} • 가입일: {new Date(user.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })}
           </p>
           <div className="flex justify-center items-center space-x-2 mt-2">
             <Badge className={user.verified ? "bg-gradient-to-r from-pink-500 to-purple-500" : "bg-gray-400"}>

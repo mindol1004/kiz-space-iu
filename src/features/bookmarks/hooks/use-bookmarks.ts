@@ -31,7 +31,8 @@ export function useBookmarks(userIdFromProps?: string) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to fetch bookmarks");
       }
-      return response.json();
+      const result = await response.json();
+      return result.bookmarks; // <--- MODIFIED HERE: Access the 'bookmarks' array from the response object
     },
     enabled: !!currentUserId, // Only run the query if userId is available
   });
