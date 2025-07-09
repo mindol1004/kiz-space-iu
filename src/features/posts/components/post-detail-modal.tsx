@@ -9,23 +9,35 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Heart, MessageCircle, Bookmark, Share2, Send } from "lucide-react"
 import { formatDate, getAgeGroupLabel, getCategoryLabel } from "@/lib/utils"
-import type { Post } from "@/lib/schemas"
+interface Post {
+  id: string
+  content: string
+  images: string[]
+  category: string
+  ageGroup: string
+  tags: string[]
+  likesCount: number
+  commentsCount: number
+  bookmarksCount: number
+  isLiked?: boolean
+  isBookmarked?: boolean
+  createdAt: string
+  author: {
+    nickname: string
+    avatar?: string
+  }
+}
 
 interface PostDetailModalProps {
-  post: Post & {
-    author: {
-      nickname: string
-      avatar?: string
-    }
-  }
+  post: Post
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
 export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalProps) {
-  const [isLiked, setIsLiked] = useState(false)
-  const [isBookmarked, setIsBookmarked] = useState(false)
-  const [likeCount, setLikeCount] = useState(post.likes.length)
+  const [isLiked, setIsLiked] = useState(post.isLiked || false)
+  const [isBookmarked, setIsBookmarked] = useState(post.isBookmarked || false)
+  const [likeCount, setLikeCount] = useState(post.likesCount || 0)
   const [comment, setComment] = useState("")
   const [comments, setComments] = useState([
     {
