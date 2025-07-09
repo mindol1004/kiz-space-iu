@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -8,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Plus, ImageIcon, X } from "lucide-react"
+import { Plus, ImageIcon, X, Upload } from "lucide-react"
 import { useCreatePost } from "../hooks/use-posts"
 import { useAuthStore } from "@/shared/stores/auth-store"
+import { useToast } from "@/hooks/use-toast"
 
 export function CreatePostDialog() {
   const [open, setOpen] = useState(false)
@@ -19,30 +21,44 @@ export function CreatePostDialog() {
   const [ageGroup, setAgeGroup] = useState("")
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
+  const [images, setImages] = useState<string[]>([])
   const { createPost, isLoading } = useCreatePost()
   const { user } = useAuthStore()
+  const { toast } = useToast()
 
   const categories = [
-    { value: "play", label: "놀이/활동" },
-    { value: "health", label: "건강/안전" },
-    { value: "education", label: "교육" },
-    { value: "food", label: "식사" },
-    { value: "products", label: "육아용품" },
-    { value: "advice", label: "고민상담" },
+    { value: "PLAY", label: "놀이/활동" },
+    { value: "HEALTH", label: "건강/안전" },
+    { value: "EDUCATION", label: "교육" },
+    { value: "FOOD", label: "식사/영양" },
+    { value: "PRODUCTS", label: "육아용품" },
+    { value: "ADVICE", label: "고민상담" },
+    { value: "PREGNANCY", label: "임신" },
+    { value: "NEWBORN", label: "신생아" },
+    { value: "LIFESTYLE", label: "라이프스타일" },
   ]
 
   const ageGroups = [
-    { value: "0-2", label: "영아 (0-2세)" },
-    { value: "3-5", label: "유아 (3-5세)" },
-    { value: "6-8", label: "초등 저학년 (6-8세)" },
-    { value: "9-12", label: "초등 고학년 (9-12세)" },
-    { value: "all", label: "전체 연령" },
+    { value: "PREGNANCY", label: "임신" },
+    { value: "NEWBORN_0_6M", label: "신생아 (0-6개월)" },
+    { value: "INFANT_6_12M", label: "영아 (6-12개월)" },
+    { value: "TODDLER_1_3Y", label: "유아 (1-3세)" },
+    { value: "PRESCHOOL_3_5Y", label: "유치원 (3-5세)" },
+    { value: "SCHOOL_5_8Y", label: "초등 저학년 (5-8세)" },
+    { value: "TWEEN_8_12Y", label: "초등 고학년 (8-12세)" },
+    { value: "ALL", label: "전체 연령" },
   ]
 
   const addTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+    if (tagInput.trim() && !tags.includes(tagInput.trim()) && tags.length < 5) {
       setTags([...tags, tagInput.trim()])
       setTagInput("")
+    } else if (tags.length >= 5) {
+      toast({
+        title: "태그 제한",
+        description: "태그는 최대 5개까지 추가할 수 있습니다.",
+        variant: "destructive"
+      })
     }
   }
 
@@ -50,27 +66,81 @@ export function CreatePostDialog() {
     setTags(tags.filter((tag) => tag !== tagToRemove))
   }
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (files) {
+      // 실제 구현에서는 파일을 서버에 업로드하고 URL을 받아와야 합니다
+      // 현재는 더미 URL을 사용
+      const newImages = Array.from(files).map((file, index) => 
+        `/placeholder.svg?${Date.now()}-${index}`
+      )
+      setImages(prev => [...prev, ...newImages].slice(0, 4)) // 최대 4개 이미지
+    }
+  }
+
+  const removeImage = (indexToRemove: number) => {
+    setImages(images.filter((_, index) => index !== indexToRemove))
+  }
+
+  const resetForm = () => {
+    setContent("")
+    setCategory("")
+    setAgeGroup("")
+    setTags([])
+    setTagInput("")
+    setImages([])
+  }
+
   const handleSubmit = async () => {
-    if (!user) return
+    if (!user) {
+      toast({
+        title: "로그인 필요",
+        description: "게시글을 작성하려면 로그인이 필요합니다.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!content.trim()) {
+      toast({
+        title: "내용 입력 필요",
+        description: "게시글 내용을 입력해주세요.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!category) {
+      toast({
+        title: "카테고리 선택 필요",
+        description: "카테고리를 선택해주세요.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!ageGroup) {
+      toast({
+        title: "연령대 선택 필요",
+        description: "연령대를 선택해주세요.",
+        variant: "destructive"
+      })
+      return
+    }
 
     try {
       await createPost({
-        content,
+        content: content.trim(),
         category,
         ageGroup,
         tags,
         authorId: user.id,
-        images: [],
+        images,
       })
 
       setOpen(false)
-      // Reset form
-      setContent("")
-      setCategory("")
-      setAgeGroup("")
-      setTags([])
+      resetForm()
     } catch (error) {
-      // Error is handled in the hook
       console.error("Failed to create post:", error)
     }
   }
@@ -88,17 +158,22 @@ export function CreatePostDialog() {
         </DialogHeader>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
           <div>
+            <label className="text-sm font-medium mb-2 block">내용 *</label>
             <Textarea
               placeholder="어떤 이야기를 나누고 싶으신가요?"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="min-h-[120px] resize-none"
+              maxLength={1000}
             />
+            <div className="text-right text-xs text-gray-500 mt-1">
+              {content.length}/1000
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">카테고리</label>
+              <label className="text-sm font-medium mb-2 block">카테고리 *</label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
                   <SelectValue placeholder="카테고리 선택" />
@@ -113,7 +188,7 @@ export function CreatePostDialog() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-2 block">연령대</label>
+              <label className="text-sm font-medium mb-2 block">연령대 *</label>
               <Select value={ageGroup} onValueChange={setAgeGroup}>
                 <SelectTrigger>
                   <SelectValue placeholder="연령대 선택" />
@@ -130,16 +205,22 @@ export function CreatePostDialog() {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-2 block">태그</label>
+            <label className="text-sm font-medium mb-2 block">태그 (선택사항)</label>
             <div className="flex gap-2 mb-2">
               <Input
                 placeholder="태그 입력 후 Enter"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    addTag()
+                  }
+                }}
                 className="flex-1"
+                maxLength={20}
               />
-              <Button type="button" onClick={addTag} size="sm">
+              <Button type="button" onClick={addTag} size="sm" disabled={tags.length >= 5}>
                 추가
               </Button>
             </div>
@@ -160,15 +241,65 @@ export function CreatePostDialog() {
                 </motion.div>
               )}
             </AnimatePresence>
+            <div className="text-xs text-gray-500 mt-1">
+              {tags.length}/5 태그
+            </div>
           </div>
 
-          <Button variant="outline" className="w-full border-dashed bg-transparent">
-            <ImageIcon className="h-4 w-4 mr-2" />
-            사진 추가
-          </Button>
+          <div>
+            <label className="text-sm font-medium mb-2 block">사진 (선택사항)</label>
+            <div className="space-y-2">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                id="image-upload"
+                disabled={images.length >= 4}
+              />
+              <label htmlFor="image-upload">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full border-dashed bg-transparent cursor-pointer"
+                  disabled={images.length >= 4}
+                  asChild
+                >
+                  <div>
+                    <Upload className="h-4 w-4 mr-2" />
+                    사진 추가 ({images.length}/4)
+                  </div>
+                </Button>
+              </label>
+              
+              {images.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {images.map((image, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                      <img src={image} alt={`업로드된 이미지 ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="flex gap-2 pt-4">
-            <Button variant="outline" onClick={() => setOpen(false)} className="flex-1">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setOpen(false)
+                resetForm()
+              }} 
+              className="flex-1"
+            >
               취소
             </Button>
             <Button

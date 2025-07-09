@@ -1,18 +1,20 @@
+
 "use client"
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal } from "lucide-react"
+import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Eye } from "lucide-react"
 import { formatDate, getAgeGroupLabel, getCategoryLabel } from "@/lib/utils"
 import { PostDetailModal } from "./post-detail-modal"
 import { useLikePost, useBookmarkPost } from "../hooks/use-posts"
 import { useAuthStore } from "@/shared/stores/auth-store"
+import { useToast } from "@/hooks/use-toast"
 import type { PostWithAuthor } from "@/lib/schemas"
 
 interface PostCardProps {
@@ -28,41 +30,125 @@ export function PostCard({ post }: PostCardProps) {
   const likePostMutation = useLikePost()
   const bookmarkPostMutation = useBookmarkPost()
   const { user } = useAuthStore()
+  const { toast } = useToast()
+
+  // post 데이터가 변경될 때 상태 업데이트
+  useEffect(() => {
+    setIsLiked(post.isLiked || false)
+    setIsBookmarked(post.isBookmarked || false)
+    setLikeCount(post.likesCount || 0)
+  }, [post.isLiked, post.isBookmarked, post.likesCount])
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!user) return
+    if (!user) {
+      toast({
+        title: "로그인 필요",
+        description: "좋아요를 누르려면 로그인이 필요합니다.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    const previousIsLiked = isLiked
+    const previousLikeCount = likeCount
+
+    // 낙관적 업데이트
+    setIsLiked(!isLiked)
+    setLikeCount(prev => isLiked ? prev - 1 : prev + 1)
 
     try {
       await likePostMutation.mutateAsync({
         postId: post.id || post._id || "",
         userId: user.id || user._id || "",
       })
-      setIsLiked(!isLiked)
-      setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1))
     } catch (error) {
-      // Error is handled in the hook
+      // 에러 발생 시 원래 상태로 롤백
+      setIsLiked(previousIsLiked)
+      setLikeCount(previousLikeCount)
+      toast({
+        title: "오류 발생",
+        description: "좋아요 처리 중 오류가 발생했습니다.",
+        variant: "destructive"
+      })
     }
   }
 
   const handleBookmark = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!user) return
+    if (!user) {
+      toast({
+        title: "로그인 필요",
+        description: "북마크를 추가하려면 로그인이 필요합니다.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    const previousIsBookmarked = isBookmarked
+
+    // 낙관적 업데이트
+    setIsBookmarked(!isBookmarked)
 
     try {
       await bookmarkPostMutation.mutateAsync({
         postId: post.id || post._id || "",
         userId: user.id || user._id || "",
       })
-      setIsBookmarked(!isBookmarked)
+      
+      toast({
+        title: isBookmarked ? "북마크 해제" : "북마크 추가",
+        description: isBookmarked ? "북마크에서 제거되었습니다." : "북마크에 추가되었습니다.",
+      })
     } catch (error) {
-      // Error is handled in the hook
+      // 에러 발생 시 원래 상태로 롤백
+      setIsBookmarked(previousIsBookmarked)
+      toast({
+        title: "오류 발생",
+        description: "북마크 처리 중 오류가 발생했습니다.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${post.author.nickname}님의 게시글`,
+          text: post.content.slice(0, 100) + (post.content.length > 100 ? '...' : ''),
+          url: window.location.href
+        })
+      } catch (error) {
+        console.log('Share cancelled')
+      }
+    } else {
+      // 웹 공유 API를 지원하지 않는 경우 클립보드에 복사
+      try {
+        await navigator.clipboard.writeText(window.location.href)
+        toast({
+          title: "링크 복사됨",
+          description: "게시글 링크가 클립보드에 복사되었습니다.",
+        })
+      } catch (error) {
+        toast({
+          title: "복사 실패",
+          description: "링크 복사에 실패했습니다.",
+          variant: "destructive"
+        })
+      }
     }
   }
 
   const handleCardClick = () => {
     setShowDetailModal(true)
   }
+
+  const truncatedContent = post.content.length > 150 
+    ? post.content.slice(0, 150) + '...' 
+    : post.content
 
   return (
     <>
@@ -103,7 +189,7 @@ export function PostCard({ post }: PostCardProps) {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <p className="text-sm text-gray-700 mb-3 leading-relaxed">{post.content}</p>
+            <p className="text-sm text-gray-700 mb-3 leading-relaxed">{truncatedContent}</p>
 
             {post.images && post.images.length > 0 && (
               <div className="grid grid-cols-2 gap-2 mb-3">
@@ -112,7 +198,7 @@ export function PostCard({ post }: PostCardProps) {
                     <img src={image || "/placeholder.svg"} alt="" className="w-full h-full object-cover" />
                     {index === 3 && post.images && post.images.length > 4 && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="text-white font-medium">+{post.images.length - 4}</span>
+                        <span className="text-white font-medium text-sm">+{post.images.length - 4}</span>
                       </div>
                     )}
                   </div>
@@ -122,11 +208,16 @@ export function PostCard({ post }: PostCardProps) {
 
             {post.tags && post.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-3">
-                {post.tags.map((tag, index) => (
+                {post.tags.slice(0, 3).map((tag, index) => (
                   <span key={index} className="text-xs text-pink-600 bg-pink-50 px-2 py-1 rounded-full">
                     #{tag}
                   </span>
                 ))}
+                {post.tags.length > 3 && (
+                  <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
+                    +{post.tags.length - 3}
+                  </span>
+                )}
               </div>
             )}
 
@@ -151,8 +242,14 @@ export function PostCard({ post }: PostCardProps) {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MessageCircle className="h-4 w-4" />
-                  <span className="text-xs">{post.commentCount}</span>
+                  <span className="text-xs">{post.commentCount || post.commentsCount || 0}</span>
                 </Button>
+                {post.viewsCount !== undefined && (
+                  <div className="flex items-center space-x-1 text-gray-500">
+                    <Eye className="h-4 w-4" />
+                    <span className="text-xs">{post.viewsCount}</span>
+                  </div>
+                )}
               </div>
               <div className="flex items-center space-x-2">
                 <Button
@@ -164,7 +261,7 @@ export function PostCard({ post }: PostCardProps) {
                 >
                   <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} />
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray-500" onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="sm" className="text-gray-500" onClick={handleShare}>
                   <Share2 className="h-4 w-4" />
                 </Button>
               </div>

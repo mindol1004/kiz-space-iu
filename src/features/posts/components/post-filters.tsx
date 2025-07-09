@@ -1,3 +1,4 @@
+
 "use client"
 
 import { motion } from "framer-motion"
@@ -10,20 +11,27 @@ export function PostFilters() {
 
   const categories = [
     { value: "all", label: "전체" },
-    { value: "play", label: "놀이/활동" },
-    { value: "health", label: "건강/안전" },
-    { value: "education", label: "교육" },
-    { value: "food", label: "식사" },
-    { value: "products", label: "육아용품" },
-    { value: "advice", label: "고민상담" },
+    { value: "PLAY", label: "놀이/활동" },
+    { value: "HEALTH", label: "건강/안전" },
+    { value: "EDUCATION", label: "교육" },
+    { value: "FOOD", label: "식사" },
+    { value: "PRODUCTS", label: "육아용품" },
+    { value: "ADVICE", label: "고민상담" },
+    { value: "PREGNANCY", label: "임신" },
+    { value: "NEWBORN", label: "신생아" },
+    { value: "LIFESTYLE", label: "라이프스타일" },
   ]
 
   const ageGroups = [
     { value: "all", label: "전체 연령" },
-    { value: "0-2", label: "0-2세" },
-    { value: "3-5", label: "3-5세" },
-    { value: "6-8", label: "6-8세" },
-    { value: "9-12", label: "9-12세" },
+    { value: "PREGNANCY", label: "임신" },
+    { value: "NEWBORN_0_6M", label: "신생아 (0-6개월)" },
+    { value: "INFANT_6_12M", label: "영아 (6-12개월)" },
+    { value: "TODDLER_1_3Y", label: "유아 (1-3세)" },
+    { value: "PRESCHOOL_3_5Y", label: "유치원 (3-5세)" },
+    { value: "SCHOOL_5_8Y", label: "초등 저학년 (5-8세)" },
+    { value: "TWEEN_8_12Y", label: "초등 고학년 (8-12세)" },
+    { value: "ALL", label: "전체" },
   ]
 
   return (

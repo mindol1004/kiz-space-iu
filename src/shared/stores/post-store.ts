@@ -1,27 +1,46 @@
-import { create } from "zustand"
-import type { Post } from "@/lib/schemas"
 
-interface PostState {
-  posts: Post[]
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
+
+interface PostStore {
   selectedCategory: string
   selectedAgeGroup: string
-  setPosts: (posts: Post[]) => void
-  addPost: (post: Post) => void
-  updatePost: (postId: string, updates: Partial<Post>) => void
+  sortBy: "createdAt" | "likesCount" | "commentsCount"
+  sortOrder: "desc" | "asc"
+  
   setSelectedCategory: (category: string) => void
   setSelectedAgeGroup: (ageGroup: string) => void
+  setSortBy: (sortBy: "createdAt" | "likesCount" | "commentsCount") => void
+  setSortOrder: (sortOrder: "desc" | "asc") => void
+  resetFilters: () => void
 }
 
-export const usePostStore = create<PostState>((set) => ({
-  posts: [],
+const initialState = {
   selectedCategory: "all",
   selectedAgeGroup: "all",
-  setPosts: (posts) => set({ posts }),
-  addPost: (post) => set((state) => ({ posts: [post, ...state.posts] })),
-  updatePost: (postId, updates) =>
-    set((state) => ({
-      posts: state.posts.map((post) => (post._id === postId ? { ...post, ...updates } : post)),
-    })),
-  setSelectedCategory: (selectedCategory) => set({ selectedCategory }),
-  setSelectedAgeGroup: (selectedAgeGroup) => set({ selectedAgeGroup }),
-}))
+  sortBy: "createdAt" as const,
+  sortOrder: "desc" as const,
+}
+
+export const usePostStore = create<PostStore>()(
+  persist(
+    (set) => ({
+      ...initialState,
+      
+      setSelectedCategory: (category) => set({ selectedCategory: category }),
+      setSelectedAgeGroup: (ageGroup) => set({ selectedAgeGroup: ageGroup }),
+      setSortBy: (sortBy) => set({ sortBy }),
+      setSortOrder: (sortOrder) => set({ sortOrder }),
+      resetFilters: () => set(initialState),
+    }),
+    {
+      name: "post-store",
+      partialize: (state) => ({
+        selectedCategory: state.selectedCategory,
+        selectedAgeGroup: state.selectedAgeGroup,
+        sortBy: state.sortBy,
+        sortOrder: state.sortOrder,
+      }),
+    }
+  )
+)
