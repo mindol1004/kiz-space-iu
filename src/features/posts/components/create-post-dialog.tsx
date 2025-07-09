@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -13,6 +12,7 @@ import { Plus, ImageIcon, X, Upload } from "lucide-react"
 import { useCreatePost } from "../hooks/use-posts"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
+import { CATEGORIES, AGE_GROUPS, MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/data/common-data"
 
 export function CreatePostDialog() {
   const [open, setOpen] = useState(false)
@@ -26,34 +26,11 @@ export function CreatePostDialog() {
   const { user } = useAuthStore()
   const { toast } = useToast()
 
-  const categories = [
-    { value: "PLAY", label: "놀이/활동" },
-    { value: "HEALTH", label: "건강/안전" },
-    { value: "EDUCATION", label: "교육" },
-    { value: "FOOD", label: "식사/영양" },
-    { value: "PRODUCTS", label: "육아용품" },
-    { value: "ADVICE", label: "고민상담" },
-    { value: "PREGNANCY", label: "임신" },
-    { value: "NEWBORN", label: "신생아" },
-    { value: "LIFESTYLE", label: "라이프스타일" },
-  ]
-
-  const ageGroups = [
-    { value: "PREGNANCY", label: "임신" },
-    { value: "NEWBORN_0_6M", label: "신생아 (0-6개월)" },
-    { value: "INFANT_6_12M", label: "영아 (6-12개월)" },
-    { value: "TODDLER_1_3Y", label: "유아 (1-3세)" },
-    { value: "PRESCHOOL_3_5Y", label: "유치원 (3-5세)" },
-    { value: "SCHOOL_5_8Y", label: "초등 저학년 (5-8세)" },
-    { value: "TWEEN_8_12Y", label: "초등 고학년 (8-12세)" },
-    { value: "ALL", label: "전체 연령" },
-  ]
-
   const addTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim()) && tags.length < 5) {
+    if (tagInput.trim() && !tags.includes(tagInput.trim()) && tags.length < MAX_TAGS_PER_POST) {
       setTags([...tags, tagInput.trim()])
       setTagInput("")
-    } else if (tags.length >= 5) {
+    } else if (tags.length >= MAX_TAGS_PER_POST) {
       toast({
         title: "태그 제한",
         description: "태그는 최대 5개까지 추가할 수 있습니다.",
@@ -74,7 +51,7 @@ export function CreatePostDialog() {
       const newImages = Array.from(files).map((file, index) => 
         `/placeholder.svg?${Date.now()}-${index}`
       )
-      setImages(prev => [...prev, ...newImages].slice(0, 4)) // 최대 4개 이미지
+      setImages(prev => [...prev, ...newImages].slice(0, MAX_IMAGES_PER_POST)) // 최대 4개 이미지
     }
   }
 
@@ -179,7 +156,7 @@ export function CreatePostDialog() {
                   <SelectValue placeholder="카테고리 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
+                  {CATEGORIES.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
                     </SelectItem>
@@ -194,7 +171,7 @@ export function CreatePostDialog() {
                   <SelectValue placeholder="연령대 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ageGroups.map((age) => (
+                  {AGE_GROUPS.map((age) => (
                     <SelectItem key={age.value} value={age.value}>
                       {age.label}
                     </SelectItem>
@@ -220,7 +197,7 @@ export function CreatePostDialog() {
                 className="flex-1"
                 maxLength={20}
               />
-              <Button type="button" onClick={addTag} size="sm" disabled={tags.length >= 5}>
+              <Button type="button" onClick={addTag} size="sm" disabled={tags.length >= MAX_TAGS_PER_POST}>
                 추가
               </Button>
             </div>
@@ -242,7 +219,7 @@ export function CreatePostDialog() {
               )}
             </AnimatePresence>
             <div className="text-xs text-gray-500 mt-1">
-              {tags.length}/5 태그
+              {tags.length}/{MAX_TAGS_PER_POST} 태그
             </div>
           </div>
 
@@ -256,23 +233,23 @@ export function CreatePostDialog() {
                 onChange={handleImageUpload}
                 className="hidden"
                 id="image-upload"
-                disabled={images.length >= 4}
+                disabled={images.length >= MAX_IMAGES_PER_POST}
               />
               <label htmlFor="image-upload">
                 <Button 
                   type="button" 
                   variant="outline" 
                   className="w-full border-dashed bg-transparent cursor-pointer"
-                  disabled={images.length >= 4}
+                  disabled={images.length >= MAX_IMAGES_PER_POST}
                   asChild
                 >
                   <div>
                     <Upload className="h-4 w-4 mr-2" />
-                    사진 추가 ({images.length}/4)
+                    사진 추가 ({images.length}/{MAX_IMAGES_PER_POST})
                   </div>
                 </Button>
               </label>
-              
+
               {images.length > 0 && (
                 <div className="grid grid-cols-2 gap-2">
                   {images.map((image, index) => (

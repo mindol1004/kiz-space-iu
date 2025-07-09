@@ -5,36 +5,9 @@ import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Users } from "lucide-react"
-import { GroupDetailModal } from "./group-detail-modal"
-import type { PopularGroup } from "../types/explore-types"
-
-const mockGroups: PopularGroup[] = [
-  {
-    id: "1",
-    name: "신생아 케어 모임",
-    description: "0-12개월 아기를 키우는 부모들의 모임",
-    memberCount: 1234,
-    category: "신생아",
-    isJoined: false,
-  },
-  {
-    id: "2",
-    name: "워킹맘 소통방",
-    description: "일하는 엄마들의 육아와 커리어 이야기",
-    memberCount: 856,
-    category: "워킹맘",
-    isJoined: true,
-  },
-  {
-    id: "3",
-    name: "유치원 준비반",
-    description: "유치원 입학을 준비하는 부모들",
-    memberCount: 642,
-    category: "유치원",
-    isJoined: false,
-  },
-]
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Users, MapPin } from "lucide-react"
+import { MOCK_POPULAR_GROUPS, type PopularGroup } from "@/shared/constants/common-data"
 
 export function PopularGroups() {
   const [selectedGroup, setSelectedGroup] = useState<PopularGroup | null>(null)
@@ -50,7 +23,7 @@ export function PopularGroups() {
       <div className="space-y-3">
         <h3 className="font-semibold text-lg">인기 그룹</h3>
         <div className="space-y-3">
-          {mockGroups.map((group, index) => (
+          {MOCK_POPULAR_GROUPS.map((group, index) => (
             <motion.div
               key={group.id}
               initial={{ opacity: 0, x: -20 }}

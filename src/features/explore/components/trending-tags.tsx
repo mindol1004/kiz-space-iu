@@ -4,7 +4,7 @@ import { motion } from "framer-motion"
 import { TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { TRENDING_TAGS } from "../data/explore-data"
+import { TRENDING_TAGS } from "@/shared/constants/common-data"
 
 export function TrendingTags() {
   return (

@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import { Calendar } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { WEEKLY_EVENTS } from "../data/explore-data"
+import { WEEKLY_EVENTS } from "@/shared/constants/common-data"
 
 export function WeeklyEvents() {
   return (

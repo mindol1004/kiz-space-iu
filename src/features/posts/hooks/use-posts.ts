@@ -1,12 +1,27 @@
 "use client"
 
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
-import type { PostWithAuthor } from "@/lib/schemas"
+import { DEFAULT_PAGE_SIZE, MESSAGES } from "@/shared/constants/common-data"
 
-interface PostFilters {
-  category?: string
-  ageGroup?: string
+interface Post {
+  _id: string
+  content: string
+  images: string[]
+  category: string
+  ageGroup: string
+  tags: string[]
+  authorId: string
+  author: {
+    id: string
+    nickname: string
+    avatar: string
+  }
+  likesCount: number
+  commentCount: number
+  bookmarksCount: number
+  createdAt: string
+  updatedAt: string
 }
 
 interface CreatePostData {
@@ -14,66 +29,39 @@ interface CreatePostData {
   images?: string[]
   category: string
   ageGroup: string
-  tags: string[]
+  tags?: string[]
   authorId: string
 }
 
 interface PostsResponse {
-  posts: PostWithAuthor[]
+  posts: Post[]
   hasMore: boolean
   nextPage?: number
   total: number
 }
 
-export function usePosts(filters: PostFilters = {}) {
-  const query = useInfiniteQuery({
-    queryKey: ["posts", filters],
-    queryFn: async ({ pageParam = 1 }) => {
-      const params = new URLSearchParams()
-      params.append("page", pageParam.toString())
-      params.append("limit", "10")
-      if (filters.category) params.append("category", filters.category)
-      if (filters.ageGroup) params.append("ageGroup", filters.ageGroup)
+export function usePosts(category?: string, ageGroup?: string, page = 1) {
+  return useQuery({
+    queryKey: ["posts", category, ageGroup, page],
+    queryFn: async (): Promise<PostsResponse> => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: DEFAULT_PAGE_SIZE.toString(),
+      })
+
+      if (category && category !== "all") {
+        params.append("category", category)
+      }
+      if (ageGroup && ageGroup !== "all") {
+        params.append("ageGroup", ageGroup)
+      }
 
       const response = await fetch(`/api/posts?${params}`)
-      const result = await response.json()
-
       if (!response.ok) {
-        throw new Error(result.error || "게시글을 불러오는데 실패했습니다")
+        throw new Error("Failed to fetch posts")
       }
-
-      return result as PostsResponse
+      return response.json()
     },
-    getNextPageParam: (lastPage) => {
-      return lastPage.hasMore ? lastPage.nextPage : undefined
-    },
-    initialPageParam: 1,
-  })
-
-  // 모든 페이지의 posts를 평면화
-  const posts = query.data?.pages.flatMap((page) => page.posts) || []
-
-  return {
-    ...query,
-    posts,
-    hasMore: query.data?.pages[query.data.pages.length - 1]?.hasMore || false,
-  }
-}
-
-export function usePost(postId: string) {
-  return useQuery({
-    queryKey: ["post", postId],
-    queryFn: async () => {
-      const response = await fetch(`/api/posts/${postId}`)
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || "게시글을 불러오는데 실패했습니다")
-      }
-
-      return result.post as PostWithAuthor
-    },
-    enabled: !!postId,
   })
 }
 
@@ -81,110 +69,90 @@ export function useCreatePost() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const mutation = useMutation({
+  return useMutation({
     mutationFn: async (data: CreatePostData) => {
       const response = await fetch("/api/posts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
       })
 
-      const result = await response.json()
-
       if (!response.ok) {
-        throw new Error(result.error || "게시글 작성에 실패했습니다")
+        throw new Error("Failed to create post")
       }
 
-      return result.post as PostWithAuthor
+      return response.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] })
       toast({
         title: "게시글 작성 완료",
-        description: "새 게시글이 성공적으로 작성되었습니다.",
+        description: MESSAGES.POST_CREATED,
       })
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "게시글 작성 실패",
-        description: error.message,
+        description: MESSAGES.POST_FAILED,
         variant: "destructive",
       })
     },
   })
+}
 
-  return {
-    createPost: mutation.mutateAsync,
-    isLoading: mutation.isPending,
-    ...mutation,
-  }
+export function usePost(id: string) {
+  return useQuery({
+    queryKey: ["post", id],
+    queryFn: async () => {
+      const response = await fetch(`/api/posts/${id}`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch post")
+      }
+      return response.json()
+    },
+  })
 }
 
 export function useLikePost() {
   const queryClient = useQueryClient()
-  const { toast } = useToast()
 
   return useMutation({
-    mutationFn: async ({ postId, userId }: { postId: string; userId: string }) => {
+    mutationFn: async (postId: string) => {
       const response = await fetch(`/api/posts/${postId}/like`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
       })
-
-      const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || "좋아요 처리에 실패했습니다")
+        throw new Error("Failed to like post")
       }
 
-      return result
+      return response.json()
     },
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] })
-      queryClient.invalidateQueries({ queryKey: ["post", variables.postId] })
-    },
-    onError: (error) => {
-      toast({
-        title: "오류",
-        description: error.message,
-        variant: "destructive",
-      })
     },
   })
 }
 
 export function useBookmarkPost() {
   const queryClient = useQueryClient()
-  const { toast } = useToast()
 
   return useMutation({
-    mutationFn: async ({ postId, userId }: { postId: string; userId: string }) => {
+    mutationFn: async (postId: string) => {
       const response = await fetch(`/api/posts/${postId}/bookmark`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
       })
-
-      const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || "북마크 처리에 실패했습니다")
+        throw new Error("Failed to bookmark post")
       }
 
-      return result
+      return response.json()
     },
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] })
-      queryClient.invalidateQueries({ queryKey: ["post", variables.postId] })
-      queryClient.invalidateQueries({ queryKey: ["bookmarks"] })
-    },
-    onError: (error) => {
-      toast({
-        title: "오류",
-        description: error.message,
-        variant: "destructive",
-      })
     },
   })
 }
