@@ -46,7 +46,7 @@ export function verifyRefreshToken(token: string): JWTPayload | null {
 }
 
 export function generateTokenId(): string {
-  return crypto.randomBytes(32).toString('hex')
+  return crypto.randomBytes(12).toString('hex')
 }
 
 export function getTokenExpirationDate(expiresIn: string): Date {
