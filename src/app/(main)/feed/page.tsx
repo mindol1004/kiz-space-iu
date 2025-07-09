@@ -119,7 +119,7 @@ export default function FeedPage() {
         </div>
       )}
 
-      {posts.length === 0 ? (
+      {!posts || posts.length === 0 ? (
         <div className="text-center py-8 px-4">
           <div className="mb-4">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
@@ -143,7 +143,7 @@ export default function FeedPage() {
         </div>
       ) : (
         <div className="space-y-4 px-4 pb-20">
-          {posts.map((post, index) => (
+          {posts?.map((post, index) => (
             <motion.div
               key={post.id}
               initial={{ opacity: 0, y: 20 }}
@@ -174,7 +174,7 @@ export default function FeedPage() {
             </div>
           )}
 
-          {!hasMore && posts.length > 0 && (
+          {!hasMore && posts && posts.length > 0 && (
             <div className="text-center py-4">
               <p className="text-gray-500 text-sm">모든 게시글을 확인했습니다.</p>
             </div>
