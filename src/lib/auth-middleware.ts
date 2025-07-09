@@ -106,3 +106,21 @@ export async function optionalAuth(request: NextRequest) {
   const auth = await authenticateToken(request)
   return auth.isAuthenticated ? auth.user : null
 }
+
+// Higher-order function to wrap API handlers with authentication
+export function withAuth<T extends any[]>(
+  handler: (request: NextRequest, auth: { user: any }, ...args: T) => Promise<NextResponse>
+) {
+  return async (request: NextRequest, ...args: T) => {
+    const auth = await authenticateToken(request)
+    
+    if (!auth.isAuthenticated) {
+      return NextResponse.json(
+        { error: auth.error || "Authentication required" },
+        { status: 401 }
+      )
+    }
+
+    return handler(request, { user: auth.user }, ...args)
+  }
+}

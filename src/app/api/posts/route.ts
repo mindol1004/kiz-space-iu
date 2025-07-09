@@ -1,5 +1,7 @@
+
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { withAuth } from "@/lib/auth-middleware"
 
 export async function GET(request: NextRequest) {
   try {
@@ -59,22 +61,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, auth: { user: any }) => {
   try {
     const { content, images, category, ageGroup, tags } = await request.json()
-
-    // Assuming 'auth' is available in this scope, e.g., from middleware
-    // and 'auth.user!.id' contains the authenticated user's ID.
-    // If 'auth' is not available, you'll need to implement the authentication
-    // logic to retrieve the user's ID.
 
     if (!content) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 })
     }
 
-    // Make sure auth and auth.user are valid before accessing auth.user!.id
-    // Example:  if (!auth || !auth.user || !auth.user.id) { ... }
-    // For this example, assuming auth is available for brevity
     const post = await prisma.post.create({
       data: {
         content,
@@ -82,7 +76,7 @@ export async function POST(request: NextRequest) {
         category,
         ageGroup,
         tags: tags || [],
-        authorId: auth.user!.id,
+        authorId: auth.user.id,
       },
       include: {
         author: {
@@ -115,4 +109,4 @@ export async function POST(request: NextRequest) {
     console.error("Error creating post:", error)
     return NextResponse.json({ error: "Failed to create post" }, { status: 500 })
   }
-}
+})

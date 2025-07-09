@@ -1,55 +1,91 @@
+
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { withAuth } from "@/lib/auth-middleware"
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export const POST = withAuth(async (
+  request: NextRequest,
+  auth: { user: any },
+  { params }: { params: { id: string } }
+) => {
   try {
-    const { followerId } = await request.json()
+    const { id: followingId } = params
 
-    if (!followerId) {
-      return NextResponse.json({ error: "Follower ID is required" }, { status: 400 })
+    if (auth.user.id === followingId) {
+      return NextResponse.json({ error: "Cannot follow yourself" }, { status: 400 })
     }
 
-    // 이미 팔로우 중인지 확인
+    // Check if user exists
+    const userToFollow = await prisma.user.findUnique({
+      where: { id: followingId },
+    })
+
+    if (!userToFollow) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    // Check if already following
     const existingFollow = await prisma.follow.findUnique({
       where: {
         followerId_followingId: {
-          followerId,
-          followingId: params.id,
+          followerId: auth.user.id,
+          followingId,
         },
       },
     })
 
-    let isFollowing = false
-
     if (existingFollow) {
-      // 언팔로우
+      // Unfollow
       await prisma.follow.delete({
-        where: {
-          followerId_followingId: {
-            followerId,
-            followingId: params.id,
-          },
-        },
+        where: { id: existingFollow.id },
       })
-      isFollowing = false
+
+      // Update counts
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: auth.user.id },
+          data: { followingCount: { decrement: 1 } },
+        }),
+        prisma.user.update({
+          where: { id: followingId },
+          data: { followersCount: { decrement: 1 } },
+        }),
+      ])
+
+      return NextResponse.json({
+        success: true,
+        following: false,
+        message: "Unfollowed user",
+      })
     } else {
-      // 팔로우
+      // Follow
       await prisma.follow.create({
         data: {
-          followerId,
-          followingId: params.id,
+          followerId: auth.user.id,
+          followingId,
         },
       })
-      isFollowing = true
-    }
 
-    return NextResponse.json({
-      success: true,
-      isFollowing,
-      message: isFollowing ? "Successfully followed user" : "Successfully unfollowed user",
-    })
+      // Update counts
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: auth.user.id },
+          data: { followingCount: { increment: 1 } },
+        }),
+        prisma.user.update({
+          where: { id: followingId },
+          data: { followersCount: { increment: 1 } },
+        }),
+      ])
+
+      return NextResponse.json({
+        success: true,
+        following: true,
+        message: "Followed user",
+      })
+    }
   } catch (error) {
-    console.error("Error following/unfollowing user:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Error toggling follow:", error)
+    return NextResponse.json({ error: "Failed to toggle follow" }, { status: 500 })
   }
-}
+})

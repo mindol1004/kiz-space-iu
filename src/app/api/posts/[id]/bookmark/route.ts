@@ -1,20 +1,32 @@
+
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { withAuth } from "@/lib/auth-middleware"
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export const POST = withAuth(async (
+  request: NextRequest,
+  auth: { user: any },
+  { params }: { params: { id: string } }
+) => {
   try {
-    const { userId } = await request.json()
+    const { id: postId } = params
+    const { category, notes } = await request.json()
 
-    if (!userId) {
-      return NextResponse.json({ error: "User ID is required" }, { status: 400 })
+    // Check if post exists
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+    })
+
+    if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
 
-    // Check if bookmark already exists
+    // Check if already bookmarked
     const existingBookmark = await prisma.bookmark.findUnique({
       where: {
         userId_postId: {
-          userId,
-          postId: params.id,
+          userId: auth.user.id,
+          postId,
         },
       },
     })
@@ -22,26 +34,34 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (existingBookmark) {
       // Remove bookmark
       await prisma.bookmark.delete({
-        where: {
-          userId_postId: {
-            userId,
-            postId: params.id,
-          },
-        },
+        where: { id: existingBookmark.id },
       })
-      return NextResponse.json({ success: true, isBookmarked: false })
+
+      return NextResponse.json({
+        success: true,
+        bookmarked: false,
+        message: "Bookmark removed",
+      })
     } else {
       // Add bookmark
-      await prisma.bookmark.create({
+      const bookmark = await prisma.bookmark.create({
         data: {
-          userId,
-          postId: params.id,
+          userId: auth.user.id,
+          postId,
+          category,
+          notes,
         },
       })
-      return NextResponse.json({ success: true, isBookmarked: true })
+
+      return NextResponse.json({
+        success: true,
+        bookmarked: true,
+        bookmark,
+        message: "Post bookmarked",
+      })
     }
   } catch (error) {
     console.error("Error toggling bookmark:", error)
     return NextResponse.json({ error: "Failed to toggle bookmark" }, { status: 500 })
   }
-}
+})

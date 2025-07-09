@@ -1,20 +1,31 @@
+
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { withAuth } from "@/lib/auth-middleware"
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export const POST = withAuth(async (
+  request: NextRequest,
+  auth: { user: any },
+  { params }: { params: { id: string } }
+) => {
   try {
-    const { userId } = await request.json()
+    const { id: postId } = params
 
-    if (!userId) {
-      return NextResponse.json({ error: "User ID is required" }, { status: 400 })
+    // Check if post exists
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+    })
+
+    if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
 
-    // Check if like already exists
+    // Check if already liked
     const existingLike = await prisma.like.findUnique({
       where: {
         userId_postId: {
-          userId,
-          postId: params.id,
+          userId: auth.user.id,
+          postId,
         },
       },
     })
@@ -22,26 +33,31 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (existingLike) {
       // Unlike
       await prisma.like.delete({
-        where: {
-          userId_postId: {
-            userId,
-            postId: params.id,
-          },
-        },
+        where: { id: existingLike.id },
       })
-      return NextResponse.json({ success: true, isLiked: false })
+
+      return NextResponse.json({
+        success: true,
+        liked: false,
+        message: "Post unliked",
+      })
     } else {
       // Like
       await prisma.like.create({
         data: {
-          userId,
-          postId: params.id,
+          userId: auth.user.id,
+          postId,
         },
       })
-      return NextResponse.json({ success: true, isLiked: true })
+
+      return NextResponse.json({
+        success: true,
+        liked: true,
+        message: "Post liked",
+      })
     }
   } catch (error) {
     console.error("Error toggling like:", error)
     return NextResponse.json({ error: "Failed to toggle like" }, { status: 500 })
   }
-}
+})

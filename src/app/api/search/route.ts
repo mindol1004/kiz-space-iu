@@ -1,7 +1,9 @@
+
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { withAuth } from "@/lib/auth-middleware"
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, auth: { user: any }) => {
   try {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get("q")
@@ -18,7 +20,10 @@ export async function GET(request: NextRequest) {
     if (type === "all" || type === "posts") {
       const posts = await prisma.post.findMany({
         where: {
-          OR: [{ content: { contains: query, mode: "insensitive" } }, { tags: { has: query } }],
+          OR: [
+            { content: { contains: query, mode: "insensitive" } },
+            { tags: { has: query } }
+          ],
         },
         include: {
           author: {
@@ -52,13 +57,22 @@ export async function GET(request: NextRequest) {
     if (type === "all" || type === "users") {
       const users = await prisma.user.findMany({
         where: {
-          nickname: { contains: query, mode: "insensitive" },
+          OR: [
+            { nickname: { contains: query, mode: "insensitive" } },
+            { bio: { contains: query, mode: "insensitive" } },
+            { interests: { has: query } }
+          ],
         },
         select: {
           id: true,
           nickname: true,
           avatar: true,
+          bio: true,
           location: true,
+          interests: true,
+          followersCount: true,
+          followingCount: true,
+          postsCount: true,
           verified: true,
         },
         skip: (page - 1) * limit,
@@ -73,7 +87,7 @@ export async function GET(request: NextRequest) {
         where: {
           OR: [
             { name: { contains: query, mode: "insensitive" } },
-            { description: { contains: query, mode: "insensitive" } },
+            { description: { contains: query, mode: "insensitive" } }
           ],
         },
         include: {
@@ -89,13 +103,19 @@ export async function GET(request: NextRequest) {
 
       results.groups = groups.map((group) => ({
         ...group,
-        memberCount: group._count.members,
+        membersCount: group._count.members,
       }))
     }
 
-    return NextResponse.json({ results })
+    return NextResponse.json({
+      results,
+      query,
+      type,
+      page,
+      limit,
+    })
   } catch (error) {
     console.error("Error searching:", error)
-    return NextResponse.json({ error: "Search failed" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to search" }, { status: 500 })
   }
-}
+})
