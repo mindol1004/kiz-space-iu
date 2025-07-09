@@ -22,6 +22,15 @@ export function formatDate(date: Date): string {
 
 export function getAgeGroupLabel(ageGroup: string): string {
   const labels = {
+    "PREGNANCY": "임신",
+    "NEWBORN_0_6M": "신생아 (0-6개월)",
+    "INFANT_6_12M": "영아 (6-12개월)",
+    "TODDLER_1_3Y": "유아 (1-3세)",
+    "PRESCHOOL_3_5Y": "유치원 (3-5세)",
+    "SCHOOL_5_8Y": "초등 저학년 (5-8세)",
+    "TWEEN_8_12Y": "초등 고학년 (8-12세)",
+    "ALL": "전체 연령",
+    // 기존 형식 호환성
     "0-2": "영아 (0-2세)",
     "3-5": "유아 (3-5세)",
     "6-8": "초등 저학년 (6-8세)",
@@ -33,6 +42,16 @@ export function getAgeGroupLabel(ageGroup: string): string {
 
 export function getCategoryLabel(category: string): string {
   const labels = {
+    "PREGNANCY": "임신",
+    "NEWBORN": "신생아",
+    "HEALTH": "건강/안전",
+    "EDUCATION": "교육",
+    "FOOD": "식사/영양",
+    "PLAY": "놀이/활동",
+    "PRODUCTS": "육아용품",
+    "ADVICE": "고민상담",
+    "LIFESTYLE": "라이프스타일",
+    // 기존 형식 호환성
     play: "놀이/활동",
     health: "건강/안전",
     education: "교육",

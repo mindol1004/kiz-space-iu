@@ -1,4 +1,3 @@
-
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { withAuth } from "@/lib/auth-middleware"
@@ -44,16 +43,39 @@ export async function GET(request: NextRequest) {
 
     const total = await prisma.post.count({ where })
 
+    // 현재 로그인한 사용자 ID (실제로는 JWT에서 가져와야 함)
+    // 임시로 헤더에서 가져오거나 기본값 사용
+    const currentUserId = request.headers.get('x-user-id') || null
+
+    // 게시글 데이터 변환
+    const transformedPosts = posts.map(post => ({
+      id: post.id,
+      content: post.content,
+      images: post.images,
+      category: post.category,
+      ageGroup: post.ageGroup,
+      tags: post.tags,
+      likesCount: post._count.likes,
+      commentsCount: post._count.comments,
+      bookmarksCount: post._count.bookmarks,
+      viewsCount: post.viewsCount,
+      isLiked: currentUserId ? post.likes.some(like => like.userId === currentUserId) : false,
+      isBookmarked: currentUserId ? post.bookmarks.some(bookmark => bookmark.userId === currentUserId) : false,
+      createdAt: post.createdAt.toISOString(),
+      author: {
+        id: post.author.id,
+        nickname: post.author.nickname,
+        avatar: post.author.avatar,
+      },
+    }))
+
     return NextResponse.json({
-      posts: posts.map((post) => ({
-        ...post,
-        commentCount: post._count.comments,
-        likesCount: post._count.likes,
-        bookmarksCount: post._count.bookmarks,
-      })),
-      hasMore: posts.length === limit,
-      nextPage: posts.length === limit ? page + 1 : undefined,
+      posts: transformedPosts,
       total,
+      page,
+      limit,
+      hasMore: (page - 1) * limit + posts.length < total,
+      nextPage: (page - 1) * limit + posts.length < total ? page + 1 : null,
     })
   } catch (error) {
     console.error("Error fetching posts:", error)

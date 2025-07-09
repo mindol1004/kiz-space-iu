@@ -59,8 +59,8 @@ export function PostCard({ post }: PostCardProps) {
 
     try {
       await likePostMutation.mutateAsync({
-        postId: post.id || post._id || "",
-        userId: user.id || user._id || "",
+        postId: post.id,
+        userId: user.id,
       })
     } catch (error) {
       // 에러 발생 시 원래 상태로 롤백
@@ -92,8 +92,8 @@ export function PostCard({ post }: PostCardProps) {
 
     try {
       await bookmarkPostMutation.mutateAsync({
-        postId: post.id || post._id || "",
-        userId: user.id || user._id || "",
+        postId: post.id,
+        userId: user.id,
       })
       
       toast({
