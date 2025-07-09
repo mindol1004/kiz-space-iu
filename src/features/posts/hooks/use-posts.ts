@@ -1,11 +1,13 @@
+
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 import { DEFAULT_PAGE_SIZE, MESSAGES } from "@/shared/constants/common-data"
 
 interface Post {
-  _id: string
+  id: string
+  _id?: string
   content: string
   images: string[]
   category: string
@@ -18,8 +20,12 @@ interface Post {
     avatar: string
   }
   likesCount: number
-  commentCount: number
+  commentsCount: number
+  commentCount?: number
   bookmarksCount: number
+  viewsCount?: number
+  isLiked?: boolean
+  isBookmarked?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -40,29 +46,64 @@ interface PostsResponse {
   total: number
 }
 
-export function usePosts(category?: string, ageGroup?: string, page = 1) {
-  return useQuery({
-    queryKey: ["posts", category, ageGroup, page],
-    queryFn: async (): Promise<PostsResponse> => {
-      const params = new URLSearchParams({
-        page: page.toString(),
+interface UsePostsParams {
+  category?: string
+  ageGroup?: string
+}
+
+export function usePosts(params: UsePostsParams = {}) {
+  const { category, ageGroup } = params
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+    refetch,
+    isRefetching
+  } = useInfiniteQuery({
+    queryKey: ["posts", category, ageGroup],
+    queryFn: async ({ pageParam = 1 }): Promise<PostsResponse> => {
+      const searchParams = new URLSearchParams({
+        page: pageParam.toString(),
         limit: DEFAULT_PAGE_SIZE.toString(),
       })
 
       if (category && category !== "all" && typeof category === "string") {
-        params.append("category", category)
+        searchParams.append("category", category)
       }
       if (ageGroup && ageGroup !== "all" && typeof ageGroup === "string") {
-        params.append("ageGroup", ageGroup)
+        searchParams.append("ageGroup", ageGroup)
       }
 
-      const response = await fetch(`/api/posts?${params}`)
+      const response = await fetch(`/api/posts?${searchParams}`)
       if (!response.ok) {
         throw new Error("Failed to fetch posts")
       }
       return response.json()
     },
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.nextPage : undefined
+    },
+    initialPageParam: 1,
   })
+
+  // Flatten all pages into a single array
+  const posts = data?.pages.flatMap(page => page.posts) || []
+  const hasMore = hasNextPage
+
+  return {
+    posts,
+    isLoading,
+    error,
+    hasMore,
+    fetchNextPage,
+    isFetchingNextPage,
+    refetch,
+    isRefetching
+  }
 }
 
 export function useCreatePost() {
@@ -115,13 +156,22 @@ export function usePost(id: string) {
   })
 }
 
+interface LikePostParams {
+  postId: string
+  userId: string
+}
+
 export function useLikePost() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (postId: string) => {
+    mutationFn: async ({ postId, userId }: LikePostParams) => {
       const response = await fetch(`/api/posts/${postId}/like`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
       })
 
       if (!response.ok) {
@@ -136,13 +186,22 @@ export function useLikePost() {
   })
 }
 
+interface BookmarkPostParams {
+  postId: string
+  userId: string
+}
+
 export function useBookmarkPost() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (postId: string) => {
+    mutationFn: async ({ postId, userId }: BookmarkPostParams) => {
       const response = await fetch(`/api/posts/${postId}/bookmark`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId }),
       })
 
       if (!response.ok) {
