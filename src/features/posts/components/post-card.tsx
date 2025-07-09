@@ -59,8 +59,11 @@ export function PostCard({ post }: PostCardProps) {
     const previousLikeCount = likeCount
 
     // 낙관적 업데이트
-    setIsLiked(!isLiked)
-    setLikeCount(prev => isLiked ? prev - 1 : prev + 1)
+    const newIsLiked = !isLiked
+    const newLikeCount = isLiked ? likeCount - 1 : likeCount + 1
+    
+    setIsLiked(newIsLiked)
+    setLikeCount(newLikeCount)
 
     try {
       const result = await likePostMutation.mutateAsync({
@@ -68,9 +71,11 @@ export function PostCard({ post }: PostCardProps) {
         userId: user.id,
       })
       
-      // API 응답으로 정확한 상태 업데이트
-      setIsLiked(result.liked)
-      setLikeCount(result.likesCount)
+      // API 응답이 낙관적 업데이트와 다를 경우에만 상태 조정
+      if (result.liked !== newIsLiked || result.likesCount !== newLikeCount) {
+        setIsLiked(result.liked)
+        setLikeCount(result.likesCount)
+      }
     } catch (error) {
       // 에러 발생 시 원래 상태로 롤백
       setIsLiked(previousIsLiked)

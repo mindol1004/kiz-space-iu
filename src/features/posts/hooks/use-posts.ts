@@ -180,8 +180,8 @@ export function useLikePost() {
       return response.json()
     },
     onSuccess: (data, variables) => {
-      // 특정 게시글의 좋아요 상태를 즉시 업데이트
-      queryClient.setQueryData(["posts"], (oldData: any) => {
+      // 모든 posts 쿼리 키에 대해 데이터 업데이트 (카테고리, 연령대별 필터링된 쿼리들 포함)
+      queryClient.setQueriesData({ queryKey: ["posts"] }, (oldData: any) => {
         if (!oldData) return oldData
         
         return {
@@ -201,8 +201,17 @@ export function useLikePost() {
         }
       })
       
-      // 백그라운드에서 전체 데이터 새로고침
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
+      // 개별 post 쿼리도 업데이트
+      queryClient.setQueryData(["post", variables.postId], (oldPost: any) => {
+        if (!oldPost) return oldPost
+        return {
+          ...oldPost,
+          isLiked: data.liked,
+          likesCount: data.likesCount
+        }
+      })
+      
+      // invalidateQueries 제거 - 자동 refetch 방지
     },
   })
 }
