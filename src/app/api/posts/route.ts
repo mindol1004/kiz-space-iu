@@ -13,10 +13,10 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
     if (category && category !== "all") {
-      where.category = category
+      where.category = category.toUpperCase()
     }
     if (ageGroup && ageGroup !== "all") {
-      where.ageGroup = ageGroup
+      where.ageGroup = ageGroup.toUpperCase().replace('-', '_')
     }
 
     const posts = await prisma.post.findMany({
@@ -73,8 +73,8 @@ export const POST = withAuth(async (request: NextRequest, auth: { user: any }) =
       data: {
         content,
         images: images || [],
-        category,
-        ageGroup,
+        category: category.toUpperCase(),
+        ageGroup: ageGroup.toUpperCase().replace('-', '_'),
         tags: tags || [],
         authorId: auth.user.id,
       },
