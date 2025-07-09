@@ -1,76 +1,44 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { withAuth } from "@/lib/auth-middleware"
 
-export async function GET(request: NextRequest, { params }: { params: { roomId: string } }) {
+export const GET = withAuth(async (request: NextRequest, auth: { user: any }, { params }: { params: { roomId: string } }) => {
   try {
-    const { roomId } = params
-
-    // 그룹 채팅방인지 확인
-    const group = await prisma.group.findUnique({
-      where: { id: roomId },
+    const chatRoom = await prisma.chatRoom.findUnique({
+      where: {
+        id: params.roomId
+      },
       include: {
-        members: {
+        participants: {
           include: {
             user: {
               select: {
                 id: true,
                 nickname: true,
-                avatar: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            members: true,
-          },
-        },
-      },
+                avatar: true
+              }
+            }
+          }
+        }
+      }
     })
 
-    if (group) {
-      // 그룹 채팅방 정보 반환
-      return NextResponse.json({
-        id: group.id,
-        name: group.name,
-        type: "group",
-        lastMessage: "마지막 메시지", // 실제로는 최근 메시지 조회
-        lastMessageTime: "방금 전",
-        unreadCount: 0, // 실제로는 읽지 않은 메시지 수 계산
-        participants: group._count.members,
-        avatar: group.image,
-        isOnline: true,
-      })
+    if (!chatRoom) {
+      return NextResponse.json({ error: "채팅방을 찾을 수 없습니다" }, { status: 404 })
     }
 
-    // 개인 채팅방인 경우 사용자 정보 조회
-    const user = await prisma.user.findUnique({
-      where: { id: roomId },
-      select: {
-        id: true,
-        nickname: true,
-        avatar: true,
-        isOnline: true,
-      },
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: "Chat room not found" }, { status: 404 })
+    // 참여자인지 확인
+    const isParticipant = chatRoom.participants.some(p => p.userId === auth.user.id)
+    if (!isParticipant) {
+      return NextResponse.json({ error: "채팅방에 참여하지 않았습니다" }, { status: 403 })
     }
 
     return NextResponse.json({
-      id: user.id,
-      name: user.nickname,
-      type: "direct",
-      lastMessage: "마지막 메시지", // 실제로는 최근 메시지 조회
-      lastMessageTime: "방금 전",
-      unreadCount: 0, // 실제로는 읽지 않은 메시지 수 계산
-      participants: 2,
-      avatar: user.avatar,
-      isOnline: user.isOnline,
+      success: true,
+      chatRoom
     })
   } catch (error) {
     console.error("Error fetching chat room:", error)
-    return NextResponse.json({ error: "Failed to fetch chat room" }, { status: 500 })
+    return NextResponse.json({ error: "채팅방 정보를 불러오는데 실패했습니다" }, { status: 500 })
   }
-}
+})

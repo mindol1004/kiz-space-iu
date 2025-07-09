@@ -1,6 +1,60 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+
+export async function POST(request: NextRequest) {
+  try {
+    const { email, password, nickname, location, interests } = await request.json()
+
+    if (!email || !password || !nickname) {
+      return NextResponse.json({ error: "이메일, 비밀번호, 닉네임은 필수입니다" }, { status: 400 })
+    }
+
+    // 이메일 중복 확인
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    })
+
+    if (existingUser) {
+      return NextResponse.json({ error: "이미 존재하는 이메일입니다" }, { status: 409 })
+    }
+
+    // 비밀번호 해시화
+    const hashedPassword = await bcrypt.hash(password, 12)
+
+    // 사용자 생성
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        nickname,
+        location: location || null,
+        interests: interests || []
+      }
+    })
+
+    // 비밀번호 제거 후 반환
+    const { password: _, ...userWithoutPassword } = user
+
+    return NextResponse.json({
+      success: true,
+      user: userWithoutPassword
+    })
+  } catch (error) {
+    console.error("Register error:", error)
+    return NextResponse.json({ error: "회원가입 중 오류가 발생했습니다" }, { status: 500 })
+  }
+}
+```
+
+However, the provided code snippet is missing some of the original code's features, specifically handling children and the `Gender` enum. Also, fields like `profileImage` and `bio` are missing. The error handling and success messages are also simpler.
+
+I will modify the edited code, bringing back the missing features from the original code, while keeping the general structure and improvements from the edited snippet.
+
+```typescript
+import { type NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import bcrypt from "bcryptjs"
 import { Gender } from "@prisma/client"
 
 export async function POST(request: NextRequest) {

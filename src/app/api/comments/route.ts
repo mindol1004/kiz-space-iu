@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { withAuth } from "@/lib/auth-middleware"
 
-export const GET = withAuth(async (request: NextRequest, auth: { user: any }) => {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const postId = searchParams.get("postId")
@@ -11,21 +11,21 @@ export const GET = withAuth(async (request: NextRequest, auth: { user: any }) =>
     const limit = Number.parseInt(searchParams.get("limit") || "10")
 
     if (!postId) {
-      return NextResponse.json({ error: "Post ID is required" }, { status: 400 })
+      return NextResponse.json({ error: "포스트 ID가 필요합니다" }, { status: 400 })
     }
 
     const comments = await prisma.comment.findMany({
       where: {
         postId,
-        parentId: null, // Only top-level comments
+        parentId: null // 최상위 댓글만
       },
       include: {
         author: {
           select: {
             id: true,
             nickname: true,
-            avatar: true,
-          },
+            avatar: true
+          }
         },
         replies: {
           include: {
@@ -33,82 +33,62 @@ export const GET = withAuth(async (request: NextRequest, auth: { user: any }) =>
               select: {
                 id: true,
                 nickname: true,
-                avatar: true,
-              },
+                avatar: true
+              }
             },
             _count: {
               select: {
-                likes: true,
-              },
-            },
+                likes: true
+              }
+            }
           },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: "asc" }
         },
         _count: {
           select: {
             likes: true,
-            replies: true,
-          },
-        },
+            replies: true
+          }
+        }
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
-      take: limit,
+      take: limit
     })
 
     const total = await prisma.comment.count({
       where: {
         postId,
-        parentId: null,
-      },
+        parentId: null
+      }
     })
 
     return NextResponse.json({
-      comments: comments.map((comment) => ({
+      comments: comments.map(comment => ({
         ...comment,
         likesCount: comment._count.likes,
         repliesCount: comment._count.replies,
-        replies: comment.replies.map((reply) => ({
+        replies: comment.replies.map(reply => ({
           ...reply,
-          likesCount: reply._count.likes,
-        })),
+          likesCount: reply._count.likes
+        }))
       })),
       hasMore: comments.length === limit,
       nextPage: comments.length === limit ? page + 1 : undefined,
-      total,
+      total
     })
   } catch (error) {
     console.error("Error fetching comments:", error)
-    return NextResponse.json({ error: "Failed to fetch comments" }, { status: 500 })
+    return NextResponse.json({ error: "댓글을 불러오는데 실패했습니다" }, { status: 500 })
   }
-})
+}
 
 export const POST = withAuth(async (request: NextRequest, auth: { user: any }) => {
   try {
     const { postId, content, parentId } = await request.json()
 
     if (!postId || !content) {
-      return NextResponse.json({ error: "Post ID and content are required" }, { status: 400 })
-    }
-
-    // Check if post exists
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-    })
-
-    if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 })
-    }
-
-    // If parentId is provided, check if parent comment exists
-    if (parentId) {
-      const parentComment = await prisma.comment.findUnique({
-        where: { id: parentId },
-      })
-
-      if (!parentComment) {
-        return NextResponse.json({ error: "Parent comment not found" }, { status: 404 })
-      }
+      return NextResponse.json({ error: "포스트 ID와 내용이 필요합니다" }, { status: 400 })
     }
 
     const comment = await prisma.comment.create({
@@ -116,23 +96,33 @@ export const POST = withAuth(async (request: NextRequest, auth: { user: any }) =
         postId,
         authorId: auth.user.id,
         content,
-        parentId,
+        parentId: parentId || null
       },
       include: {
         author: {
           select: {
             id: true,
             nickname: true,
-            avatar: true,
-          },
+            avatar: true
+          }
         },
         _count: {
           select: {
             likes: true,
-            replies: true,
-          },
-        },
-      },
+            replies: true
+          }
+        }
+      }
+    })
+
+    // 포스트의 댓글 카운트 업데이트
+    await prisma.post.update({
+      where: { id: postId },
+      data: {
+        commentsCount: {
+          increment: 1
+        }
+      }
     })
 
     return NextResponse.json({
@@ -140,11 +130,11 @@ export const POST = withAuth(async (request: NextRequest, auth: { user: any }) =
       comment: {
         ...comment,
         likesCount: comment._count.likes,
-        repliesCount: comment._count.replies,
-      },
+        repliesCount: comment._count.replies
+      }
     })
   } catch (error) {
     console.error("Error creating comment:", error)
-    return NextResponse.json({ error: "Failed to create comment" }, { status: 500 })
+    return NextResponse.json({ error: "댓글 생성에 실패했습니다" }, { status: 500 })
   }
 })
