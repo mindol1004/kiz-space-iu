@@ -49,10 +49,10 @@ export function usePosts(category?: string, ageGroup?: string, page = 1) {
         limit: DEFAULT_PAGE_SIZE.toString(),
       })
 
-      if (category && category !== "all") {
+      if (category && category !== "all" && typeof category === "string") {
         params.append("category", category)
       }
-      if (ageGroup && ageGroup !== "all") {
+      if (ageGroup && ageGroup !== "all" && typeof ageGroup === "string") {
         params.append("ageGroup", ageGroup)
       }
 

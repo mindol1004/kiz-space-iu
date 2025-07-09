@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
     const limit = Number.parseInt(searchParams.get("limit") || "10")
 
     const where: any = {}
-    if (category && category !== "all") {
+    if (category && category !== "all" && typeof category === "string") {
       where.category = category.toUpperCase()
     }
-    if (ageGroup && ageGroup !== "all") {
+    if (ageGroup && ageGroup !== "all" && typeof ageGroup === "string") {
       where.ageGroup = ageGroup.toUpperCase().replace('-', '_')
     }
 
