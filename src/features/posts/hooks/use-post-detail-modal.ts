@@ -23,7 +23,6 @@ export function usePostDetailModal(post: Post) {
       await createCommentMutation.mutateAsync({
         postId: post.id,
         content: comment.trim(),
-        authorId: user.id,
       })
       setComment("")
     } catch (error) {
