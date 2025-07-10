@@ -27,10 +27,7 @@ export default function FeedPage() {
     ageGroup: selectedAgeGroup !== "all" ? selectedAgeGroup : undefined,
   })
 
-  // 필터가 변경될 때마다 데이터 새로고침
-  useEffect(() => {
-    refetch()
-  }, [selectedCategory, selectedAgeGroup, refetch])
+  // React Query가 queryKey 변경을 감지하여 자동으로 refetch하므로 useEffect 제거
 
   const handleRefresh = () => {
     refetch()
