@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Eye } from "lucide-react"
+import { MoreHorizontal } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { PostDetailModal } from "./post-detail-modal"
 import { usePostCard } from "../hooks/use-post-card"
 import { Post } from "../types/post-type"
 import { getCategoryLabel, getAgeGroupLabel } from "@/shared/constants/common-data"
+import { PostActions } from "./post-actions"
 
 interface PostCardProps {
   post: Post
@@ -19,17 +20,10 @@ interface PostCardProps {
 
 export function PostCard({ post }: PostCardProps) {
   const {
-    isLiked,
-    isBookmarked,
-    likeCount,
     showDetailModal,
     setShowDetailModal,
-    handleLike,
-    handleBookmark,
-    handleShare,
     handleCardClick,
     getTruncatedContent,
-    isLoading,
   } = usePostCard(post)
 
   const truncatedContent = getTruncatedContent()
@@ -101,50 +95,12 @@ export function PostCard({ post }: PostCardProps) {
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-3 border-t">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLike}
-                  disabled={isLoading}
-                  className={`flex items-center space-x-1 ${isLiked ? "text-red-500" : "text-gray-500"}`}
-                >
-                  <motion.div whileTap={{ scale: 0.8 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
-                    <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-                  </motion.div>
-                  <span className="text-xs">{likeCount}</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center space-x-1 text-gray-500"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <span className="text-xs">{post.commentsCount || 0}</span>
-                </Button>
-                {post.viewsCount !== undefined && (
-                  <div className="flex items-center space-x-1 text-gray-500">
-                    <Eye className="h-4 w-4" />
-                    <span className="text-xs">{post.viewsCount}</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBookmark}
-                  disabled={isLoading}
-                  className={`${isBookmarked ? "text-yellow-500" : "text-gray-500"}`}
-                >
-                  <Bookmark className={`h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} />
-                </Button>
-                <Button variant="ghost" size="sm" className="text-gray-500" onClick={handleShare}>
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="pt-3 border-t">
+              <PostActions 
+                post={post} 
+                variant="card"
+                onCommentClick={(e) => e?.stopPropagation()}
+              />
             </div>
           </CardContent>
         </Card>

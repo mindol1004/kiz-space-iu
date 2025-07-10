@@ -1,74 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useAuthStore } from "@/shared/stores/auth-store"
-import { PostsAPI } from "../api/post-api"
 import { Post } from "../types/post-type"
 
 export function usePostCard(post: Post) {
-  const { user } = useAuthStore()
-  const queryClient = useQueryClient()
-  const [showDetailModal, setShowDetailModal] = useState<boolean>(false)
-
-  const likeMutation = useMutation({
-    mutationFn: () => PostsAPI.likePost(post.id, user!.id),
-    onSuccess: (data) => {
-      queryClient.setQueryData(["post", post.id], (oldData: Post) => ({
-        ...oldData,
-        isLiked: data.liked,
-        likesCount: data.likesCount,
-      }))
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-    },
-  })
-
-  const bookmarkMutation = useMutation({
-    mutationFn: () => PostsAPI.bookmarkPost(post.id, user!.id),
-    onSuccess: (data) => {
-      queryClient.setQueryData(["post", post.id], (oldData: Post) => ({
-        ...oldData,
-        isBookmarked: data.bookmarked,
-        bookmarksCount: data.bookmarksCount,
-      }))
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-    },
-  })
-
-  const handleLike = (e?: React.MouseEvent) => {
-    e?.stopPropagation()
-    if (!user) {
-      alert("로그인이 필요합니다.")
-      return
-    }
-    likeMutation.mutate()
-  }
-
-  const handleBookmark = (e?: React.MouseEvent) => {
-    e?.stopPropagation()
-    if (!user) {
-      alert("로그인이 필요합니다.")
-      return
-    }
-    bookmarkMutation.mutate()
-  }
-
-  const handleShare = (e?: React.MouseEvent) => {
-    e?.stopPropagation()
-    if (navigator.share) {
-      navigator.share({
-        title: "게시글 공유",
-        text: post.content,
-        url: window.location.href,
-      })
-    } else {
-      // 폴백: 클립보드에 복사
-      navigator.clipboard.writeText(window.location.href)
-      alert("링크가 클립보드에 복사되었습니다.")
-    }
-  }
-
-  const handleCardClick = () => {
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false)atioconst handleCardClick = () => {
     setShowDetailModal(true)
   }
 
@@ -79,27 +15,11 @@ export function usePostCard(post: Post) {
   }
 
   return {
-    // Post state
-    isLiked: post.isLiked || false,
-    isBookmarked: post.isBookmarked || false,
-    likeCount: post.likesCount || 0,
-    
-    // Modal state
     showDetailModal,
     setShowDetailModal,
-    
-    // Handlers
-    handleLike,
-    handleBookmark,
-    handleShare,
     handleCardClick,
-    
-    // Utils
     getTruncatedContent,
-    
-    // Loading states
-    isLiking: likeMutation.isPending,
-    isBookmarking: bookmarkMutation.isPending,
+  }Mutation.isPending,
     isLoading: likeMutation.isPending || bookmarkMutation.isPending,
   }
 }

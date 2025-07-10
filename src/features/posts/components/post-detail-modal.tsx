@@ -1,16 +1,18 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
+import { useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { Heart, MessageCircle, Bookmark, Share2, Send } from "lucide-react"
+import { Send } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { Post } from "../types/post-type"
 import { getCategoryLabel, getAgeGroupLabel } from "@/shared/constants/common-data"
 import { usePostDetailModal } from "../hooks/use-post-detail-modal"
+import { PostActions } from "./post-actions"
 
 interface PostDetailModalProps {
   post: Post
@@ -20,16 +22,19 @@ interface PostDetailModalProps {
 
 export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalProps) {
   const {
-    isLiked,
-    isBookmarked,
-    likeCount,
     comment,
     comments,
     setComment,
-    handleLike,
-    handleBookmark,
     handleCommentSubmit,
+    incrementViews,
   } = usePostDetailModal(post)
+
+  // 모달이 열릴 때 조회수 증가
+  useEffect(() => {
+    if (open) {
+      incrementViews()
+    }
+  }, [open, incrementViews])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -85,35 +90,12 @@ export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalPro
           </div>
 
           {/* 액션 버튼들 */}
-          <div className="flex items-center justify-between py-3 border-t border-b">
-            <div className="flex items-center space-x-6">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLike}
-                className={`flex items-center space-x-2 ${isLiked ? "text-red-500" : "text-gray-500"}`}
-              >
-                <Heart className={`h-5 w-5 ${isLiked ? "fill-current" : ""}`} />
-                <span>{likeCount}</span>
-              </Button>
-              <Button variant="ghost" size="sm" className="flex items-center space-x-2 text-gray-500">
-                <MessageCircle className="h-5 w-5" />
-                <span>{comments?.comments?.length || 0}</span>
-              </Button>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBookmark}
-                className={`${isBookmarked ? "text-yellow-500" : "text-gray-500"}`}
-              >
-                <Bookmark className={`h-5 w-5 ${isBookmarked ? "fill-current" : ""}`} />
-              </Button>
-              <Button variant="ghost" size="sm" className="text-gray-500">
-                <Share2 className="h-5 w-5" />
-              </Button>
-            </div>
+          <div className="py-3 border-t border-b">
+            <PostActions 
+              post={post} 
+              variant="modal"
+              commentsCount={comments?.comments?.length || 0}
+            />
           </div>
 
           {/* 댓글 목록 */}

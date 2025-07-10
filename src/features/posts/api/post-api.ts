@@ -67,8 +67,8 @@ export class PostsAPI {
     }
   }
 
-  // 게시글 조회수 증가
-  static async incrementViews(postId: string): Promise<void> {
-    await apiClient.post(`/posts/${postId}/view`)
+  static async incrementViews(postId: string, userId: string) {
+    const response = await apiClient.post(`/posts/${postId}/views`, { userId })
+    return response.data
   }
 }
