@@ -63,11 +63,18 @@ export function usePostCard(post: Post) {
     }
   }
 
+  const getTruncatedContent = () => {
+    const maxLength = 200
+    if (post.content.length <= maxLength) return post.content
+    return post.content.slice(0, maxLength) + "..."
+  }
+
   return {
     handleLike,
     handleBookmark,
     handleShare,
     isLiking: likeMutation.isPending,
     isBookmarking: bookmarkMutation.isPending,
+    getTruncatedContent,
   }
 }
