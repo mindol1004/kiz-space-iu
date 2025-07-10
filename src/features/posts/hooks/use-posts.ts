@@ -3,54 +3,14 @@
 import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 import { DEFAULT_PAGE_SIZE, MESSAGES } from "@/shared/constants/common-data"
-
-interface Post {
-  id: string
-  _id?: string
-  content: string
-  images: string[]
-  category: "play" | "health" | "education" | "food" | "products" | "advice"
-  ageGroup: "0-2" | "3-5" | "6-8" | "9-12" | "all"
-  tags: string[]
-  likes: string[]
-  bookmarks: string[]
-  authorId: string
-  author: {
-    id: string
-    nickname: string
-    avatar: string
-  }
-  likesCount: number
-  commentsCount: number
-  commentCount?: number
-  bookmarksCount: number
-  viewsCount?: number
-  isLiked?: boolean
-  isBookmarked?: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-interface CreatePostData {
-  content: string
-  images?: string[]
-  category: string
-  ageGroup: string
-  tags?: string[]
-  authorId: string
-}
-
-interface PostsResponse {
-  posts: Post[]
-  hasMore: boolean
-  nextPage?: number
-  total: number
-}
-
-interface UsePostsParams {
-  category?: string
-  ageGroup?: string
-}
+import { 
+  Post, 
+  CreatePostData, 
+  PostsResponse, 
+  UsePostsParams, 
+  LikePostParams, 
+  BookmarkPostParams 
+} from "../types/post-type"
 
 export function usePosts(params: UsePostsParams = {}) {
   const { category, ageGroup } = params
@@ -157,11 +117,6 @@ export function usePost(id: string) {
   })
 }
 
-interface LikePostParams {
-  postId: string
-  userId: string
-}
-
 export function useLikePost() {
   const queryClient = useQueryClient()
 
@@ -185,7 +140,7 @@ export function useLikePost() {
       // 모든 posts 쿼리 키에 대해 데이터 업데이트 (카테고리, 연령대별 필터링된 쿼리들 포함)
       queryClient.setQueriesData({ queryKey: ["posts"] }, (oldData: any) => {
         if (!oldData) return oldData
-        
+
         return {
           ...oldData,
           pages: oldData.pages.map((page: any) => ({
@@ -202,7 +157,7 @@ export function useLikePost() {
           }))
         }
       })
-      
+
       // 개별 post 쿼리도 업데이트
       queryClient.setQueryData(["post", variables.postId], (oldPost: any) => {
         if (!oldPost) return oldPost
@@ -212,15 +167,8 @@ export function useLikePost() {
           likesCount: data.likesCount
         }
       })
-      
-      // invalidateQueries 제거 - 자동 refetch 방지
     },
   })
-}
-
-interface BookmarkPostParams {
-  postId: string
-  userId: string
 }
 
 export function useBookmarkPost() {

@@ -13,12 +13,14 @@ import { useCreatePost } from "../hooks/use-posts"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
 import { CATEGORIES, AGE_GROUPS, MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/constants/common-data"
+import { PostCategory, AgeGroup } from "../types/post-type" // Importing the new types
+import { POST_CATEGORIES, AGE_GROUPS as AGE_GROUP_CONSTANTS } from "@/shared/constants/common-data";
 
 export function CreatePostDialog() {
   const [open, setOpen] = useState(false)
   const [content, setContent] = useState("")
-  const [category, setCategory] = useState("")
-  const [ageGroup, setAgeGroup] = useState("")
+  const [category, setCategory] = useState<PostCategory | "">("")
+  const [ageGroup, setAgeGroup] = useState<AgeGroup | "">("")
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
   const [images, setImages] = useState<string[]>([])
@@ -108,8 +110,8 @@ export function CreatePostDialog() {
     try {
       await createPost({
         content: content.trim(),
-        category,
-        ageGroup,
+        category: category as PostCategory,
+        ageGroup: ageGroup as AgeGroup,
         tags,
         authorId: user.id,
         images,
@@ -121,6 +123,21 @@ export function CreatePostDialog() {
       console.error("Failed to create post:", error)
     }
   }
+
+  const categories = Object.entries(POST_CATEGORIES)
+    .filter(([key]) => key !== "PREGNANCY") // 임신 카테고리 제외
+    .map(([key, label]) => ({
+      value: key,
+      label
+    }))
+
+  const ageGroups = Object.entries(AGE_GROUP_CONSTANTS)
+    .filter(([key]) => key !== "PREGNANCY") // 임신 연령대 제외
+    .map(([key, label]) => ({
+      value: key,
+      label
+    }))
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -151,12 +168,12 @@ export function CreatePostDialog() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">카테고리 *</label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={category} onValueChange={(value) => setCategory(value as PostCategory)}>
                 <SelectTrigger>
                   <SelectValue placeholder="카테고리 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
                     </SelectItem>
@@ -166,12 +183,12 @@ export function CreatePostDialog() {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">연령대 *</label>
-              <Select value={ageGroup} onValueChange={setAgeGroup}>
+              <Select value={ageGroup} onValueChange={(value) => setAgeGroup(value as AgeGroup)}>
                 <SelectTrigger>
                   <SelectValue placeholder="연령대 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {AGE_GROUPS.map((age) => (
+                  {ageGroups.map((age) => (
                     <SelectItem key={age.value} value={age.value}>
                       {age.label}
                     </SelectItem>

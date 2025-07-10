@@ -1,59 +1,24 @@
-
 "use client"
 
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { X } from "lucide-react"
 import { usePostStore } from "@/shared/stores/post-store"
-import { FILTER_CATEGORIES, FILTER_AGE_GROUPS } from "@/shared/constants/common-data"
+import { POST_CATEGORIES, AGE_GROUPS } from "../types/post-type"
 
-export function PostFilters() {
-  const { selectedCategory, selectedAgeGroup, setSelectedCategory, setSelectedAgeGroup } = usePostStore()
+const categories = [
+  { value: "all", label: "전체" },
+  ...Object.entries(POST_CATEGORIES).map(([key, label]) => ({
+    value: key.toLowerCase(),
+    label
+  }))
+]
 
-  return (
-    <div className="space-y-4 p-4 bg-white rounded-lg shadow-sm">
-      <div>
-        <h3 className="font-medium text-sm text-gray-700 mb-3">카테고리</h3>
-        <div className="flex flex-wrap gap-2">
-          {FILTER_CATEGORIES.map((category) => (
-            <motion.div key={category.value} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                variant={selectedCategory === category.value ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category.value)}
-                className={
-                  selectedCategory === category.value
-                    ? "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                    : ""
-                }
-              >
-                {category.label}
-              </Button>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="font-medium text-sm text-gray-700 mb-3">연령대</h3>
-        <div className="flex flex-wrap gap-2">
-          {FILTER_AGE_GROUPS.map((ageGroup) => (
-            <motion.div key={ageGroup.value} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Badge
-                variant={selectedAgeGroup === ageGroup.value ? "default" : "outline"}
-                className={`cursor-pointer ${
-                  selectedAgeGroup === ageGroup.value
-                    ? "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                    : ""
-                }`}
-                onClick={() => setSelectedAgeGroup(ageGroup.value)}
-              >
-                {ageGroup.label}
-              </Badge>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
+const ageGroups = [
+  { value: "all", label: "전체" },
+  ...Object.entries(AGE_GROUPS).filter(([key]) => key !== "ALL").map(([key, label]) => ({
+    value: key.toLowerCase().replace('_', '-'),
+    label
+  }))
+]

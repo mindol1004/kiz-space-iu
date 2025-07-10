@@ -1,4 +1,3 @@
-
 "use client"
 
 import type React from "react"
@@ -10,15 +9,15 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Eye } from "lucide-react"
-import { formatDate, getAgeGroupLabel, getCategoryLabel } from "@/lib/utils"
+import { formatDate } from "@/lib/utils"
 import { PostDetailModal } from "./post-detail-modal"
 import { useLikePost, useBookmarkPost } from "../hooks/use-posts"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
-import type { PostWithAuthor } from "@/lib/schemas"
+import { Post, getCategoryLabel, getAgeGroupLabel } from "../types/post-type"
 
 interface PostCardProps {
-  post: PostWithAuthor
+  post: Post
 }
 
 export function PostCard({ post }: PostCardProps) {
@@ -61,7 +60,7 @@ export function PostCard({ post }: PostCardProps) {
     // 낙관적 업데이트
     const newIsLiked = !isLiked
     const newLikeCount = isLiked ? likeCount - 1 : likeCount + 1
-    
+
     setIsLiked(newIsLiked)
     setLikeCount(newLikeCount)
 
@@ -70,7 +69,7 @@ export function PostCard({ post }: PostCardProps) {
         postId: post.id,
         userId: user.id,
       })
-      
+
       // API 응답이 낙관적 업데이트와 다를 경우에만 상태 조정
       if (result.liked !== newIsLiked || result.likesCount !== newLikeCount) {
         setIsLiked(result.liked)
@@ -109,7 +108,7 @@ export function PostCard({ post }: PostCardProps) {
         postId: post.id,
         userId: user.id,
       })
-      
+
       toast({
         title: isBookmarked ? "북마크 해제" : "북마크 추가",
         description: isBookmarked ? "북마크에서 제거되었습니다." : "북마크에 추가되었습니다.",
@@ -127,7 +126,7 @@ export function PostCard({ post }: PostCardProps) {
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -194,12 +193,8 @@ export function PostCard({ post }: PostCardProps) {
               </Button>
             </div>
             <div className="flex gap-2 mt-2">
-              <Badge variant="secondary" className="text-xs">
-                {getCategoryLabel(post.category)}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                {getAgeGroupLabel(post.ageGroup)}
-              </Badge>
+              <Badge variant="secondary">{getCategoryLabel(post.category)}</Badge>
+              <Badge variant="outline">{getAgeGroupLabel(post.ageGroup)}</Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
