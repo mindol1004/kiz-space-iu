@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -18,7 +19,7 @@ export function usePostCard(post: Post) {
     setShowDetailModal(true)
   }
 
-  const getTruncatedContent = (maxLength: number = 150) => {
+  const getTruncatedContent = (maxLength: number = 100) => {
     if (post.content.length <= maxLength) {
       return post.content
     } else {

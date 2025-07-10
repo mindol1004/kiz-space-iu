@@ -14,11 +14,11 @@ import { useLogin } from "../hooks/use-auth"
 export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const { login, isPending } = useLogin()
+  const loginMutation = useLogin()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await login({ email, password })
+    loginMutation.mutate({ email, password })
   }
 
   return (
@@ -82,9 +82,9 @@ export function LoginForm() {
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                disabled={isPending}
+                disabled={loginMutation.isPending}
               >
-                {isPending ? "로그인 중..." : "로그인"}
+                {loginMutation.isPending ? "로그인 중..." : "로그인"}
               </Button>
             </form>
             <div className="mt-6 text-center">
