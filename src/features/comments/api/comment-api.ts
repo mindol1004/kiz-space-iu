@@ -1,32 +1,11 @@
 
 import { apiClient } from '@/lib/axios-config'
-
-export interface Comment {
-  id: string
-  content: string
-  author: {
-    id: string
-    nickname: string
-    avatar?: string
-  }
-  createdAt: string
-  postId: string
-  parentId?: string
-  replies?: Comment[]
-  likesCount?: number
-  repliesCount?: number
-}
-
-export interface CreateCommentData {
-  content: string
-  postId: string
-  parentId?: string
-}
-
-export interface CommentsResponse {
-  comments: Comment[]
-  total: number
-}
+import { 
+  Comment, 
+  CreateCommentData, 
+  CommentsResponse, 
+  CommentLikeResponse 
+} from '../types/comment-types'
 
 export class CommentsAPI {
   // 댓글 목록 조회
@@ -47,7 +26,7 @@ export class CommentsAPI {
   }
 
   // 댓글 좋아요 토글
-  static async likeComment(commentId: string): Promise<{ liked: boolean; likesCount: number }> {
+  static async likeComment(commentId: string): Promise<CommentLikeResponse> {
     const response = await apiClient.post<{ success: boolean; liked: boolean; likesCount: number }>(`/comments/${commentId}/like`)
     return {
       liked: response.data.liked,

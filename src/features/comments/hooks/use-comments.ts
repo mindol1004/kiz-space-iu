@@ -1,10 +1,10 @@
-
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/shared/stores/auth-store"
-import { CommentsAPI, CreateCommentData, Comment } from "../api/comment-api"
+import { CommentsAPI } from "../api/comment-api"
+import { Comment, CreateCommentData, UseCommentsParams } from "../types/comment-types"
 
 export function useComments(postId: string) {
   return useQuery({
@@ -24,7 +24,7 @@ export function useCreateComment() {
       if (!user) {
         throw new Error("로그인이 필요합니다")
       }
-      
+
       return CommentsAPI.createComment({
         ...data,
         authorId: user.id
@@ -102,7 +102,7 @@ export function useCreateReply() {
       if (!user) {
         throw new Error("로그인이 필요합니다")
       }
-      
+
       return CommentsAPI.createReply(parentId, { content, postId })
     },
     onSuccess: (comment) => {
