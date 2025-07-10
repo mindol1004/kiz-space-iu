@@ -59,7 +59,7 @@ export async function getUserFromCookies(request: NextRequest): Promise<UserFrom
   }
 }
 
-export function getUserIdFromCookies(request: NextRequest): string | null {
+export function getUserIdFromCookies(request: NextRequest): string | undefined {
   try {
     // Get access token from cookie or Authorization header
     const cookieToken = request.cookies.get('accessToken')?.value
@@ -69,14 +69,14 @@ export function getUserIdFromCookies(request: NextRequest): string | null {
       : cookieToken
 
     if (!token) {
-      return null
+      return undefined
     }
 
     // Verify JWT token and get userId
     const payload = verifyAccessToken(token)
-    return payload?.userId || null
+    return payload?.userId || undefined
   } catch (error) {
     console.error("Error getting user ID from cookies:", error)
-    return null
+    return undefined
   }
 }
