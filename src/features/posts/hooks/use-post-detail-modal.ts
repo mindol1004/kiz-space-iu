@@ -100,5 +100,8 @@ export function usePostDetailModal(post: Post | null) {
     handleCommentSubmit,
     isLiking: likeMutation.isPending,
     isBookmarking: bookmarkMutation.isPending,
+    isLiked: post?.isLiked || false,
+    isBookmarked: post?.isBookmarked || false,
+    likeCount: post?.likesCount || 0,
   }
 }
