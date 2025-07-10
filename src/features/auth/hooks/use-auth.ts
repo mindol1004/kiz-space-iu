@@ -22,7 +22,10 @@ export function useLogin() {
         description: "환영합니다!",
       })
 
-      router.push("/feed")
+      // 페이지 이동 전에 잠시 대기하여 상태 업데이트 완료 보장
+      setTimeout(() => {
+        router.push("/feed")
+      }, 100)
     },
     onError: (error: Error) => {
       toast({

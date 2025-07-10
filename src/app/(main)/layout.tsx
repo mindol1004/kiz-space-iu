@@ -19,6 +19,12 @@ export default function MainLayout({
 
   useEffect(() => {
     const verifyAuth = async () => {
+      // 이미 인증된 상태라면 체크하지 않음
+      if (isAuthenticated) {
+        setIsLoading(false)
+        return
+      }
+
       setIsLoading(true)
       const isAuth = await checkAuthStatus()
       
@@ -29,7 +35,7 @@ export default function MainLayout({
     }
 
     verifyAuth()
-  }, [checkAuthStatus, router])
+  }, [checkAuthStatus, router, isAuthenticated])
 
   // 로딩 중이거나 인증되지 않은 경우 로딩 상태 표시
   if (isLoading || !isAuthenticated) {
