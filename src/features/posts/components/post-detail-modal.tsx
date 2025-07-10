@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Heart, MessageCircle, Bookmark, Share2, Send } from "lucide-react"
-import { formatDate, getAgeGroupLabel, getCategoryLabel } from "@/lib/utils"
+import { formatDate } from "@/lib/utils"
 import { Post, getCategoryLabel, getAgeGroupLabel } from "../types/post-type"
 
 interface PostDetailModalProps {
