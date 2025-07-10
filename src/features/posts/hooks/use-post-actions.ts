@@ -102,7 +102,7 @@ export function usePostActions(post: Post) {
   })
 
   const viewMutation = useMutation({
-    mutationFn: () => PostsAPI.incrementViews(post.id),
+    mutationFn: () => PostsAPI.incrementViews(post.id, user?.id),
     onSuccess: (data) => {
       setLocalState(prev => ({
         ...prev,

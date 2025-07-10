@@ -67,8 +67,8 @@ export class PostsAPI {
     }
   }
 
-  static async incrementViews(postId: string) {
-    const response = await apiClient.post(`/posts/${postId}/views`)
+  static async incrementViews(postId: string, userId?: string) {
+    const response = await apiClient.post(`/posts/${postId}/views`, { userId })
     return response.data
   }
 }

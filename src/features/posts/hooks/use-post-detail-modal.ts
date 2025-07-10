@@ -34,7 +34,7 @@ export function usePostDetailModal(post: Post) {
   const viewMutation = useMutation({
     mutationFn: async () => {
       if (!post?.id) return
-      return PostsAPI.incrementViews(post.id)
+      return PostsAPI.incrementViews(post.id, user?.id)
     },
   })
 
