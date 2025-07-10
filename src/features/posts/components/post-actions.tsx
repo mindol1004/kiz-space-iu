@@ -10,7 +10,7 @@ import { Post } from "../types/post-type"
 interface PostActionsProps {
   post: Post
   variant?: "card" | "modal"
-  onCommentClick?: () => void
+  onCommentClick?: (e?: React.MouseEvent) => void
   commentsCount?: number
 }
 
