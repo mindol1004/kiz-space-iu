@@ -10,6 +10,20 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")
 
+    // 현재 로그인한 사용자 ID를 쿠키에서 가져오기
+    const cookies = request.headers.get('cookie') || ''
+    const userCookie = cookies.split(';').find(c => c.trim().startsWith('user='))
+    let currentUserId = null
+    
+    if (userCookie) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(userCookie.split('=')[1]))
+        currentUserId = userData.id
+      } catch (error) {
+        console.log('Failed to parse user cookie:', error)
+      }
+    }
+
     const where: any = {}
     if (category && category !== "all" && typeof category === "string") {
       where.category = category.toUpperCase()
@@ -53,20 +67,6 @@ export async function GET(request: NextRequest) {
 
     const total = await prisma.post.count({ where })
 
-    // 현재 로그인한 사용자 ID를 쿠키에서 가져오기
-    const cookies = request.headers.get('cookie') || ''
-    const userCookie = cookies.split(';').find(c => c.trim().startsWith('user='))
-    let currentUserId = null
-    
-    if (userCookie) {
-      try {
-        const userData = JSON.parse(decodeURIComponent(userCookie.split('=')[1]))
-        currentUserId = userData.id
-      } catch (error) {
-        console.log('Failed to parse user cookie:', error)
-      }
-    }
-
     // 게시글 데이터 변환
     const transformedPosts = posts.map(post => ({
       id: post.id,
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       bookmarksCount: post._count.bookmarks,
       viewsCount: post.viewsCount,
       isLiked: currentUserId ? (post.likes && post.likes.length > 0) : false,
-      isBookmarked: currentUserId ? (post.bookmarks && post.bookmarks.length > 0) : false
+      isBookmarked: currentUserId ? (post.bookmarks && post.bookmarks.length > 0) : false,
       createdAt: post.createdAt.toISOString(),
       updatedAt: post.updatedAt.toISOString(),
       authorId: post.authorId,
