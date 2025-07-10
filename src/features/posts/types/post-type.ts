@@ -54,6 +54,8 @@ export interface PostsResponse {
 export interface UsePostsParams {
   category?: string
   ageGroup?: string
+  page?: number
+  limit?: number
 }
 
 export interface LikePostParams {
