@@ -1,39 +1,50 @@
-
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getUserIdFromCookies } from "@/lib/auth-utils"
 import { withAuth } from "@/lib/auth-middleware"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const userId = params.id
+    const currentUserId = getUserIdFromCookies(request)
+
+    if (!userId) {
+      return NextResponse.json({ error: "사용자 ID가 필요합니다" }, { status: 400 })
+    }
+
     const user = await prisma.user.findUnique({
-      where: {
-        id: params.id
-      },
+      where: { id: userId },
       select: {
         id: true,
-        email: true,
         nickname: true,
         avatar: true,
+        bio: true,
         location: true,
         interests: true,
         verified: true,
-        bio: true,
         postsCount: true,
         followersCount: true,
         followingCount: true,
         createdAt: true,
-        lastSeenAt: true
-      }
+        followers: currentUserId ? {
+          where: {
+            followerId: currentUserId
+          }
+        } : false,
+      },
     })
 
     if (!user) {
       return NextResponse.json({ error: "사용자를 찾을 수 없습니다" }, { status: 404 })
     }
 
-    return NextResponse.json({
-      success: true,
-      user
-    })
+    const userWithFollowStatus = {
+      ...user,
+      isFollowing: currentUserId ? (user.followers && user.followers.length > 0) : false,
+      followers: undefined, // Remove followers from response
+    }
+
+    return NextResponse.json({ user: userWithFollowStatus })
   } catch (error) {
     console.error("Error fetching user:", error)
     return NextResponse.json({ error: "사용자 정보를 불러오는데 실패했습니다" }, { status: 500 })

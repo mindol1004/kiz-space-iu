@@ -1,53 +1,41 @@
-import { NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getUserIdFromCookies } from "@/lib/auth-utils"
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    let userId: string | undefined
-    
-    try {
-      const body = await request.json()
-      userId = body.userId
-    } catch (error) {
-      // JSON 파싱 실패시 userId는 undefined로 처리
-      userId = undefined
-    }
-    
+    const userId = getUserIdFromCookies(request)
     const postId = params.id
 
     if (!postId) {
-      return NextResponse.json({ error: "Post ID is required" }, { status: 400 })
+      return NextResponse.json({ error: "포스트 ID가 필요합니다" }, { status: 400 })
     }
 
-    // 같은 유저가 이미 조회했는지 확인
+    // 사용자가 이미 조회했는지 확인 (로그인한 경우에만)
     if (userId) {
       const existingView = await prisma.postView.findUnique({
         where: {
           userId_postId: {
-            userId,
-            postId,
+            userId: userId,
+            postId: postId,
           },
         },
       })
 
-      // 이미 조회한 경우 조회수 증가하지 않음
       if (existingView) {
+        // 이미 조회한 경우 현재 조회수만 반환
         const post = await prisma.post.findUnique({
           where: { id: postId },
           select: { viewsCount: true },
         })
-        return NextResponse.json({
-          success: true,
-          viewsCount: post?.viewsCount || 0,
-          message: "Already viewed",
-        })
+        return NextResponse.json({ viewsCount: post?.viewsCount || 0 })
       }
 
       // 새로운 조회 기록 생성
       await prisma.postView.create({
         data: {
-          userId,
-          postId,
+          userId: userId,
+          postId: postId,
         },
       })
     }
@@ -63,13 +51,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       select: { viewsCount: true },
     })
 
-    return NextResponse.json({
-      success: true,
-      viewsCount: updatedPost.viewsCount,
-      message: "Views incremented",
-    })
+    return NextResponse.json({ viewsCount: updatedPost.viewsCount })
   } catch (error) {
     console.error("Error incrementing views:", error)
-    return NextResponse.json({ error: "Failed to increment views" }, { status: 500 })
+    return NextResponse.json({ error: "조회수 증가에 실패했습니다" }, { status: 500 })
   }
 }
