@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -76,7 +77,8 @@ export function useCreateComment() {
     },
   })
 }
-```export function useDeleteComment() {
+
+export function useDeleteComment() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
@@ -93,7 +95,7 @@ export function useCreateComment() {
 
       return commentId
     },
-    onSuccess: (commentId) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["comments"] })
       toast({
         title: "댓글 삭제 완료",

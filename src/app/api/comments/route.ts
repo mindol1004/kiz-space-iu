@@ -138,3 +138,69 @@ export const POST = withAuth(async (request: NextRequest, auth: { user: any }) =
     return NextResponse.json({ error: "댓글 생성에 실패했습니다" }, { status: 500 })
   }
 })
+import { type NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { withAuth } from "@/lib/auth-middleware"
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const postId = searchParams.get("postId")
+
+    if (!postId) {
+      return NextResponse.json({ error: "Post ID is required" }, { status: 400 })
+    }
+
+    const comments = await prisma.comment.findMany({
+      where: { postId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            nickname: true,
+            avatar: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    })
+
+    return NextResponse.json({ comments })
+  } catch (error) {
+    console.error("Error fetching comments:", error)
+    return NextResponse.json({ error: "Failed to fetch comments" }, { status: 500 })
+  }
+}
+
+export const POST = withAuth(async (request: NextRequest, auth: { user: any }) => {
+  try {
+    const { content, postId, parentId } = await request.json()
+
+    if (!content || !postId) {
+      return NextResponse.json({ error: "Content and postId are required" }, { status: 400 })
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        content,
+        postId,
+        authorId: auth.user.id,
+        parentId: parentId || null,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            nickname: true,
+            avatar: true,
+          },
+        },
+      },
+    })
+
+    return NextResponse.json({ success: true, comment })
+  } catch (error) {
+    console.error("Error creating comment:", error)
+    return NextResponse.json({ error: "Failed to create comment" }, { status: 500 })
+  }
+})
