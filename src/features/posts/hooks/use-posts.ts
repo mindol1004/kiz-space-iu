@@ -9,7 +9,7 @@ interface Post {
   _id?: string
   content: string
   images: string[]
-  category: string
+  category: "play" | "health" | "education" | "food" | "products" | "advice"
   ageGroup: string
   tags: string[]
   likes: string[]
