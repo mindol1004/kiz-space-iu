@@ -8,11 +8,11 @@ import { CreatePostData } from "../types/post-type"
 import { CATEGORIES, AGE_GROUPS, MESSAGES } from "@/shared/constants/common-data"
 
 export function useCreatePostDialog() {
-  const [open, setOpen] = useState(false)
-  const [content, setContent] = useState("")
+  const [open, setOpen] = useState<boolean>(false)
+  const [content, setContent] = useState<string>("")
   const [images, setImages] = useState<string[]>([])
-  const [category, setCategory] = useState("")
-  const [ageGroup, setAgeGroup] = useState("")
+  const [category, setCategory] = useState<string>("")
+  const [ageGroup, setAgeGroup] = useState<string>("")
   const [tags, setTags] = useState<string[]>([])
   const [currentTag, setCurrentTag] = useState("")
 

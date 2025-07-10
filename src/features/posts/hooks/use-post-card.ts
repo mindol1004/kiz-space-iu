@@ -9,7 +9,7 @@ import { Post } from "../types/post-type"
 export function usePostCard(post: Post) {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
-  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false)
 
   const likeMutation = useMutation({
     mutationFn: () => PostsAPI.likePost(post.id, user!.id),

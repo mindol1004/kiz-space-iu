@@ -8,8 +8,8 @@ import { PostsAPI } from "../api/post-api"
 import { Post } from "../types/post-type"
 
 export function usePostDetailModal(post: Post | null) {
-  const [open, setOpen] = useState(false)
-  const [comment, setComment] = useState("")
+  const [open, setOpen] = useState<boolean>(false)
+  const [comment, setComment] = useState<string>("")
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
