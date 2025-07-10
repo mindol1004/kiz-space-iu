@@ -6,22 +6,16 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 import { usePostStore } from "@/shared/stores/post-store"
-import { POST_CATEGORIES, POST_AGE_GROUPS } from "@/shared/constants/common-data"
+import { CATEGORIES, AGE_GROUPS } from "@/shared/constants/common-data"
 
 const categories = [
   { value: "all", label: "전체" },
-  ...Object.entries(POST_CATEGORIES).map(([key, label]) => ({
-    value: key,
-    label
-  }))
+  ...CATEGORIES
 ]
 
 const ageGroups = [
   { value: "all", label: "전체" },
-  ...Object.entries(POST_AGE_GROUPS).filter(([key]) => key !== "ALL").map(([key, label]) => ({
-    value: key,
-    label
-  }))
+  ...AGE_GROUPS.filter(group => group.value !== "ALL")
 ]
 
 export function PostFilters() {

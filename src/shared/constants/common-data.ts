@@ -11,38 +11,15 @@ export const CATEGORIES = [
   { value: "LIFESTYLE", label: "라이프스타일" },
 ]
 
-// Post Category mappings for UI
-export const POST_CATEGORIES = {
-  PREGNANCY: "임신",
-  NEWBORN: "신생아",
-  HEALTH: "건강",
-  EDUCATION: "교육",
-  FOOD: "음식",
-  PLAY: "놀이",
-  PRODUCTS: "제품",
-  ADVICE: "조언",
-  LIFESTYLE: "라이프스타일"
-} as const
-
-// Post Age Group mappings for UI  
-export const POST_AGE_GROUPS = {
-  PREGNANCY: "임신",
-  NEWBORN_0_6M: "신생아 (0-6개월)",
-  INFANT_6_12M: "영아 (6-12개월)", 
-  TODDLER_1_3Y: "유아 (1-3세)",
-  PRESCHOOL_3_5Y: "유치원 (3-5세)",
-  SCHOOL_5_8Y: "초등 저학년 (5-8세)",
-  TWEEN_8_12Y: "초등 고학년 (8-12세)",
-  ALL: "전체"
-} as const
-
 // Helper functions for posts
-export const getCategoryLabel = (category: keyof typeof POST_CATEGORIES): string => {
-  return POST_CATEGORIES[category] || category
+export const getCategoryLabel = (category: string): string => {
+  const categoryItem = CATEGORIES.find(c => c.value === category)
+  return categoryItem ? categoryItem.label : category
 }
 
-export const getAgeGroupLabel = (ageGroup: keyof typeof POST_AGE_GROUPS): string => {
-  return POST_AGE_GROUPS[ageGroup] || ageGroup
+export const getAgeGroupLabel = (ageGroup: string): string => {
+  const ageGroupItem = AGE_GROUPS.find(a => a.value === ageGroup)
+  return ageGroupItem ? ageGroupItem.label : ageGroup
 }
 
 export const AGE_GROUPS = [

@@ -1,23 +1,4 @@
-export type PostCategory = 
-  | "PREGNANCY"
-  | "NEWBORN" 
-  | "HEALTH"
-  | "EDUCATION"
-  | "FOOD"
-  | "PLAY"
-  | "PRODUCTS"
-  | "ADVICE"
-  | "LIFESTYLE"
-
-export type AgeGroup = 
-  | "PREGNANCY"
-  | "NEWBORN_0_6M"
-  | "INFANT_6_12M"
-  | "TODDLER_1_3Y"
-  | "PRESCHOOL_3_5Y"
-  | "SCHOOL_5_8Y"
-  | "TWEEN_8_12Y"
-  | "ALL"
+// Using string types instead of union types for flexibility
 
 export interface PostAuthor {
   id: string
@@ -31,8 +12,8 @@ export interface Post {
   author: PostAuthor
   content: string
   images: string[]
-  category: PostCategory
-  ageGroup: AgeGroup
+  category: string
+  ageGroup: string
   tags: string[]
 
   // Engagement counts (denormalized from Prisma)
@@ -57,8 +38,8 @@ export interface Post {
 export interface CreatePostData {
   content: string
   images?: string[]
-  category: PostCategory
-  ageGroup: AgeGroup
+  category: string
+  ageGroup: string
   tags?: string[]
   authorId: string
 }

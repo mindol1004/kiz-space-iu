@@ -12,14 +12,14 @@ import { Plus, ImageIcon, X, Upload } from "lucide-react"
 import { useCreatePost } from "../hooks/use-posts"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
-import { POST_CATEGORIES, POST_AGE_GROUPS, MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/constants/common-data"
-import { PostCategory, AgeGroup } from "../types/post-type"
+import { CATEGORIES, AGE_GROUPS, MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/constants/common-data"
+import { CreatePostData } from "../types/post-type"
 
 export function CreatePostDialog() {
   const [open, setOpen] = useState(false)
   const [content, setContent] = useState("")
-  const [category, setCategory] = useState<PostCategory | "">("")
-  const [ageGroup, setAgeGroup] = useState<AgeGroup | "">("")
+  const [category, setCategory] = useState<string>("")
+  const [ageGroup, setAgeGroup] = useState<string>("")
   const [tags, setTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
   const [images, setImages] = useState<string[]>([])
@@ -88,20 +88,11 @@ export function CreatePostDialog() {
       return
     }
 
-    if (!category) {
+    if (!category || !ageGroup || category === "" || ageGroup === "") {
       toast({
-        title: "카테고리 선택 필요",
-        description: "카테고리를 선택해주세요.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    if (!ageGroup) {
-      toast({
-        title: "연령대 선택 필요",
-        description: "연령대를 선택해주세요.",
-        variant: "destructive"
+        title: "필수 정보 누락",
+        description: "카테고리와 연령대를 선택해주세요.",
+        variant: "destructive",
       })
       return
     }
@@ -109,8 +100,8 @@ export function CreatePostDialog() {
     try {
       await createPost({
         content: content.trim(),
-        category: category as PostCategory,
-        ageGroup: ageGroup as AgeGroup,
+        category: category as any,
+        ageGroup: ageGroup as any,
         tags,
         authorId: user.id,
         images,
@@ -123,19 +114,9 @@ export function CreatePostDialog() {
     }
   }
 
-  const categories = Object.entries(POST_CATEGORIES)
-    .filter(([key]) => key !== "PREGNANCY") // 임신 카테고리 제외
-    .map(([key, label]) => ({
-      value: key,
-      label
-    }))
+  const categories = CATEGORIES
 
-  const ageGroups = Object.entries(POST_AGE_GROUPS)
-    .filter(([key]) => key !== "PREGNANCY") // 임신 연령대 제외
-    .map(([key, label]) => ({
-      value: key,
-      label
-    }))
+  const ageGroups = AGE_GROUPS.filter(group => group.value !== "ALL")
 
 
   return (
@@ -167,7 +148,7 @@ export function CreatePostDialog() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">카테고리 *</label>
-              <Select value={category} onValueChange={(value) => setCategory(value as PostCategory)}>
+              <Select value={category} onValueChange={(value) => setCategory(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="카테고리 선택" />
                 </SelectTrigger>
@@ -182,7 +163,7 @@ export function CreatePostDialog() {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">연령대 *</label>
-              <Select value={ageGroup} onValueChange={(value) => setAgeGroup(value as AgeGroup)}>
+              <Select value={ageGroup} onValueChange={(value) => setAgeGroup(value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="연령대 선택" />
                 </SelectTrigger>
