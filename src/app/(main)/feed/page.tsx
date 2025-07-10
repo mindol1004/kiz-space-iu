@@ -14,10 +14,10 @@ import { useEffect } from "react"
 export default function FeedPage() {
   const { selectedCategory, selectedAgeGroup } = usePostStore()
   const { 
-    posts, 
+    data, 
     isLoading, 
     error, 
-    hasMore, 
+    hasNextPage, 
     fetchNextPage, 
     isFetchingNextPage,
     refetch,
@@ -26,6 +26,10 @@ export default function FeedPage() {
     category: selectedCategory !== "all" ? selectedCategory : undefined,
     ageGroup: selectedAgeGroup !== "all" ? selectedAgeGroup : undefined,
   })
+
+  // 페이지별 데이터를 평면화하여 posts 배열로 변환
+  const posts = data?.pages?.flatMap(page => page.posts) ?? []
+  const hasMore = hasNextPage
 
   // React Query가 queryKey 변경을 감지하여 자동으로 refetch하므로 useEffect 제거
 
