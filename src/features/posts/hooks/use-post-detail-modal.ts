@@ -21,11 +21,11 @@ export function usePostDetailModal(post: Post | null) {
   }, [open, post])
 
   const likeMutation = useMutation({
-    mutationFn: () => PostsAPI.likePost(post!.id),
+    mutationFn: () => PostsAPI.likePost(post!.id, user!.id),
     onSuccess: (data) => {
       queryClient.setQueryData(["post", post!.id], (oldData: Post) => ({
         ...oldData,
-        isLiked: data.isLiked,
+        isLiked: data.liked,
         likesCount: data.likesCount,
       }))
       queryClient.invalidateQueries({ queryKey: ["posts"] })
@@ -33,11 +33,11 @@ export function usePostDetailModal(post: Post | null) {
   })
 
   const bookmarkMutation = useMutation({
-    mutationFn: () => PostsAPI.bookmarkPost(post!.id),
+    mutationFn: () => PostsAPI.bookmarkPost(post!.id, user!.id),
     onSuccess: (data) => {
       queryClient.setQueryData(["post", post!.id], (oldData: Post) => ({
         ...oldData,
-        isBookmarked: data.isBookmarked,
+        isBookmarked: data.bookmarked,
         bookmarksCount: data.bookmarksCount,
       }))
       queryClient.invalidateQueries({ queryKey: ["posts"] })
