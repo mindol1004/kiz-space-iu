@@ -252,7 +252,7 @@ export function PostCard({ post }: PostCardProps) {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MessageCircle className="h-4 w-4" />
-                  <span className="text-xs">{post.commentCount || post.commentsCount || 0}</span>
+                  <span className="text-xs">{post.commentsCount || 0}</span>
                 </Button>
                 {post.viewsCount !== undefined && (
                   <div className="flex items-center space-x-1 text-gray-500">
