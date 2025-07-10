@@ -1,17 +1,19 @@
 
+"use client"
+
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useAuthStore } from "@/shared/stores/auth-store"
-import { useToast } from "@/hooks/use-toast"
-import { PostsAPI } from "../api/post-api"
 import { Post } from "../types/post-type"
+import { PostsAPI } from "../api/post-api"
+import { useToast } from "@/hooks/use-toast"
+import { useAuthStore } from "@/shared/stores/auth-store"
 
 export function usePostCard(post: Post) {
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false)
-  const { user } = useAuthStore()
-  const { toast } = useToast()
   const queryClient = useQueryClient()
+  const { toast } = useToast()
+  const { user } = useAuthStore()
 
   const handleCardClick = () => {
     setShowDetailModal(true)
@@ -26,14 +28,12 @@ export function usePostCard(post: Post) {
   }
 
   const deleteMutation = useMutation({
-    mutationFn: async (postId: string) => {
-      await PostsAPI.deletePost(postId)
-    },
+    mutationFn: () => PostsAPI.deletePost(post.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] })
       toast({
         title: "게시글 삭제 완료",
-        description: "게시글이 성공적으로 삭제되었습니다.",
+        description: "게시글이 삭제되었습니다.",
       })
       setShowDeleteDialog(false)
     },
@@ -47,9 +47,7 @@ export function usePostCard(post: Post) {
   })
 
   const handleDelete = () => {
-    if (post.id) {
-      deleteMutation.mutate(post.id)
-    }
+    deleteMutation.mutate()
   }
 
   const isOwner = user?.id === post.author.id

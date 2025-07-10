@@ -45,8 +45,9 @@ export class PostsAPI {
   }
 
   // 게시글 삭제
-  static async deletePost(id: string): Promise<void> {
-    await apiClient.delete(`/posts/${id}`)
+  static async deletePost(id: string): Promise<{ success: boolean }> {
+    const response = await apiClient.delete<{ success: boolean }>(`/posts/${id}`)
+    return response.data
   }
 
   // 게시글 좋아요 토글
