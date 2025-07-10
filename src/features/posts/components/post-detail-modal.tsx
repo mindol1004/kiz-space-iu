@@ -140,7 +140,7 @@ export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalPro
                       <p className="text-sm text-gray-700 mt-1">{comment.content}</p>
                     </div>
                     <div className="flex items-center space-x-4 mt-2">
-                      <span className="text-xs text-gray-500">{formatDate(comment.createdAt)}</span>
+                      <span className="text-xs text-gray-500">{formatDate(new Date(comment.createdAt))}</span>
                       <Button variant="ghost" size="sm" className="text-xs text-gray-500 h-auto p-0">
                         좋아요 {comment.likes}
                       </Button>
