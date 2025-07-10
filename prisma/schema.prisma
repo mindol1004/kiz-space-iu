@@ -44,7 +44,7 @@ model User {
   children      Child[]
   posts         Post[]
   comments      Comment[]
-  likes         Like[]
+  likes         Like[] @relation("UserLikes")
   bookmarks     Bookmark[]
   chatRooms     ChatParticipant[]
   sentMessages  Message[]
@@ -54,8 +54,6 @@ model User {
   followers     Follow[] @relation("UserFollowers")
   following     Follow[] @relation("UserFollowing")
   tokens        Token[]
-  postLikes     Like[]
-  postBookmarks Bookmark[]
   postViews     PostView[]
   
 
@@ -176,7 +174,7 @@ model Comment {
 model Like {
   id     String @id @default(auto()) @map("_id") @db.ObjectId
   userId String @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation("UserLikes", fields: [userId], references: [id], onDelete: Cascade)
 
   // Polymorphic relation - can like posts or comments
   postId    String?  @db.ObjectId
