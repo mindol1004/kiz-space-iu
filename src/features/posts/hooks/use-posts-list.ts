@@ -1,7 +1,3 @@
-import { useInfiniteQuery } from "@tanstack/react-query"
-import { PostsAPI } from "../api/post-api"
-import { UsePostsParams } from "../types/post-type"
-
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { PostsAPI } from "../api/post-api"
 import { UsePostsParams } from "../types/post-type"
