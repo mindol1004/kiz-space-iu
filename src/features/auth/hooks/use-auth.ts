@@ -1,8 +1,10 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
 import { AuthAPI } from "../api/auth-api"
+import { LoginRequest, RegisterRequest } from "../types/auth-api-types"
 
 export function useLogin() {
   const { login } = useAuthStore()
@@ -66,7 +68,7 @@ export function useRegister() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: (data: RegisterData) => AuthAPI.register(data),
+    mutationFn: (data: RegisterRequest) => AuthAPI.register(data),
     onSuccess: () => {
       toast({
         title: "회원가입 성공",
@@ -84,4 +86,3 @@ export function useRegister() {
     },
   })
 }
-```
