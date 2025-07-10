@@ -7,7 +7,7 @@ export interface UserFromCookie {
   id: string
   email: string
   nickname: string
-  avatar?: string
+  avatar?: string | null
   verified: boolean
 }
 
