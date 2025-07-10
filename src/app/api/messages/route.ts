@@ -1,10 +1,15 @@
 
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { withAuth } from "@/lib/auth-middleware"
+import { getUserIdFromCookies } from "@/lib/auth-utils"
 
-export const GET = withAuth(async (request: NextRequest, auth: { user: any }) => {
+export async function GET(request: NextRequest) {
   try {
+    const userId = getUserIdFromCookies(request)
+    if (!userId) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const chatRoomId = searchParams.get("chatRoomId")
     const page = Number.parseInt(searchParams.get("page") || "1")
@@ -14,158 +19,140 @@ export const GET = withAuth(async (request: NextRequest, auth: { user: any }) =>
       return NextResponse.json({ error: "채팅방 ID가 필요합니다" }, { status: 400 })
     }
 
-    // 채팅방 참여자인지 확인
-    const participation = await prisma.chatParticipant.findUnique({
+    // Check if user is participant of the chat room
+    const participant = await prisma.chatParticipant.findUnique({
       where: {
         chatRoomId_userId: {
-          chatRoomId,
-          userId: auth.user.id
-        }
-      }
+          chatRoomId: chatRoomId,
+          userId: userId,
+        },
+      },
     })
 
-    if (!participation) {
-      return NextResponse.json({ error: "채팅방에 참여하지 않았습니다" }, { status: 403 })
+    if (!participant) {
+      return NextResponse.json({ error: "채팅방에 참여하지 않은 사용자입니다" }, { status: 403 })
     }
 
     const messages = await prisma.message.findMany({
       where: {
-        chatRoomId
+        chatRoomId: chatRoomId,
+        isDeleted: false,
       },
       include: {
         sender: {
           select: {
             id: true,
             nickname: true,
-            avatar: true
-          }
+            avatar: true,
+          },
         },
         replyTo: {
-          select: {
-            id: true,
-            content: true,
+          include: {
             sender: {
               select: {
-                nickname: true
-              }
-            }
-          }
-        }
+                id: true,
+                nickname: true,
+                avatar: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
-      take: limit
+      take: limit,
     })
 
-    // 읽음 상태 업데이트
-    await prisma.chatParticipant.update({
+    const total = await prisma.message.count({
       where: {
-        chatRoomId_userId: {
-          chatRoomId,
-          userId: auth.user.id
-        }
+        chatRoomId: chatRoomId,
+        isDeleted: false,
       },
-      data: {
-        lastReadAt: new Date(),
-        unreadCount: 0
-      }
     })
 
     return NextResponse.json({
-      messages: messages.reverse(), // 시간순 정렬
-      hasMore: messages.length === limit,
-      nextPage: messages.length === limit ? page + 1 : undefined
+      messages: messages.reverse(), // 최신 메시지가 아래로 오도록
+      hasMore: total > page * limit,
+      nextPage: total > page * limit ? page + 1 : undefined,
+      total,
     })
   } catch (error) {
     console.error("Error fetching messages:", error)
     return NextResponse.json({ error: "메시지를 불러오는데 실패했습니다" }, { status: 500 })
   }
-})
+}
 
-export const POST = withAuth(async (request: NextRequest, auth: { user: any }) => {
+export async function POST(request: NextRequest) {
   try {
+    const senderId = getUserIdFromCookies(request)
+    if (!senderId) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
+    }
+
     const { chatRoomId, content, type, attachments, replyToId } = await request.json()
 
     if (!chatRoomId || !content) {
-      return NextResponse.json({ error: "채팅방 ID와 내용이 필요합니다" }, { status: 400 })
+      return NextResponse.json({ error: "채팅방 ID와 메시지 내용이 필요합니다" }, { status: 400 })
     }
 
-    // 채팅방 참여자인지 확인
-    const participation = await prisma.chatParticipant.findUnique({
+    // Check if user is participant of the chat room
+    const participant = await prisma.chatParticipant.findUnique({
       where: {
         chatRoomId_userId: {
-          chatRoomId,
-          userId: auth.user.id
-        }
-      }
+          chatRoomId: chatRoomId,
+          userId: senderId,
+        },
+      },
     })
 
-    if (!participation) {
-      return NextResponse.json({ error: "채팅방에 참여하지 않았습니다" }, { status: 403 })
+    if (!participant) {
+      return NextResponse.json({ error: "채팅방에 참여하지 않은 사용자입니다" }, { status: 403 })
     }
 
     const message = await prisma.message.create({
       data: {
-        chatRoomId,
-        senderId: auth.user.id,
-        content,
+        chatRoomId: chatRoomId,
+        senderId: senderId,
+        content: content,
         type: type || "TEXT",
         attachments: attachments || [],
-        replyToId: replyToId || null
+        replyToId: replyToId || null,
       },
       include: {
         sender: {
           select: {
             id: true,
             nickname: true,
-            avatar: true
-          }
+            avatar: true,
+          },
         },
         replyTo: {
-          select: {
-            id: true,
-            content: true,
+          include: {
             sender: {
               select: {
-                nickname: true
-              }
-            }
-          }
-        }
-      }
+                id: true,
+                nickname: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+      },
     })
 
-    // 채팅방 정보 업데이트
+    // Update chat room's last message info
     await prisma.chatRoom.update({
       where: { id: chatRoomId },
       data: {
         lastMessageId: message.id,
         lastMessageContent: content,
-        lastMessageAt: new Date()
-      }
-    })
-
-    // 다른 참여자들의 미읽음 카운트 증가
-    await prisma.chatParticipant.updateMany({
-      where: {
-        chatRoomId,
-        userId: {
-          not: auth.user.id
-        }
+        lastMessageAt: new Date(),
       },
-      data: {
-        unreadCount: {
-          increment: 1
-        }
-      }
     })
 
-    return NextResponse.json({
-      success: true,
-      message
-    })
+    return NextResponse.json({ message })
   } catch (error) {
-    console.error("Error sending message:", error)
+    console.error("Error creating message:", error)
     return NextResponse.json({ error: "메시지 전송에 실패했습니다" }, { status: 500 })
   }
-})
+}

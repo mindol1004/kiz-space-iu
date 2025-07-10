@@ -1,32 +1,27 @@
 
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { withAuth } from "@/lib/auth-middleware"
+import { getUserIdFromCookies } from "@/lib/auth-utils"
 
-export const POST = withAuth(async (
-  request: NextRequest,
-  auth: { user: any },
-  { params }: { params: { id: string } }
-) => {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id: postId } = params
-    const { category, notes } = await request.json()
+    const userId = getUserIdFromCookies(request)
+    if (!userId) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
+    }
 
-    // Check if post exists
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-    })
+    const postId = params.id
 
-    if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 })
+    if (!postId) {
+      return NextResponse.json({ error: "포스트 ID가 필요합니다" }, { status: 400 })
     }
 
     // Check if already bookmarked
     const existingBookmark = await prisma.bookmark.findUnique({
       where: {
         userId_postId: {
-          userId: auth.user.id,
-          postId,
+          userId: userId,
+          postId: postId,
         },
       },
     })
@@ -34,34 +29,58 @@ export const POST = withAuth(async (
     if (existingBookmark) {
       // Remove bookmark
       await prisma.bookmark.delete({
-        where: { id: existingBookmark.id },
-      })
-
-      return NextResponse.json({
-        success: true,
-        bookmarked: false,
-        message: "Bookmark removed",
-      })
-    } else {
-      // Add bookmark
-      const bookmark = await prisma.bookmark.create({
-        data: {
-          userId: auth.user.id,
-          postId,
-          category,
-          notes,
+        where: {
+          userId_postId: {
+            userId: userId,
+            postId: postId,
+          },
         },
       })
 
+      // Update post bookmark count
+      const updatedPost = await prisma.post.update({
+        where: { id: postId },
+        data: {
+          bookmarksCount: {
+            decrement: 1,
+          },
+        },
+        select: { bookmarksCount: true },
+      })
+
       return NextResponse.json({
         success: true,
-        bookmarked: true,
-        bookmark,
-        message: "Post bookmarked",
+        isBookmarked: false,
+        bookmarksCount: updatedPost.bookmarksCount,
+      })
+    } else {
+      // Add bookmark
+      await prisma.bookmark.create({
+        data: {
+          userId: userId,
+          postId: postId,
+        },
+      })
+
+      // Update post bookmark count
+      const updatedPost = await prisma.post.update({
+        where: { id: postId },
+        data: {
+          bookmarksCount: {
+            increment: 1,
+          },
+        },
+        select: { bookmarksCount: true },
+      })
+
+      return NextResponse.json({
+        success: true,
+        isBookmarked: true,
+        bookmarksCount: updatedPost.bookmarksCount,
       })
     }
   } catch (error) {
     console.error("Error toggling bookmark:", error)
-    return NextResponse.json({ error: "Failed to toggle bookmark" }, { status: 500 })
+    return NextResponse.json({ error: "북마크 처리에 실패했습니다" }, { status: 500 })
   }
-})
+}

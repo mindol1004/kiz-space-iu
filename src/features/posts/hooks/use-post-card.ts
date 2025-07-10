@@ -9,11 +9,12 @@ export function usePostCard(post: Post) {
     setShowDetailModal(true)
   }
 
-  const getTruncatedContent = (maxLength: number = 150) => {
-    if (post.content.length <= maxLength) {
-      return post.content
+  const getTruncatedContent = () => {
+    const maxLength = 150
+    if (post.content.length > maxLength) {
+      return post.content.slice(0, maxLength) + "..."
     }
-    return post.content.slice(0, maxLength) + "..."
+    return post.content
   }
 
   return {

@@ -1,6 +1,7 @@
+
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { withAuth } from "@/lib/auth-middleware"
+import { getUserIdFromCookies } from "@/lib/auth-utils"
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,32 +14,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "포스트 ID가 필요합니다" }, { status: 400 })
     }
 
-    // 현재 로그인한 사용자 ID를 쿠키에서 가져오기
-    const cookies = request.headers.get('cookie') || ''
-    const userCookie = cookies.split(';').find(c => c.trim().startsWith('user='))
-    let currentUserId = null
-
-    if (userCookie) {
-      try {
-        const userData = JSON.parse(decodeURIComponent(userCookie.split('=')[1]))
-        currentUserId = userData.id
-      } catch (error) {
-        console.log('Failed to parse user cookie:', error)
-      }
-    }
+    // 현재 로그인한 사용자 ID 가져오기
+    const currentUserId = getUserIdFromCookies(request)
 
     const comments = await prisma.comment.findMany({
       where: {
-        postId,
-        parentId: null // 최상위 댓글만
+        postId: postId,
+        parentId: null, // 최상위 댓글만
       },
       include: {
         author: {
           select: {
             id: true,
             nickname: true,
-            avatar: true
-          }
+            avatar: true,
+          },
         },
         replies: {
           include: {
@@ -46,8 +36,8 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 nickname: true,
-                avatar: true
-              }
+                avatar: true,
+              },
             },
             likes: currentUserId ? {
               where: {
@@ -56,11 +46,12 @@ export async function GET(request: NextRequest) {
             } : false,
             _count: {
               select: {
-                likes: true
-              }
-            }
+                likes: true,
+                replies: true,
+              },
+            },
           },
-          orderBy: { createdAt: "asc" }
+          orderBy: { createdAt: "asc" },
         },
         likes: currentUserId ? {
           where: {
@@ -70,37 +61,39 @@ export async function GET(request: NextRequest) {
         _count: {
           select: {
             likes: true,
-            replies: true
-          }
-        }
+            replies: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
-      take: limit
+      take: limit,
     })
 
     const total = await prisma.comment.count({
       where: {
-        postId,
-        parentId: null
-      }
+        postId: postId,
+        parentId: null,
+      },
     })
 
-    return NextResponse.json({
-      comments: comments.map(comment => ({
-        ...comment,
-        likesCount: comment._count.likes,
-        repliesCount: comment._count.replies,
-        isLiked: currentUserId ? (comment.likes && comment.likes.length > 0) : false,
-        replies: comment.replies.map(reply => ({
-          ...reply,
-          likesCount: reply._count.likes,
-          isLiked: currentUserId ? (reply.likes && reply.likes.length > 0) : false
-        }))
+    // 사용자별 좋아요 상태 추가
+    const commentsWithLikeStatus = comments.map(comment => ({
+      ...comment,
+      isLiked: currentUserId ? comment.likes.length > 0 : false,
+      repliesCount: comment._count.replies,
+      replies: comment.replies.map(reply => ({
+        ...reply,
+        isLiked: currentUserId ? reply.likes.length > 0 : false,
+        repliesCount: reply._count.replies,
       })),
-      hasMore: comments.length === limit,
-      nextPage: comments.length === limit ? page + 1 : undefined,
-      total
+    }))
+
+    return NextResponse.json({
+      comments: commentsWithLikeStatus,
+      hasMore: total > page * limit,
+      nextPage: total > page * limit ? page + 1 : undefined,
+      total,
     })
   } catch (error) {
     console.error("Error fetching comments:", error)
@@ -108,8 +101,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export const POST = withAuth(async (request: NextRequest, auth: { user: any }) => {
+export async function POST(request: NextRequest) {
   try {
+    const userId = getUserIdFromCookies(request)
+    if (!userId) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
+    }
+
     const { postId, content, parentId } = await request.json()
 
     if (!postId || !content) {
@@ -118,49 +116,47 @@ export const POST = withAuth(async (request: NextRequest, auth: { user: any }) =
 
     const comment = await prisma.comment.create({
       data: {
-        postId,
-        authorId: auth.user.id,
-        content,
-        parentId: parentId || null
+        postId: postId,
+        authorId: userId,
+        content: content.trim(),
+        parentId: parentId || null,
       },
       include: {
         author: {
           select: {
             id: true,
             nickname: true,
-            avatar: true
-          }
+            avatar: true,
+          },
         },
         _count: {
           select: {
             likes: true,
-            replies: true
-          }
-        }
-      }
+            replies: true,
+          },
+        },
+      },
     })
 
-    // 포스트의 댓글 카운트 업데이트
+    // Update post comment count
     await prisma.post.update({
       where: { id: postId },
       data: {
         commentsCount: {
-          increment: 1
-        }
-      }
+          increment: 1,
+        },
+      },
     })
 
     return NextResponse.json({
-      success: true,
       comment: {
         ...comment,
-        likesCount: comment._count.likes,
+        isLiked: false,
         repliesCount: comment._count.replies,
-        isLiked: false
       }
     })
   } catch (error) {
     console.error("Error creating comment:", error)
-    return NextResponse.json({ error: "댓글 생성에 실패했습니다" }, { status: 500 })
+    return NextResponse.json({ error: "댓글 작성에 실패했습니다" }, { status: 500 })
   }
-})
+}

@@ -1,93 +1,86 @@
-import { type NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { withAuth } from "@/lib/auth-middleware";
 
-export const POST = withAuth(async (
-  request: NextRequest,
-  auth: { user: any },
-  { params }: { params: { id: string } }
-) => {
+import { type NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { getUserIdFromCookies } from "@/lib/auth-utils"
+
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id: postId } = params;
-
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-    });
-
-    if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    const userId = getUserIdFromCookies(request)
+    if (!userId) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
     }
 
-    // Check if the user already liked the post
+    const postId = params.id
+
+    if (!postId) {
+      return NextResponse.json({ error: "포스트 ID가 필요합니다" }, { status: 400 })
+    }
+
+    // Check if already liked
     const existingLike = await prisma.like.findUnique({
       where: {
         userId_postId: {
-          userId: auth.user.id,
-          postId,
+          userId: userId,
+          postId: postId,
         },
       },
-    });
+    })
 
     if (existingLike) {
-      // Unlike the post
-      await prisma.$transaction([
-        prisma.like.delete({
-          where: { id: existingLike.id },
-        }),
-        prisma.post.update({
-          where: { id: postId },
-          data: {
-            likesCount: {
-              decrement: 1,
-            },
+      // Remove like
+      await prisma.like.delete({
+        where: {
+          userId_postId: {
+            userId: userId,
+            postId: postId,
           },
-        }),
-      ]);
+        },
+      })
 
-      const updatedPost = await prisma.post.findUnique({
+      // Update post like count
+      const updatedPost = await prisma.post.update({
         where: { id: postId },
+        data: {
+          likesCount: {
+            decrement: 1,
+          },
+        },
         select: { likesCount: true },
-      });
+      })
 
       return NextResponse.json({
         success: true,
-        liked: false,
-        likesCount: updatedPost?.likesCount || 0,
-        message: "Post unliked",
-      });
+        isLiked: false,
+        likesCount: updatedPost.likesCount,
+      })
     } else {
-      // Like the post
-      await prisma.$transaction([
-        prisma.like.create({
-          data: {
-            userId: auth.user.id,
-            postId,
-          },
-        }),
-        prisma.post.update({
-          where: { id: postId },
-          data: {
-            likesCount: {
-              increment: 1,
-            },
-          },
-        }),
-      ]);
+      // Add like
+      await prisma.like.create({
+        data: {
+          userId: userId,
+          postId: postId,
+        },
+      })
 
-      const updatedPost = await prisma.post.findUnique({
+      // Update post like count
+      const updatedPost = await prisma.post.update({
         where: { id: postId },
+        data: {
+          likesCount: {
+            increment: 1,
+          },
+        },
         select: { likesCount: true },
-      });
+      })
 
       return NextResponse.json({
         success: true,
-        liked: true,
-        likesCount: updatedPost?.likesCount || 0,
-        message: "Post liked",
-      });
+        isLiked: true,
+        likesCount: updatedPost.likesCount,
+      })
     }
   } catch (error) {
-    console.error("Error toggling like:", error);
-    return NextResponse.json({ error: "Failed to toggle like" }, { status: 500 });
+    console.error("Error toggling like:", error)
+    return NextResponse.json({ error: "좋아요 처리에 실패했습니다" }, { status: 500 })
   }
-});
+}

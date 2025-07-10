@@ -1,17 +1,22 @@
 
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { withAuth } from "@/lib/auth-middleware"
+import { getUserIdFromCookies } from "@/lib/auth-utils"
 
-export const GET = withAuth(async (request: NextRequest, auth: { user: any }) => {
+export async function GET(request: NextRequest) {
   try {
+    const userId = getUserIdFromCookies(request)
+    if (!userId) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
-    const category = searchParams.get("category")
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")
+    const category = searchParams.get("category")
 
     const where: any = {
-      userId: auth.user.id
+      userId: userId,
     }
 
     if (category && category !== "all") {
@@ -27,99 +32,98 @@ export const GET = withAuth(async (request: NextRequest, auth: { user: any }) =>
               select: {
                 id: true,
                 nickname: true,
-                avatar: true
-              }
+                avatar: true,
+              },
             },
             _count: {
               select: {
                 comments: true,
                 likes: true,
-                bookmarks: true
-              }
-            }
-          }
-        }
+                bookmarks: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
-      take: limit
+      take: limit,
     })
 
     const total = await prisma.bookmark.count({ where })
 
     return NextResponse.json({
-      bookmarks: bookmarks.map(bookmark => ({
-        ...bookmark,
-        post: {
-          ...bookmark.post,
-          commentCount: bookmark.post._count.comments,
-          likesCount: bookmark.post._count.likes,
-          bookmarksCount: bookmark.post._count.bookmarks
-        }
-      })),
-      hasMore: bookmarks.length === limit,
-      nextPage: bookmarks.length === limit ? page + 1 : undefined,
-      total
+      bookmarks,
+      hasMore: total > page * limit,
+      nextPage: total > page * limit ? page + 1 : undefined,
+      total,
     })
   } catch (error) {
     console.error("Error fetching bookmarks:", error)
     return NextResponse.json({ error: "북마크를 불러오는데 실패했습니다" }, { status: 500 })
   }
-})
+}
 
-export const POST = withAuth(async (request: NextRequest, auth: { user: any }) => {
+export async function POST(request: NextRequest) {
   try {
+    const userId = getUserIdFromCookies(request)
+    if (!userId) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
+    }
+
     const { postId, category, notes } = await request.json()
 
     if (!postId) {
       return NextResponse.json({ error: "포스트 ID가 필요합니다" }, { status: 400 })
     }
 
-    // 이미 북마크했는지 확인
+    // Check if already bookmarked
     const existingBookmark = await prisma.bookmark.findUnique({
       where: {
         userId_postId: {
-          userId: auth.user.id,
-          postId
-        }
-      }
+          userId: userId,
+          postId: postId,
+        },
+      },
     })
 
     if (existingBookmark) {
-      return NextResponse.json({ error: "이미 북마크한 포스트입니다" }, { status: 409 })
+      return NextResponse.json({ error: "이미 북마크에 추가된 포스트입니다" }, { status: 400 })
     }
 
     const bookmark = await prisma.bookmark.create({
       data: {
-        userId: auth.user.id,
-        postId,
+        userId: userId,
+        postId: postId,
         category: category || null,
-        notes: notes || null
-      }
+        notes: notes || null,
+      },
     })
 
-    // 포스트의 북마크 카운트 업데이트
+    // Update post bookmark count
     await prisma.post.update({
       where: { id: postId },
       data: {
         bookmarksCount: {
-          increment: 1
-        }
-      }
+          increment: 1,
+        },
+      },
     })
 
-    return NextResponse.json({
-      success: true,
-      bookmark
-    })
+    return NextResponse.json({ bookmark })
   } catch (error) {
     console.error("Error creating bookmark:", error)
-    return NextResponse.json({ error: "북마크 생성에 실패했습니다" }, { status: 500 })
+    return NextResponse.json({ error: "북마크 추가에 실패했습니다" }, { status: 500 })
   }
-})
+}
 
-export const DELETE = withAuth(async (request: NextRequest, auth: { user: any }) => {
+export async function DELETE(request: NextRequest) {
   try {
+    const userId = getUserIdFromCookies(request)
+    if (!userId) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const postId = searchParams.get("postId")
 
@@ -127,40 +131,28 @@ export const DELETE = withAuth(async (request: NextRequest, auth: { user: any })
       return NextResponse.json({ error: "포스트 ID가 필요합니다" }, { status: 400 })
     }
 
-    const bookmark = await prisma.bookmark.findUnique({
+    const bookmark = await prisma.bookmark.delete({
       where: {
         userId_postId: {
-          userId: auth.user.id,
-          postId
-        }
-      }
+          userId: userId,
+          postId: postId,
+        },
+      },
     })
 
-    if (!bookmark) {
-      return NextResponse.json({ error: "북마크를 찾을 수 없습니다" }, { status: 404 })
-    }
-
-    await prisma.bookmark.delete({
-      where: {
-        id: bookmark.id
-      }
-    })
-
-    // 포스트의 북마크 카운트 업데이트
+    // Update post bookmark count
     await prisma.post.update({
       where: { id: postId },
       data: {
         bookmarksCount: {
-          decrement: 1
-        }
-      }
+          decrement: 1,
+        },
+      },
     })
 
-    return NextResponse.json({
-      success: true
-    })
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error deleting bookmark:", error)
     return NextResponse.json({ error: "북마크 삭제에 실패했습니다" }, { status: 500 })
   }
-})
+}

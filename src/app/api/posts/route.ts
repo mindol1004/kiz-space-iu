@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { withAuth } from "@/lib/auth-middleware"
+import { getUserIdFromCookies } from "@/lib/auth-utils"
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,18 +12,7 @@ export async function GET(request: NextRequest) {
     const limit = Number.parseInt(searchParams.get("limit") || "10")
 
     // 현재 로그인한 사용자 ID를 쿠키에서 가져오기
-    const cookies = request.headers.get('cookie') || ''
-    const userCookie = cookies.split(';').find(c => c.trim().startsWith('user='))
-    let currentUserId = null
-    
-    if (userCookie) {
-      try {
-        const userData = JSON.parse(decodeURIComponent(userCookie.split('=')[1]))
-        currentUserId = userData.id
-      } catch (error) {
-        console.log('Failed to parse user cookie:', error)
-      }
-    }
+    const currentUserId = getUserIdFromCookies(request)
 
     const where: any = {}
     if (category && category !== "all" && typeof category === "string") {
@@ -109,10 +99,18 @@ export async function GET(request: NextRequest) {
 
 export const POST = withAuth(async (request: NextRequest, auth: { user: any }) => {
   try {
+    const authorId = getUserIdFromCookies(request)
+    if (!authorId) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
+    }
+
     const { content, images, category, ageGroup, tags } = await request.json()
 
-    if (!content) {
-      return NextResponse.json({ error: "Content is required" }, { status: 400 })
+    if (!content || !category || !ageGroup) {
+      return NextResponse.json(
+        { error: "필수 필드가 누락되었습니다" },
+        { status: 400 }
+      )
     }
 
     const post = await prisma.post.create({
