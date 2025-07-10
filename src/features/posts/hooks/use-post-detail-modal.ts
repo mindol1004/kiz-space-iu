@@ -1,70 +1,104 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useAuthStore } from "@/shared/stores/auth-store"
+import { PostsAPI } from "../api/post-api"
+import { Post } from "../types/post-type"
 
-interface Comment {
-  id: string
-  content: string
-  author: { nickname: string; avatar: string }
-  createdAt: Date
-  likes: number
-}
-
-export function usePostDetailModal(initialPost: any) {
-  const [isLiked, setIsLiked] = useState(initialPost.isLiked || false)
-  const [isBookmarked, setIsBookmarked] = useState(initialPost.isBookmarked || false)
-  const [likeCount, setLikeCount] = useState(initialPost.likesCount || 0)
+export function usePostDetailModal(post: Post | null) {
+  const [open, setOpen] = useState(false)
   const [comment, setComment] = useState("")
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: "1",
-      content: "정말 유용한 정보네요! 감사합니다 ㅎㅎ",
-      author: { nickname: "김엄마", avatar: "/placeholder.svg" },
-      createdAt: new Date(Date.now() - 1000 * 60 * 30),
-      likes: 2,
+  const { user } = useAuthStore()
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    if (open && post) {
+      // 게시글 조회수 증가
+      PostsAPI.incrementViews(post.id).catch(console.error)
+    }
+  }, [open, post])
+
+  const likeMutation = useMutation({
+    mutationFn: () => PostsAPI.likePost(post!.id),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["post", post!.id], (oldData: Post) => ({
+        ...oldData,
+        isLiked: data.isLiked,
+        likesCount: data.likesCount,
+      }))
+      queryClient.invalidateQueries({ queryKey: ["posts"] })
     },
-    {
-      id: "2",
-      content: "저도 비슷한 경험이 있어요. 공감됩니다!",
-      author: { nickname: "이엄마", avatar: "/placeholder.svg" },
-      createdAt: new Date(Date.now() - 1000 * 60 * 15),
-      likes: 1,
+  })
+
+  const bookmarkMutation = useMutation({
+    mutationFn: () => PostsAPI.bookmarkPost(post!.id),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["post", post!.id], (oldData: Post) => ({
+        ...oldData,
+        isBookmarked: data.isBookmarked,
+        bookmarksCount: data.bookmarksCount,
+      }))
+      queryClient.invalidateQueries({ queryKey: ["posts"] })
     },
-  ])
+  })
 
   const handleLike = () => {
-    setIsLiked(!isLiked)
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1))
+    if (!user) {
+      alert("로그인이 필요합니다.")
+      return
+    }
+    if (!post) return
+    likeMutation.mutate()
   }
 
   const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked)
+    if (!user) {
+      alert("로그인이 필요합니다.")
+      return
+    }
+    if (!post) return
+    bookmarkMutation.mutate()
   }
 
-  const handleCommentSubmit = () => {
-    if (comment.trim()) {
-      const newComment: Comment = {
-        id: Date.now().toString(),
-        content: comment.trim(),
-        author: { nickname: "나", avatar: "/placeholder.svg" },
-        createdAt: new Date(),
-        likes: 0,
-      }
-      setComments((prev) => [...prev, newComment])
-      setComment("")
+  const handleShare = () => {
+    if (!post) return
+    if (navigator.share) {
+      navigator.share({
+        title: "게시글 공유",
+        text: post.content,
+        url: window.location.href,
+      })
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+      alert("링크가 클립보드에 복사되었습니다.")
     }
   }
 
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) {
+      alert("로그인이 필요합니다.")
+      return
+    }
+    if (!comment.trim()) return
+    
+    // TODO: 댓글 API 추가 시 구현
+    console.log("댓글 작성:", comment)
+    setComment("")
+  }
+
   return {
-    isLiked,
-    isBookmarked,
-    likeCount,
+    open,
+    setOpen,
     comment,
-    comments,
     setComment,
     handleLike,
     handleBookmark,
+    handleShare,
     handleCommentSubmit,
+    isLiking: likeMutation.isPending,
+    isBookmarking: bookmarkMutation.isPending,
   }
 }

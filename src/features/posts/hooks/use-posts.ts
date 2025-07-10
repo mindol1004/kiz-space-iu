@@ -1,17 +1,14 @@
+
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
+import { PostsAPI } from "../api/post-api"
 
 export function usePost(id: string) {
   return useQuery({
     queryKey: ["post", id],
-    queryFn: async () => {
-      const response = await fetch(`/api/posts/${id}`)
-      if (!response.ok) {
-        throw new Error("Failed to fetch post")
-      }
-      return response.json()
-    },
+    queryFn: () => PostsAPI.getPost(id),
+    enabled: !!id,
   })
 }
 
