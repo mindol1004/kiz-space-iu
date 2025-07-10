@@ -5,7 +5,7 @@ import { PostsAPI } from "../api/post-api"
 import { UsePostsParams } from "../types/post-type"
 
 export function usePostsList(params: UsePostsParams = {}) {
-  return useInfiniteQuery({
+  const query = useInfiniteQuery({
     queryKey: ["posts", params],
     queryFn: ({ pageParam = 1 }) => 
       PostsAPI.getPosts({
@@ -18,4 +18,9 @@ export function usePostsList(params: UsePostsParams = {}) {
     },
     initialPageParam: 1,
   })
+
+  return {
+    ...query,
+    posts: query.data?.pages.flatMap(page => page.posts) || [],
+  }
 }

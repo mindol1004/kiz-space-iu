@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { PostsAPI } from "../api/post-api"
@@ -96,6 +96,9 @@ export function useCreatePostDialog() {
     setCurrentTag("")
   }
 
+  const categories = useMemo(() => CATEGORIES, [])
+  const ageGroups = useMemo(() => AGE_GROUPS, [])
+
   return {
     open,
     setOpen,
@@ -118,7 +121,7 @@ export function useCreatePostDialog() {
     removeTag,
     handleClose,
     isLoading: createPostMutation.isPending,
-    categories: CATEGORIES,
-    ageGroups: AGE_GROUPS,
+    categories: categories,
+    ageGroups: ageGroups,
   }
 }

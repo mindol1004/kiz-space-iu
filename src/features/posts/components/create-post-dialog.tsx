@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Plus, X, Upload } from "lucide-react"
 import { useCreatePostDialog } from "../hooks/use-create-post-dialog"
-import { MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST, CATEGORIES, AGE_GROUPS } from "@/shared/constants/common-data"
+import { MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/constants/common-data"
 
 export function CreatePostDialog() {
   const {
