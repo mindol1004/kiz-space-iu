@@ -72,4 +72,6 @@ export interface PostWithAuthor extends Post {
   bookmarksCount: number
   isLiked?: boolean
   isBookmarked?: boolean
+  createdAt: string
+  updatedAt: string
 }
