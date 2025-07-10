@@ -1,6 +1,7 @@
 
 import { NextRequest } from "next/server"
 import { verifyAccessToken } from "@/lib/jwt"
+import { prisma } from "@/lib/prisma"
 
 export interface UserFromCookie {
   id: string
@@ -29,19 +30,28 @@ export async function getUserFromCookies(request: NextRequest): Promise<UserFrom
       return null
     }
 
-    // Get user data from user cookie
-    const userCookie = request.cookies.get('user')?.value
-    if (!userCookie) {
+    // Get user data from database using userId from JWT token
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        nickname: true,
+        avatar: true,
+        verified: true
+      }
+    })
+
+    if (!user) {
       return null
     }
 
-    const userData = JSON.parse(decodeURIComponent(userCookie))
     return {
-      id: userData.id,
-      email: userData.email,
-      nickname: userData.nickname,
-      avatar: userData.avatar,
-      verified: userData.verified || false
+      id: user.id,
+      email: user.email,
+      nickname: user.nickname,
+      avatar: user.avatar,
+      verified: user.verified
     }
   } catch (error) {
     console.error("Error getting user from cookies:", error)
@@ -51,13 +61,20 @@ export async function getUserFromCookies(request: NextRequest): Promise<UserFrom
 
 export function getUserIdFromCookies(request: NextRequest): string | null {
   try {
-    const userCookie = request.cookies.get('user')?.value
-    if (!userCookie) {
+    // Get access token from cookie or Authorization header
+    const cookieToken = request.cookies.get('accessToken')?.value
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.startsWith('Bearer ') 
+      ? authHeader.substring(7)
+      : cookieToken
+
+    if (!token) {
       return null
     }
 
-    const userData = JSON.parse(decodeURIComponent(userCookie))
-    return userData.id || null
+    // Verify JWT token and get userId
+    const payload = verifyAccessToken(token)
+    return payload?.userId || null
   } catch (error) {
     console.error("Error getting user ID from cookies:", error)
     return null
