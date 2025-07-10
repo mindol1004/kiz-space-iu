@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
+import { AuthAPI } from "../api/auth-api"
 
 interface LoginData {
   email: string
@@ -30,23 +31,7 @@ export function useLogin() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: async (data: LoginData) => {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(data),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "로그인에 실패했습니다")
-      }
-
-      return response.json()
-    },
+    mutationFn: (data: LoginData) => AuthAPI.login(data),
     onSuccess: (data) => {
       // 토큰은 쿠키에 저장되므로 사용자 정보만 저장
       login(data.user)
@@ -75,18 +60,7 @@ export function useLogout() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      })
-
-      if (!response.ok) {
-        throw new Error("로그아웃에 실패했습니다")
-      }
-
-      return response.json()
-    },
+    mutationFn: () => AuthAPI.logout(),
     onSuccess: () => {
       logout()
       queryClient.clear()
@@ -113,22 +87,7 @@ export function useRegister() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: async (data: RegisterData) => {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "회원가입에 실패했습니다")
-      }
-
-      return response.json()
-    },
+    mutationFn: (data: RegisterData) => AuthAPI.register(data),
     onSuccess: () => {
       toast({
         title: "회원가입 성공",

@@ -55,23 +55,13 @@ export const useAuthStore = create<AuthState>()(
       },
       checkAuthStatus: async () => {
         try {
-          const response = await fetch('/api/auth/check', {
-            credentials: 'include'
+          const { AuthAPI } = await import('@/features/auth/api/auth-api')
+          const userData = await AuthAPI.checkAuth()
+          set({
+            user: userData.user,
+            isAuthenticated: true,
           })
-          if (response.ok) {
-            const userData = await response.json()
-            set({
-              user: userData.user,
-              isAuthenticated: true,
-            })
-            return true
-          } else {
-            set({
-              user: null,
-              isAuthenticated: false,
-            })
-            return false
-          }
+          return true
         } catch (error) {
           console.error('Auth check failed:', error)
           set({
