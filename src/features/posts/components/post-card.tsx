@@ -13,6 +13,9 @@ import { usePostCard } from "../hooks/use-post-card"
 import { Post } from "../types/post-type"
 import { getCategoryLabel, getAgeGroupLabel } from "@/shared/constants/common-data"
 import { PostActions } from "./post-actions"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Trash2, Loader2 } from "lucide-react"
 
 interface PostCardProps {
   post: Post
@@ -22,8 +25,13 @@ export function PostCard({ post }: PostCardProps) {
   const {
     showDetailModal,
     setShowDetailModal,
+    showDeleteDialog,
+    setShowDeleteDialog,
     handleCardClick,
     getTruncatedContent,
+    handleDelete,
+    isOwner,
+    isDeleting,
   } = usePostCard(post)
 
   const truncatedContent = getTruncatedContent()
@@ -53,9 +61,27 @@ export function PostCard({ post }: PostCardProps) {
                   <p className="text-xs text-gray-500">{formatDate(new Date(post.createdAt))}</p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowDeleteDialog(true)
+                      }}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      삭제
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
             <div className="flex gap-2 mt-2">
               <Badge variant="secondary">{getCategoryLabel(post.category)}</Badge>
@@ -107,6 +133,34 @@ export function PostCard({ post }: PostCardProps) {
       </motion.div>
 
       <PostDetailModal post={post} open={showDetailModal} onOpenChange={setShowDetailModal} />
+      
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>게시글 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말로 이 게시글을 삭제하시겠습니까? 삭제된 게시글은 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  삭제 중...
+                </>
+              ) : (
+                "삭제"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
