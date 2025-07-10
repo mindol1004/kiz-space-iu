@@ -27,7 +27,7 @@ export function usePostActions(post: Post) {
   }, [post.isLiked, post.isBookmarked, post.likesCount, post.viewsCount])
 
   const likeMutation = useMutation({
-    mutationFn: () => PostsAPI.likePost(post.id, user!.id),
+    mutationFn: () => PostsAPI.likePost(post.id),
     onMutate: async () => {
       // 낙관적 업데이트
       const newIsLiked = !localState.isLiked
@@ -66,7 +66,7 @@ export function usePostActions(post: Post) {
   })
 
   const bookmarkMutation = useMutation({
-    mutationFn: () => PostsAPI.bookmarkPost(post.id, user!.id),
+    mutationFn: () => PostsAPI.bookmarkPost(post.id),
     onMutate: async () => {
       // 낙관적 업데이트
       const newIsBookmarked = !localState.isBookmarked
