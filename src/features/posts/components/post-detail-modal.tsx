@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -29,10 +29,18 @@ export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalPro
     incrementViews,
   } = usePostDetailModal(post)
 
-  // 모달이 열릴 때 조회수 증가
+  // 조회수 증가를 한 번만 실행하도록 ref 사용
+  const hasIncrementedViews = useRef(false)
+
   useEffect(() => {
-    if (open) {
+    if (open && !hasIncrementedViews.current) {
       incrementViews()
+      hasIncrementedViews.current = true
+    }
+    
+    // 모달이 닫히면 다시 조회수 증가 가능하도록 초기화
+    if (!open) {
+      hasIncrementedViews.current = false
     }
   }, [open, incrementViews])
 
