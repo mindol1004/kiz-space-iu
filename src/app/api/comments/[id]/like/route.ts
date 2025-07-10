@@ -22,12 +22,10 @@ export const POST = withAuth(async (
     }
 
     // 기존 좋아요 확인
-    const existingLike = await prisma.like.findUnique({
+    const existingLike = await prisma.like.findFirst({
       where: {
-        userId_commentId: {
-          userId: auth.user.id,
-          commentId: commentId
-        }
+        userId: auth.user.id,
+        commentId: commentId
       }
     })
 
