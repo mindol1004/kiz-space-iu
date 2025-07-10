@@ -7,16 +7,18 @@ interface User {
   email: string
   nickname: string
   avatar?: string
+  region?: string
   location?: string
   interests: string[]
-  verified: boolean
+  children?: any[]
+  verified?: boolean
   bio?: string
-  postsCount: number
-  followersCount: number
-  followingCount: number
+  postsCount?: number
+  followersCount?: number
+  followingCount?: number
   createdAt: Date
   updatedAt: Date
-  lastSeenAt: Date
+  lastSeenAt?: Date
 }
 
 interface AuthState {

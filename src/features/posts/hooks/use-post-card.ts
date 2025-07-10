@@ -1,41 +1,76 @@
+
+"use client"
+
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useToast } from "@/hooks/use-toast"
 import { PostsAPI } from "../api/post-api"
 import { Post } from "../types/post-type"
 
 export function usePostCard(post: Post) {
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false)
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   const handleCardClick = () => {
     setShowDetailModal(true)
   }
 
-  const getTruncatedContent = (maxLength: number = 150) => {
+  const getTruncatedContent = (maxLength: number = 100) => {
     if (post.content.length <= maxLength) {
       return post.content
+    } else {
+      return post.content.slice(0, maxLength) + "..."
     }
-    return post.content.slice(0, maxLength) + "..."
   }
 
+  // 게시글 좋아요 뮤테이션
   const likeMutation = useMutation({
     mutationFn: () => PostsAPI.likePost(post.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] })
     },
+    onError: (error) => {
+      toast({
+        title: "좋아요 실패",
+        description: error.message,
+        variant: "destructive",
+      })
+    },
   })
 
+  // 게시글 북마크 뮤테이션
   const bookmarkMutation = useMutation({
     mutationFn: () => PostsAPI.bookmarkPost(post.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] })
+      queryClient.invalidateQueries({ queryKey: ["bookmarks"] })
+    },
+    onError: (error) => {
+      toast({
+        title: "북마크 실패",
+        description: error.message,
+        variant: "destructive",
+      })
     },
   })
 
+  // 게시글 삭제 뮤테이션
   const deleteMutation = useMutation({
     mutationFn: () => PostsAPI.deletePost(post.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] })
+      toast({
+        title: "게시글 삭제 완료",
+        description: "게시글이 성공적으로 삭제되었습니다.",
+      })
+    },
+    onError: (error) => {
+      toast({
+        title: "게시글 삭제 실패",
+        description: error.message,
+        variant: "destructive",
+      })
     },
   })
 
@@ -47,7 +82,6 @@ export function usePostCard(post: Post) {
     likeMutation,
     bookmarkMutation,
     deleteMutation,
-    isDeleting: deleteMutation.isPending,
-    isLoading: likeMutation.isPending || bookmarkMutation.isPending,
+    isLoading: likeMutation.isPending || bookmarkMutation.isPending || deleteMutation.isPending,
   }
 }
