@@ -3,6 +3,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 
+interface Comment {
+  id: string
+  content: string
+  author: {
+    id: string
+    nickname: string
+    avatar?: string
+  }
+  createdAt: Date
+  postId: string
+}
+
 interface CreateCommentData {
   content: string
   postId: string
@@ -21,7 +33,7 @@ export function useComments(postId: string) {
         throw new Error(result.error || "댓글을 불러오는데 실패했습니다")
       }
 
-      return result.comments
+      return result.comments || []
     },
     enabled: !!postId,
   })
@@ -49,7 +61,7 @@ export function useCreateComment() {
     },
     onSuccess: (comment) => {
       queryClient.invalidateQueries({ queryKey: ["comments", comment.postId] })
-      queryClient.invalidateQueries({ queryKey: ["post", comment.postId] })
+      queryClient.invalidateQueries({ queryKey: ["posts"] })
       toast({
         title: "댓글 작성 완료",
         description: "댓글이 성공적으로 작성되었습니다.",
@@ -64,8 +76,7 @@ export function useCreateComment() {
     },
   })
 }
-
-export function useDeleteComment() {
+```export function useDeleteComment() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 

@@ -6,12 +6,17 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { PostsAPI } from "../api/post-api"
 import { Post } from "../types/post-type"
+import { useComments, useCreateComment } from "../../comments/hooks/use-comments"
 
 export function usePostDetailModal(post: Post | null) {
   const [open, setOpen] = useState<boolean>(false)
   const [comment, setComment] = useState<string>("")
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
+  
+  // 댓글 데이터 가져오기
+  const { data: comments = [], isLoading: isLoadingComments } = useComments(post?.id || "")
+  const createCommentMutation = useCreateComment()
 
   useEffect(() => {
     if (open && post) {
@@ -82,11 +87,17 @@ export function usePostDetailModal(post: Post | null) {
       alert("로그인이 필요합니다.")
       return
     }
-    if (!comment.trim()) return
+    if (!comment.trim() || !post) return
     
-    // TODO: 댓글 API 추가 시 구현
-    console.log("댓글 작성:", comment)
-    setComment("")
+    createCommentMutation.mutate({
+      content: comment,
+      postId: post.id,
+      authorId: user.id,
+    }, {
+      onSuccess: () => {
+        setComment("")
+      }
+    })
   }
 
   return {
@@ -103,5 +114,8 @@ export function usePostDetailModal(post: Post | null) {
     isLiked: post?.isLiked || false,
     isBookmarked: post?.isBookmarked || false,
     likeCount: post?.likesCount || 0,
+    comments,
+    isLoadingComments,
+    isSubmittingComment: createCommentMutation.isPending,
   }
 }
