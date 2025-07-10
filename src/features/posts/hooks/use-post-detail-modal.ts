@@ -92,7 +92,6 @@ export function usePostDetailModal(post: Post | null) {
     createCommentMutation.mutate({
       content: comment,
       postId: post.id,
-      authorId: user.id,
     }, {
       onSuccess: () => {
         setComment("")
