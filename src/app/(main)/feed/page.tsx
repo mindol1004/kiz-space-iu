@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { PostCard } from "@/features/posts/components/post-card"
 import { PostFilters } from "@/features/posts/components/post-filters"
 import { CreatePostDialog } from "@/features/posts/components/create-post-dialog"
-import { usePosts } from "@/features/posts/hooks/use-posts"
+import { usePostsList } from "@/features/posts/hooks/use-posts-list"
 import { usePostStore } from "@/shared/stores/post-store"
 import { Loader2, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ export default function FeedPage() {
     isFetchingNextPage,
     refetch,
     isRefetching
-  } = usePosts({
+  } = usePostsList({
     category: selectedCategory !== "all" ? selectedCategory : undefined,
     ageGroup: selectedAgeGroup !== "all" ? selectedAgeGroup : undefined,
   })

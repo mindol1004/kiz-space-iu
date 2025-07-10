@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -10,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Heart, MessageCircle, Bookmark, Share2, Send } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { Post } from "../types/post-type"
+import { usePostDetailModal } from "../hooks/use-post-detail-modal"
 import { getCategoryLabel, getAgeGroupLabel } from "@/shared/constants/common-data"
 
 interface PostDetailModalProps {
@@ -19,49 +19,17 @@ interface PostDetailModalProps {
 }
 
 export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalProps) {
-  const [isLiked, setIsLiked] = useState(post.isLiked || false)
-  const [isBookmarked, setIsBookmarked] = useState(post.isBookmarked || false)
-  const [likeCount, setLikeCount] = useState(post.likesCount || 0)
-  const [comment, setComment] = useState("")
-  const [comments, setComments] = useState([
-    {
-      id: "1",
-      content: "정말 유용한 정보네요! 감사합니다 ㅎㅎ",
-      author: { nickname: "김엄마", avatar: "/placeholder.svg" },
-      createdAt: new Date(Date.now() - 1000 * 60 * 30),
-      likes: 2,
-    },
-    {
-      id: "2",
-      content: "저도 비슷한 경험이 있어요. 공감됩니다!",
-      author: { nickname: "이엄마", avatar: "/placeholder.svg" },
-      createdAt: new Date(Date.now() - 1000 * 60 * 15),
-      likes: 1,
-    },
-  ])
-
-  const handleLike = () => {
-    setIsLiked(!isLiked)
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1))
-  }
-
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked)
-  }
-
-  const handleCommentSubmit = () => {
-    if (comment.trim()) {
-      const newComment = {
-        id: Date.now().toString(),
-        content: comment.trim(),
-        author: { nickname: "나", avatar: "/placeholder.svg" },
-        createdAt: new Date(),
-        likes: 0,
-      }
-      setComments((prev) => [...prev, newComment])
-      setComment("")
-    }
-  }
+  const {
+    isLiked,
+    isBookmarked,
+    likeCount,
+    comment,
+    comments,
+    setComment,
+    handleLike,
+    handleBookmark,
+    handleCommentSubmit,
+  } = usePostDetailModal(post)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

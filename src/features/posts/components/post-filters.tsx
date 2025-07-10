@@ -5,29 +5,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
-import { usePostStore } from "@/shared/stores/post-store"
-import { CATEGORIES, AGE_GROUPS } from "@/shared/constants/common-data"
-
-const categories = [
-  { value: "all", label: "전체" },
-  ...CATEGORIES
-]
-
-const ageGroups = [
-  { value: "all", label: "전체" },
-  ...AGE_GROUPS.filter(group => group.value !== "ALL")
-]
+import { usePostFilters } from "../hooks/use-post-filters"
 
 export function PostFilters() {
-  const { 
-    selectedCategory, 
-    selectedAgeGroup, 
-    setSelectedCategory, 
-    setSelectedAgeGroup, 
-    resetFilters 
-  } = usePostStore()
-
-  const hasActiveFilters = selectedCategory !== "all" || selectedAgeGroup !== "all"
+  const {
+    selectedCategory,
+    selectedAgeGroup,
+    setSelectedCategory,
+    setSelectedAgeGroup,
+    resetFilters,
+    categories,
+    ageGroups,
+    hasActiveFilters,
+    getSelectedCategoryLabel,
+    getSelectedAgeGroupLabel,
+  } = usePostFilters()
 
   return (
     <div className="space-y-4">
@@ -80,7 +72,7 @@ export function PostFilters() {
               className="flex items-center gap-1 cursor-pointer"
               onClick={() => setSelectedCategory("all")}
             >
-              {categories.find(c => c.value === selectedCategory)?.label}
+              {getSelectedCategoryLabel()}
               <X className="h-3 w-3" />
             </Badge>
           )}
@@ -90,7 +82,7 @@ export function PostFilters() {
               className="flex items-center gap-1 cursor-pointer"
               onClick={() => setSelectedAgeGroup("all")}
             >
-              {ageGroups.find(a => a.value === selectedAgeGroup)?.label}
+              {getSelectedAgeGroupLabel()}
               <X className="h-3 w-3" />
             </Badge>
           )}

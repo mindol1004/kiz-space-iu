@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -8,116 +7,34 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Plus, ImageIcon, X, Upload } from "lucide-react"
-import { useCreatePost } from "../hooks/use-posts"
-import { useAuthStore } from "@/shared/stores/auth-store"
-import { useToast } from "@/hooks/use-toast"
-import { CATEGORIES, AGE_GROUPS, MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/constants/common-data"
-import { CreatePostData } from "../types/post-type"
+import { Plus, X, Upload } from "lucide-react"
+import { useCreatePostDialog } from "../hooks/use-create-post-dialog"
+import { MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/constants/common-data"
 
 export function CreatePostDialog() {
-  const [open, setOpen] = useState(false)
-  const [content, setContent] = useState("")
-  const [category, setCategory] = useState<string>("")
-  const [ageGroup, setAgeGroup] = useState<string>("")
-  const [tags, setTags] = useState<string[]>([])
-  const [tagInput, setTagInput] = useState("")
-  const [images, setImages] = useState<string[]>([])
-  const { mutateAsync: createPost, isPending: isLoading } = useCreatePost()
-  const { user } = useAuthStore()
-  const { toast } = useToast()
-
-  const addTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim()) && tags.length < MAX_TAGS_PER_POST) {
-      setTags([...tags, tagInput.trim()])
-      setTagInput("")
-    } else if (tags.length >= MAX_TAGS_PER_POST) {
-      toast({
-        title: "태그 제한",
-        description: "태그는 최대 5개까지 추가할 수 있습니다.",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove))
-  }
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-    if (files) {
-      // 실제 구현에서는 파일을 서버에 업로드하고 URL을 받아와야 합니다
-      // 현재는 더미 URL을 사용
-      const newImages = Array.from(files).map((file, index) => 
-        `/placeholder.svg?${Date.now()}-${index}`
-      )
-      setImages(prev => [...prev, ...newImages].slice(0, MAX_IMAGES_PER_POST)) // 최대 4개 이미지
-    }
-  }
-
-  const removeImage = (indexToRemove: number) => {
-    setImages(images.filter((_, index) => index !== indexToRemove))
-  }
-
-  const resetForm = () => {
-    setContent("")
-    setCategory("")
-    setAgeGroup("")
-    setTags([])
-    setTagInput("")
-    setImages([])
-  }
-
-  const handleSubmit = async () => {
-    if (!user) {
-      toast({
-        title: "로그인 필요",
-        description: "게시글을 작성하려면 로그인이 필요합니다.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    if (!content.trim()) {
-      toast({
-        title: "내용 입력 필요",
-        description: "게시글 내용을 입력해주세요.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    if (!category || !ageGroup || category === "" || ageGroup === "") {
-      toast({
-        title: "필수 정보 누락",
-        description: "카테고리와 연령대를 선택해주세요.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      await createPost({
-        content: content.trim(),
-        category: category as any,
-        ageGroup: ageGroup as any,
-        tags,
-        authorId: user.id,
-        images,
-      })
-
-      setOpen(false)
-      resetForm()
-    } catch (error) {
-      console.error("Failed to create post:", error)
-    }
-  }
-
-  const categories = CATEGORIES
-
-  const ageGroups = AGE_GROUPS.filter(group => group.value !== "ALL")
-
+  const {
+    open,
+    setOpen,
+    content,
+    setContent,
+    category,
+    setCategory,
+    ageGroup,
+    setAgeGroup,
+    tags,
+    tagInput,
+    setTagInput,
+    images,
+    categories,
+    ageGroups,
+    addTag,
+    removeTag,
+    handleImageUpload,
+    removeImage,
+    resetForm,
+    handleSubmit,
+    isLoading,
+  } = useCreatePostDialog()
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
