@@ -1,5 +1,3 @@
-"use client"
-
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { PostsAPI } from "../api/post-api"
 import { UsePostsParams } from "../types/post-type"

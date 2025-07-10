@@ -1,4 +1,3 @@
-
 export interface CommentAuthor {
   id: string
   nickname: string

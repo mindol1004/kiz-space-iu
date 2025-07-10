@@ -1,5 +1,3 @@
-"use client"
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/shared/stores/auth-store"

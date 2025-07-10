@@ -1,6 +1,3 @@
-
-"use client"
-
 import { usePostStore } from "@/shared/stores/post-store"
 import { CATEGORIES, AGE_GROUPS } from "@/shared/constants/common-data"
 

@@ -1,5 +1,3 @@
-"use client"
-
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { PostsAPI } from "../api/post-api"
