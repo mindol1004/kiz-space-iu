@@ -50,8 +50,8 @@ export class PostsAPI {
   }
 
   // 게시글 좋아요 토글
-  static async likePost(postId: string, userId: string): Promise<{ liked: boolean; likesCount: number }> {
-    const response = await apiClient.post<{ success: boolean; liked: boolean; likesCount: number }>(`/posts/${postId}/like`, { userId })
+  static async likePost(postId: string): Promise<{ liked: boolean; likesCount: number }> {
+    const response = await apiClient.post<{ success: boolean; liked: boolean; likesCount: number }>(`/posts/${postId}/like`)
     return {
       liked: response.data.liked,
       likesCount: response.data.likesCount
@@ -59,16 +59,16 @@ export class PostsAPI {
   }
 
   // 게시글 북마크 토글
-  static async bookmarkPost(postId: string, userId: string): Promise<{ bookmarked: boolean; bookmarksCount: number }> {
-    const response = await apiClient.post<{ success: boolean; bookmarked: boolean; bookmarksCount: number }>(`/posts/${postId}/bookmark`, { userId })
+  static async bookmarkPost(postId: string): Promise<{ bookmarked: boolean; bookmarksCount: number }> {
+    const response = await apiClient.post<{ success: boolean; bookmarked: boolean; bookmarksCount: number }>(`/posts/${postId}/bookmark`)
     return {
       bookmarked: response.data.bookmarked,
       bookmarksCount: response.data.bookmarksCount
     }
   }
 
-  static async incrementViews(postId: string, userId: string) {
-    const response = await apiClient.post(`/posts/${postId}/views`, { userId })
+  static async incrementViews(postId: string) {
+    const response = await apiClient.post(`/posts/${postId}/views`)
     return response.data
   }
 }

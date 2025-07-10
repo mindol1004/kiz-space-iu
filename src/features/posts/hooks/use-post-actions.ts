@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -33,7 +32,7 @@ export function usePostActions(post: Post) {
       // 낙관적 업데이트
       const newIsLiked = !localState.isLiked
       const newLikeCount = newIsLiked ? localState.likeCount + 1 : localState.likeCount - 1
-      
+
       setLocalState(prev => ({
         ...prev,
         isLiked: newIsLiked,
@@ -55,7 +54,7 @@ export function usePostActions(post: Post) {
         isLiked: data.liked,
         likeCount: data.likesCount,
       }))
-      
+
       // 캐시 업데이트
       queryClient.setQueryData(["post", post.id], (oldData: Post) => ({
         ...oldData,
@@ -71,7 +70,7 @@ export function usePostActions(post: Post) {
     onMutate: async () => {
       // 낙관적 업데이트
       const newIsBookmarked = !localState.isBookmarked
-      
+
       setLocalState(prev => ({
         ...prev,
         isBookmarked: newIsBookmarked,
@@ -91,7 +90,7 @@ export function usePostActions(post: Post) {
         ...prev,
         isBookmarked: data.bookmarked,
       }))
-      
+
       // 캐시 업데이트
       queryClient.setQueryData(["post", post.id], (oldData: Post) => ({
         ...oldData,
@@ -103,13 +102,13 @@ export function usePostActions(post: Post) {
   })
 
   const viewMutation = useMutation({
-    mutationFn: () => PostsAPI.incrementViews(post.id, user?.id || ""),
+    mutationFn: () => PostsAPI.incrementViews(post.id),
     onSuccess: (data) => {
       setLocalState(prev => ({
         ...prev,
         viewsCount: data.viewsCount,
       }))
-      
+
       // 캐시 업데이트
       queryClient.setQueryData(["post", post.id], (oldData: Post) => ({
         ...oldData,
