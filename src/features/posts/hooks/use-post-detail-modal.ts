@@ -11,7 +11,7 @@ export function usePostDetailModal(post: Post) {
   const queryClient = useQueryClient()
 
   // 댓글 데이터 가져오기
-  const { data: commentsData, isLoading: isLoadingComments } = useComments(post?.id || "")
+  const { data: commentsData, isLoading: isLoadingComments } = useComments(post?.id || "", true)
   const comments = commentsData || { comments: [], total: 0 }
   const createCommentMutation = useCreateComment()
 

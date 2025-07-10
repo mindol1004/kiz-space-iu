@@ -1,56 +1,39 @@
-
 "use client"
 
 import { useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Post } from "../types/post-type"
-import { PostsAPI } from "../api/post-api"
-import { useToast } from "@/hooks/use-toast"
+import { useDeletePost } from "./use-posts-list"
 import { useAuthStore } from "@/shared/stores/auth-store"
+import { Post } from "../types/post-type"
 
 export function usePostCard(post: Post) {
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false)
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
   const { user } = useAuthStore()
+  const deleteMutation = useDeletePost()
 
   const handleCardClick = () => {
     setShowDetailModal(true)
   }
 
   const getTruncatedContent = () => {
-    const maxLength = 120
+    const maxLength = 150
     if (post.content.length <= maxLength) {
       return post.content
     }
     return post.content.slice(0, maxLength) + "..."
   }
 
-  const deleteMutation = useMutation({
-    mutationFn: () => PostsAPI.deletePost(post.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-      toast({
-        title: "게시글 삭제 완료",
-        description: "게시글이 삭제되었습니다.",
-      })
+  const handleDelete = async () => {
+    try {
+      await deleteMutation.mutateAsync(post.id)
       setShowDeleteDialog(false)
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "게시글 삭제 실패",
-        description: error.message,
-        variant: "destructive",
-      })
-    },
-  })
-
-  const handleDelete = () => {
-    deleteMutation.mutate()
+    } catch (error) {
+      console.error("Delete failed:", error)
+    }
   }
 
-  const isOwner = user?.id === post.author.id
+  const isOwner = user?.id === post.authorId
+  const isDeleting = deleteMutation.isPending
 
   return {
     showDetailModal,
@@ -61,6 +44,6 @@ export function usePostCard(post: Post) {
     getTruncatedContent,
     handleDelete,
     isOwner,
-    isDeleting: deleteMutation.isPending,
+    isDeleting,
   }
 }

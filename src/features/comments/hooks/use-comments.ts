@@ -4,14 +4,16 @@ import { useAuthStore } from "@/shared/stores/auth-store"
 import { CommentsAPI } from "../api/comment-api"
 import { Comment, CreateCommentData, UseCommentsParams } from "../types/comment-types"
 
-export function useComments(postId: string) {
+export function useComments(postId: string, enabled = true) {
   return useQuery({
     queryKey: ["comments", postId],
     queryFn: async () => {
       const response = await CommentsAPI.getComments(postId)
       return response
     },
-    enabled: !!postId,
+    enabled: !!postId && enabled,
+    staleTime: 30000, // 30초간 캐시 유지
+    refetchOnWindowFocus: false, // 윈도우 포커스시 refetch 비활성화
   })
 }
 

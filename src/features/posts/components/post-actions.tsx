@@ -43,7 +43,7 @@ export function PostActions({ post, variant = "card", onCommentClick, commentsCo
           </motion.div>
           <span className={textSize}>{likeCount}</span>
         </Button>
-        
+
         <Button
           variant="ghost"
           size="sm"
@@ -53,7 +53,7 @@ export function PostActions({ post, variant = "card", onCommentClick, commentsCo
           <MessageCircle className={iconSize} />
           <span className={textSize}>{commentsCount || post.commentsCount || 0}</span>
         </Button>
-        
+
         {viewsCount !== undefined && (
           <div className="flex items-center space-x-1 text-gray-500">
             <Eye className={iconSize} />
@@ -61,7 +61,7 @@ export function PostActions({ post, variant = "card", onCommentClick, commentsCo
           </div>
         )}
       </div>
-      
+
       <div className="flex items-center space-x-2">
         <Button
           variant="ghost"
