@@ -10,7 +10,7 @@ interface Post {
   content: string
   images: string[]
   category: "play" | "health" | "education" | "food" | "products" | "advice"
-  ageGroup: string
+  ageGroup: "0-2" | "3-5" | "6-8" | "9-12" | "all"
   tags: string[]
   likes: string[]
   bookmarks: string[]
