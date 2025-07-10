@@ -3,7 +3,16 @@ import { prisma } from "@/lib/prisma"
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { userId } = await request.json()
+    let userId: string | undefined
+    
+    try {
+      const body = await request.json()
+      userId = body.userId
+    } catch (error) {
+      // JSON 파싱 실패시 userId는 undefined로 처리
+      userId = undefined
+    }
+    
     const postId = params.id
 
     if (!postId) {
