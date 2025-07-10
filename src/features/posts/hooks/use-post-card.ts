@@ -1,6 +1,4 @@
 
-"use client"
-
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
@@ -34,7 +32,7 @@ export function usePostCard(post: Post) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] })
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "좋아요 실패",
         description: error.message,
@@ -50,7 +48,7 @@ export function usePostCard(post: Post) {
       queryClient.invalidateQueries({ queryKey: ["posts"] })
       queryClient.invalidateQueries({ queryKey: ["bookmarks"] })
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "북마크 실패",
         description: error.message,
@@ -70,7 +68,7 @@ export function usePostCard(post: Post) {
         description: "게시글이 성공적으로 삭제되었습니다.",
       })
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "게시글 삭제 실패",
         description: error.message,
@@ -98,6 +96,5 @@ export function usePostCard(post: Post) {
     likeMutation,
     bookmarkMutation,
     deleteMutation,
-    isLoading: likeMutation.isPending || bookmarkMutation.isPending || deleteMutation.isPending,
   }
 }
