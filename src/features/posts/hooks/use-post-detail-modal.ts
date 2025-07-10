@@ -15,6 +15,22 @@ export function usePostDetailModal(post: Post) {
   const comments = commentsData || { comments: [], total: 0 }
   const createCommentMutation = useCreateComment()
 
+  // 댓글 제출 함수
+  const handleCommentSubmit = async () => {
+    if (!comment.trim() || !user?.id) return
+
+    try {
+      await createCommentMutation.mutateAsync({
+        postId: post.id,
+        content: comment.trim(),
+        authorId: user.id,
+      })
+      setComment("")
+    } catch (error) {
+      console.error("댓글 작성 실패:", error)
+    }
+  }
+
   // 조회수 증가 뮤테이션
   const viewMutation = useMutation({
     mutationFn: () => PostsAPI.incrementViews(post.id, user?.id || ""),
@@ -37,6 +53,7 @@ export function usePostDetailModal(post: Post) {
   return {
     comment,
     setComment,
+    handleCommentSubmit,
     incrementViews,
     comments,
     isLoadingComments,
