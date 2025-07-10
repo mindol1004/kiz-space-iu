@@ -59,7 +59,26 @@ export function usePostActions(post: Post) {
         isLiked: data.liked,
         likesCount: data.likesCount,
       }))
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
+      
+      // 게시글 목록 캐시에서 해당 게시글만 업데이트
+      queryClient.setQueriesData(
+        { queryKey: ["posts"] },
+        (oldData: any) => {
+          if (!oldData?.pages) return oldData
+          
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => ({
+              ...page,
+              posts: page.posts.map((p: Post) => 
+                p.id === post.id 
+                  ? { ...p, isLiked: data.liked, likesCount: data.likesCount }
+                  : p
+              )
+            }))
+          }
+        }
+      )
     },
   })
 
@@ -95,7 +114,26 @@ export function usePostActions(post: Post) {
         isBookmarked: data.bookmarked,
         bookmarksCount: data.bookmarksCount,
       }))
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
+      
+      // 게시글 목록 캐시에서 해당 게시글만 업데이트
+      queryClient.setQueriesData(
+        { queryKey: ["posts"] },
+        (oldData: any) => {
+          if (!oldData?.pages) return oldData
+          
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => ({
+              ...page,
+              posts: page.posts.map((p: Post) => 
+                p.id === post.id 
+                  ? { ...p, isBookmarked: data.bookmarked, bookmarksCount: data.bookmarksCount }
+                  : p
+              )
+            }))
+          }
+        }
+      )
     },
   })
 
