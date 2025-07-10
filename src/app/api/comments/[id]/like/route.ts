@@ -1,4 +1,5 @@
 
+
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { withAuth } from "@/lib/auth-middleware"
@@ -21,7 +22,7 @@ export const POST = withAuth(async (
     }
 
     // 기존 좋아요 확인
-    const existingLike = await prisma.commentLike.findUnique({
+    const existingLike = await prisma.like.findUnique({
       where: {
         userId_commentId: {
           userId: auth.user.id,
@@ -35,13 +36,13 @@ export const POST = withAuth(async (
 
     if (existingLike) {
       // 좋아요 취소
-      await prisma.commentLike.delete({
+      await prisma.like.delete({
         where: { id: existingLike.id }
       })
       liked = false
     } else {
       // 좋아요 추가
-      await prisma.commentLike.create({
+      await prisma.like.create({
         data: {
           userId: auth.user.id,
           commentId: commentId
@@ -51,8 +52,14 @@ export const POST = withAuth(async (
     }
 
     // 총 좋아요 수 계산
-    likesCount = await prisma.commentLike.count({
+    likesCount = await prisma.like.count({
       where: { commentId: commentId }
+    })
+
+    // 댓글의 likesCount 업데이트
+    await prisma.comment.update({
+      where: { id: commentId },
+      data: { likesCount: likesCount }
     })
 
     return NextResponse.json({ 
