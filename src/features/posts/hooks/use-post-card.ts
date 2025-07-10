@@ -4,12 +4,13 @@ import { Post } from "../types/post-type"
 
 export function usePostCard(post: Post) {
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false)
-  
+
   const handleCardClick = () => {
     setShowDetailModal(true)
   }
 
-  const getTruncatedContent = (maxLength: number = 150) => {
+  const getTruncatedContent = () => {
+    const maxLength = 120
     if (post.content.length <= maxLength) {
       return post.content
     }
