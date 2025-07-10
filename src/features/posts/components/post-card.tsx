@@ -14,7 +14,8 @@ import { PostDetailModal } from "./post-detail-modal"
 import { useLikePost, useBookmarkPost } from "../hooks/use-posts"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
-import { Post, getCategoryLabel, getAgeGroupLabel } from "../types/post-type"
+import { Post } from "../types/post-type"
+import { getCategoryLabel, getAgeGroupLabel } from "@/shared/constants/common-data"
 
 interface PostCardProps {
   post: Post

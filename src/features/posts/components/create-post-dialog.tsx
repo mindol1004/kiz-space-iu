@@ -12,9 +12,8 @@ import { Plus, ImageIcon, X, Upload } from "lucide-react"
 import { useCreatePost } from "../hooks/use-posts"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { useToast } from "@/hooks/use-toast"
-import { CATEGORIES, AGE_GROUPS, MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/constants/common-data"
-import { PostCategory, AgeGroup } from "../types/post-type" // Importing the new types
-import { POST_CATEGORIES, AGE_GROUPS as AGE_GROUP_CONSTANTS } from "@/shared/constants/common-data";
+import { POST_CATEGORIES, POST_AGE_GROUPS, MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/constants/common-data"
+import { PostCategory, AgeGroup } from "../types/post-type"
 
 export function CreatePostDialog() {
   const [open, setOpen] = useState(false)
@@ -131,7 +130,7 @@ export function CreatePostDialog() {
       label
     }))
 
-  const ageGroups = Object.entries(AGE_GROUP_CONSTANTS)
+  const ageGroups = Object.entries(POST_AGE_GROUPS)
     .filter(([key]) => key !== "PREGNANCY") // 임신 연령대 제외
     .map(([key, label]) => ({
       value: key,

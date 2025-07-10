@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Heart, MessageCircle, Bookmark, Share2, Send } from "lucide-react"
 import { formatDate } from "@/lib/utils"
-import { Post, getCategoryLabel, getAgeGroupLabel } from "../types/post-type"
+import { Post } from "../types/post-type"
+import { getCategoryLabel, getAgeGroupLabel } from "@/shared/constants/common-data"
 
 interface PostDetailModalProps {
   post: Post
