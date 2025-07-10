@@ -1,4 +1,3 @@
-
 import { apiClient } from '@/lib/axios-config'
 import { CreatePostData, Post, PostsResponse, UsePostsParams } from '../types/post-type'
 
@@ -6,23 +5,23 @@ export class PostsAPI {
   // 게시글 목록 조회
   static async getPosts(params: UsePostsParams & { page?: number; limit?: number }): Promise<PostsResponse> {
     const searchParams = new URLSearchParams()
-    
+
     if (params.category && params.category !== 'all') {
       searchParams.append('category', params.category)
     }
-    
+
     if (params.ageGroup && params.ageGroup !== 'all') {
       searchParams.append('ageGroup', params.ageGroup)
     }
-    
+
     if (params.page) {
       searchParams.append('page', params.page.toString())
     }
-    
+
     if (params.limit) {
       searchParams.append('limit', params.limit.toString())
     }
-    
+
     const response = await apiClient.get<PostsResponse>(`/posts?${searchParams.toString()}`)
     return response.data
   }
