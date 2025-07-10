@@ -98,7 +98,7 @@ export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalPro
               </Button>
               <Button variant="ghost" size="sm" className="flex items-center space-x-2 text-gray-500">
                 <MessageCircle className="h-5 w-5" />
-                <span>{comments.length}</span>
+                <span>{comments?.comments?.length || 0}</span>
               </Button>
             </div>
             <div className="flex items-center space-x-2">
@@ -118,9 +118,9 @@ export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalPro
 
           {/* 댓글 목록 */}
           <div className="space-y-4">
-            <h3 className="font-medium">댓글 {comments.length}개</h3>
+            <h3 className="font-medium">댓글 {comments?.comments?.length || 0}개</h3>
             <AnimatePresence>
-              {comments.map((comment, index) => (
+              {comments?.comments?.map((comment, index) => (
                 <motion.div
                   key={comment.id}
                   initial={{ opacity: 0, y: 10 }}
