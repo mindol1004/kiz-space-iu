@@ -41,8 +41,5 @@ export class CommentsAPI {
       parentId
     })
     return response.data.comment
-  }rentId
-    })
-    return response.data.comment
   }
 }
