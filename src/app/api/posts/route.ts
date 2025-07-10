@@ -28,6 +28,16 @@ export async function GET(request: NextRequest) {
             avatar: true,
           },
         },
+        likes: currentUserId ? {
+          where: {
+            userId: currentUserId
+          }
+        } : false,
+        bookmarks: currentUserId ? {
+          where: {
+            userId: currentUserId
+          }
+        } : false,
         _count: {
           select: {
             comments: true,
@@ -69,9 +79,13 @@ export async function GET(request: NextRequest) {
       commentsCount: post._count.comments,
       bookmarksCount: post._count.bookmarks,
       viewsCount: post.viewsCount,
-      isLiked: currentUserId ? post.likes.some(like => like.userId === currentUserId) : false,
-      isBookmarked: currentUserId ? post.bookmarks.some(bookmark => bookmark.userId === currentUserId) : false,
+      isLiked: currentUserId ? (post.likes && post.likes.length > 0) : false,
+      isBookmarked: currentUserId ? (post.bookmarks && post.bookmarks.length > 0) : false
       createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+      authorId: post.authorId,
+      isPublished: post.isPublished,
+      isPinned: post.isPinned || false,
       author: {
         id: post.author.id,
         nickname: post.author.nickname,

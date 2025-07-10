@@ -49,16 +49,22 @@ export class PostsAPI {
     await apiClient.delete(`/posts/${id}`)
   }
 
-  // 게시글 좋아요
-  static async likePost(postId: string): Promise<{ isLiked: boolean; likesCount: number }> {
-    const response = await apiClient.post<{ isLiked: boolean; likesCount: number }>(`/posts/${postId}/like`)
-    return response.data
+  // 게시글 좋아요 토글
+  static async likePost(postId: string, userId: string): Promise<{ liked: boolean; likesCount: number }> {
+    const response = await apiClient.post<{ success: boolean; liked: boolean; likesCount: number }>(`/posts/${postId}/like`, { userId })
+    return {
+      liked: response.data.liked,
+      likesCount: response.data.likesCount
+    }
   }
 
-  // 게시글 북마크
-  static async bookmarkPost(postId: string): Promise<{ isBookmarked: boolean; bookmarksCount: number }> {
-    const response = await apiClient.post<{ isBookmarked: boolean; bookmarksCount: number }>(`/posts/${postId}/bookmark`)
-    return response.data
+  // 게시글 북마크 토글
+  static async bookmarkPost(postId: string, userId: string): Promise<{ bookmarked: boolean; bookmarksCount: number }> {
+    const response = await apiClient.post<{ success: boolean; bookmarked: boolean; bookmarksCount: number }>(`/posts/${postId}/bookmark`, { userId })
+    return {
+      bookmarked: response.data.bookmarked,
+      bookmarksCount: response.data.bookmarksCount
+    }
   }
 
   // 게시글 조회수 증가
