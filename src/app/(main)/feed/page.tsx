@@ -1,4 +1,3 @@
-
 "use client"
 
 import { motion } from "framer-motion"
@@ -9,7 +8,6 @@ import { usePostsList } from "@/features/posts/hooks/use-posts-list"
 import { usePostStore } from "@/shared/stores/post-store"
 import { Loader2, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useEffect } from "react"
 
 export default function FeedPage() {
   const { selectedCategory, selectedAgeGroup } = usePostStore()
