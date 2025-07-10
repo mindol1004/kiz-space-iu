@@ -56,9 +56,9 @@ export const useAuthStore = create<AuthState>()(
       checkAuthStatus: async () => {
         try {
           const { AuthAPI } = await import('@/features/auth/api/auth-api')
-          const userData = await AuthAPI.checkAuth()
+          const response = await AuthAPI.checkAuth()
           set({
-            user: userData.user,
+            user: response.user,
             isAuthenticated: true,
           })
           return true
