@@ -11,7 +11,7 @@ export function usePostCard(post: Post) {
     setShowDetailModal(true)
   }
 
-  const getTruncatedContent = (maxLength: number = 150): string => {
+  const getTruncatedContent = (maxLength: number = 150) => {
     if (post.content.length <= maxLength) {
       return post.content
     }
