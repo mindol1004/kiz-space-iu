@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { PostsAPI } from "../api/post-api"
@@ -8,6 +9,7 @@ import { Post } from "../types/post-type"
 export function usePostCard(post: Post) {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
+  const [showDetailModal, setShowDetailModal] = useState(false)
 
   const likeMutation = useMutation({
     mutationFn: () => PostsAPI.likePost(post.id),
@@ -33,7 +35,8 @@ export function usePostCard(post: Post) {
     },
   })
 
-  const handleLike = () => {
+  const handleLike = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
     if (!user) {
       alert("로그인이 필요합니다.")
       return
@@ -41,7 +44,8 @@ export function usePostCard(post: Post) {
     likeMutation.mutate()
   }
 
-  const handleBookmark = () => {
+  const handleBookmark = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
     if (!user) {
       alert("로그인이 필요합니다.")
       return
@@ -49,7 +53,8 @@ export function usePostCard(post: Post) {
     bookmarkMutation.mutate()
   }
 
-  const handleShare = () => {
+  const handleShare = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
     if (navigator.share) {
       navigator.share({
         title: "게시글 공유",
@@ -63,6 +68,10 @@ export function usePostCard(post: Post) {
     }
   }
 
+  const handleCardClick = () => {
+    setShowDetailModal(true)
+  }
+
   const getTruncatedContent = () => {
     const maxLength = 200
     if (post.content.length <= maxLength) return post.content
@@ -70,11 +79,27 @@ export function usePostCard(post: Post) {
   }
 
   return {
+    // Post state
+    isLiked: post.isLiked || false,
+    isBookmarked: post.isBookmarked || false,
+    likeCount: post.likesCount || 0,
+    
+    // Modal state
+    showDetailModal,
+    setShowDetailModal,
+    
+    // Handlers
     handleLike,
     handleBookmark,
     handleShare,
+    handleCardClick,
+    
+    // Utils
+    getTruncatedContent,
+    
+    // Loading states
     isLiking: likeMutation.isPending,
     isBookmarking: bookmarkMutation.isPending,
-    getTruncatedContent,
+    isLoading: likeMutation.isPending || bookmarkMutation.isPending,
   }
 }
