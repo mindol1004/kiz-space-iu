@@ -33,18 +33,25 @@ export function usePostDetailModal(post: Post) {
 
   // 조회수 증가 뮤테이션
   const viewMutation = useMutation({
-    mutationFn: () => PostsAPI.incrementViews(post.id, user?.id || ""),
-    onSuccess: (data) => {
-      queryClient.setQueryData(["post", post.id], (oldData: Post) => ({
-        ...oldData,
-        viewsCount: data.viewsCount,
-      }))
+    mutationFn: async () => {
+      if (!post?.id) return
+      return PostsAPI.incrementViews(post.id)
     },
   })
 
+  // 조회수 증가 함수 (한 번만 호출되도록 제어)
   const incrementViews = useCallback(() => {
-    viewMutation.mutate()
-  }, [viewMutation])
+    if (post?.id && !viewMutation.isPending) {
+      viewMutation.mutate()
+    }
+  }, [post?.id, viewMutation])
+
+  // 조회수는 post가 변경될 때만 증가
+  useEffect(() => {
+    if (post?.id) {
+      incrementViews()
+    }
+  }, [post?.id]) // incrementViews 의존성 제거하여 무한 호출 방지
 
   useEffect(() => {
     console.log("Comments changed:", comments)
