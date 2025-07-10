@@ -9,7 +9,10 @@ import { Comment, CreateCommentData, UseCommentsParams } from "../types/comment-
 export function useComments(postId: string) {
   return useQuery({
     queryKey: ["comments", postId],
-    queryFn: () => CommentsAPI.getComments(postId),
+    queryFn: async () => {
+      const response = await CommentsAPI.getComments(postId)
+      return response
+    },
     enabled: !!postId,
   })
 }
