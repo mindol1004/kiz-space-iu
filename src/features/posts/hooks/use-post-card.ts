@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -27,20 +26,9 @@ export function usePostCard(post: Post) {
     }
   }
 
-  // 게시글 삭제 뮤테이션
+  // 게시글 삭제 뮤테이션 - PostsAPI 사용
   const deleteMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch(`/api/posts/${post.id}`, {
-        method: "DELETE",
-      })
-
-      if (!response.ok) {
-        const result = await response.json()
-        throw new Error(result.error || "게시글 삭제에 실패했습니다")
-      }
-
-      return post.id
-    },
+    mutationFn: () => PostsAPI.deletePost(post.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] })
       toast({
