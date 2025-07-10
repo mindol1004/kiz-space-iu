@@ -24,6 +24,7 @@ interface User {
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
+  isChecking: boolean
   login: (user: User) => void
   logout: () => void
   updateUser: (userData: Partial<User>) => void
@@ -35,6 +36,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       isAuthenticated: false,
+      isChecking: false,
       login: (user) => {
         set({
           user,
@@ -56,12 +58,20 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       checkAuthStatus: async () => {
+        const { isChecking } = get()
+        if (isChecking) {
+          return false
+        }
+
+        set({ isChecking: true })
+        
         try {
           const { AuthAPI } = await import('@/features/auth/api/auth-api')
           const response = await AuthAPI.checkAuth()
           set({
             user: response.user,
             isAuthenticated: true,
+            isChecking: false,
           })
           return true
         } catch (error) {
@@ -69,6 +79,7 @@ export const useAuthStore = create<AuthState>()(
           set({
             user: null,
             isAuthenticated: false,
+            isChecking: false,
           })
           return false
         }
