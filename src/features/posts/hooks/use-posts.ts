@@ -12,6 +12,8 @@ interface Post {
   category: string
   ageGroup: string
   tags: string[]
+  likes: string[]
+  bookmarks: string[]
   authorId: string
   author: {
     id: string
