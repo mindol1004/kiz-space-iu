@@ -13,6 +13,7 @@ import { Post } from "../types/post-type"
 import { getCategoryLabel, getAgeGroupLabel } from "@/shared/constants/common-data"
 import { usePostDetailModal } from "../hooks/use-post-detail-modal"
 import { PostActions } from "./post-actions"
+import { CommentList } from "@/features/comments/components/comment-list"
 
 interface PostDetailModalProps {
   post: Post
@@ -106,43 +107,8 @@ export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalPro
             />
           </div>
 
-          {/* 댓글 목록 */}
-          <div className="space-y-4">
-            <h3 className="font-medium">댓글 {comments?.comments?.length || 0}개</h3>
-            <AnimatePresence>
-              {comments?.comments?.map((comment, index) => (
-                <motion.div
-                  key={comment.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex space-x-3"
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={comment.author.avatar || "/placeholder.svg"} />
-                    <AvatarFallback className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs">
-                      {comment.author.nickname[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="font-medium text-sm">{comment.author.nickname}</p>
-                      <p className="text-sm text-gray-700 mt-1">{comment.content}</p>
-                    </div>
-                    <div className="flex items-center space-x-4 mt-2">
-                      <span className="text-xs text-gray-500">{formatDate(new Date(comment.createdAt))}</span>
-                      <Button variant="ghost" size="sm" className="text-xs text-gray-500 h-auto p-0">
-                        좋아요 {comment.likesCount}
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-xs text-gray-500 h-auto p-0">
-                        답글
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+          {/* 댓글 섹션 */}
+          <CommentList postId={post.id} />
         </div>
 
         {/* 댓글 입력 */}

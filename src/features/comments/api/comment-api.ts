@@ -26,9 +26,9 @@ export class CommentsAPI {
 
   // 댓글 좋아요 토글
   static async likeComment(commentId: string): Promise<CommentLikeResponse> {
-    const response = await apiClient.post<{ success: boolean; liked: boolean; likesCount: number }>(`/comments/${commentId}/like`)
+    const response = await apiClient.post<{ success: boolean; isLiked: boolean; likesCount: number }>(`/comments/${commentId}/like`)
     return {
-      liked: response.data.liked,
+      liked: response.data.isLiked,
       likesCount: response.data.likesCount
     }
   }

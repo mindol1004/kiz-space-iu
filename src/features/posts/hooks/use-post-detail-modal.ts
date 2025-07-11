@@ -1,34 +1,11 @@
-import { useState, useEffect, useCallback } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useCallback } from "react"
+import { useMutation } from "@tanstack/react-query"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { PostsAPI } from "../api/post-api"
-import { useComments, useCreateComment } from "@/features/comments/hooks/use-comments"
 import { Post } from "../types/post-type"
 
 export function usePostDetailModal(post: Post, options?: { enabled?: boolean }) {
   const { user } = useAuthStore()
-  const [comment, setComment] = useState("")
-  const queryClient = useQueryClient()
-
-  // 댓글 데이터 가져오기 - 모달이 열릴 때만 조회
-  const { data: commentsData, isLoading: isLoadingComments } = useComments(post?.id || "", { enabled: options?.enabled !== false })
-  const comments = commentsData || { comments: [], total: 0 }
-  const createCommentMutation = useCreateComment()
-
-  // 댓글 제출 함수
-  const handleCommentSubmit = async () => {
-    if (!comment.trim() || !user?.id) return
-
-    try {
-      await createCommentMutation.mutateAsync({
-        postId: post.id,
-        content: comment.trim(),
-      })
-      setComment("")
-    } catch (error) {
-      console.error("댓글 작성 실패:", error)
-    }
-  }
 
   // 조회수 증가 뮤테이션
   const viewMutation = useMutation({
@@ -46,10 +23,8 @@ export function usePostDetailModal(post: Post, options?: { enabled?: boolean }) 
   }, [post?.id, viewMutation])
 
   return {
-    comment,
-    setComment,
-    handleCommentSubmit,
     incrementViews,
+  }crementViews,
     comments,
     isLoadingComments,
     isSubmittingComment: createCommentMutation.isPending,
