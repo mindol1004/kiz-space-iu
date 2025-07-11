@@ -16,17 +16,23 @@ export function usePostActions(post: Post) {
 
   // 게시글 데이터가 변경될 때 로컬 상태 동기화
   useEffect(() => {
-    setLocalState({
-      isLiked: post.isLiked || false,
-      isBookmarked: post.isBookmarked || false,
-      likeCount: post.likesCount || 0,
-      viewsCount: post.viewsCount || 0,
-    })
-  }, [post.isLiked, post.isBookmarked, post.likesCount, post.viewsCount])
+    // mutation이 진행 중이 아닐 때만 상태 동기화
+    if (!likeMutation.isPending && !bookmarkMutation.isPending) {
+      setLocalState({
+        isLiked: post.isLiked || false,
+        isBookmarked: post.isBookmarked || false,
+        likeCount: post.likesCount || 0,
+        viewsCount: post.viewsCount || 0,
+      })
+    }
+  }, [post.isLiked, post.isBookmarked, post.likesCount, post.viewsCount, likeMutation.isPending, bookmarkMutation.isPending])
 
   const likeMutation = useMutation({
     mutationFn: () => PostsAPI.likePost(post.id),
     onMutate: async () => {
+      // 현재 상태 저장
+      const previousState = { ...localState }
+      
       // 낙관적 업데이트
       const newIsLiked = !localState.isLiked
       const newLikeCount = newIsLiked ? localState.likeCount + 1 : localState.likeCount - 1
@@ -37,7 +43,7 @@ export function usePostActions(post: Post) {
         likeCount: newLikeCount,
       }))
 
-      return { previousState: localState }
+      return { previousState }
     },
     onError: (err, variables, context) => {
       // 에러 시 이전 상태로 되돌리기
@@ -46,21 +52,24 @@ export function usePostActions(post: Post) {
       }
     },
     onSuccess: (data) => {
-      // 서버 응답으로 최종 상태 업데이트
+      // 서버 응답으로 최종 상태 업데이트 - 항상 서버 데이터를 우선
       setLocalState(prev => ({
         ...prev,
         isLiked: data.liked,
         likeCount: data.likesCount,
       }))
 
-      // 캐시 업데이트
-      queryClient.setQueryData(["post", post.id], (oldData: Post) => ({
-        ...oldData,
-        isLiked: data.liked,
-        likesCount: data.likesCount,
-      }))
+      // 개별 게시글 캐시 업데이트
+      queryClient.setQueryData(["post", post.id], (oldData: Post | undefined) => {
+        if (!oldData) return oldData
+        return {
+          ...oldData,
+          isLiked: data.liked,
+          likesCount: data.likesCount,
+        }
+      })
       
-      // 게시글 목록 캐시에서 해당 게시글만 업데이트
+      // 게시글 목록 캐시 업데이트
       queryClient.setQueriesData(
         { queryKey: ["posts"] },
         (oldData: any) => {
@@ -79,6 +88,9 @@ export function usePostActions(post: Post) {
           }
         }
       )
+
+      // 관련된 모든 쿼리 무효화하여 재동기화
+      queryClient.invalidateQueries({ queryKey: ["posts"] })
     },
   })
 
