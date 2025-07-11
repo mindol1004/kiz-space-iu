@@ -133,7 +133,7 @@ export function PostCard({ post }: PostCardProps) {
       </motion.div>
 
       <PostDetailModal post={post} open={showDetailModal} onOpenChange={setShowDetailModal} />
-      
+
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

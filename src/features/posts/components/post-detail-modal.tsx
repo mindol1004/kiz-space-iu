@@ -27,7 +27,7 @@ export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalPro
     setComment,
     handleCommentSubmit,
     incrementViews,
-  } = usePostDetailModal(post)
+  } = usePostDetailModal(post, { enabled: open })
 
   // 조회수 증가를 한 번만 실행하도록 ref 사용
   const hasIncrementedViews = useRef(false)
@@ -37,7 +37,7 @@ export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalPro
       incrementViews()
       hasIncrementedViews.current = true
     }
-    
+
     // 모달이 닫히면 다시 조회수 증가 가능하도록 초기화
     if (!open) {
       hasIncrementedViews.current = false
