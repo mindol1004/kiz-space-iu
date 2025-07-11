@@ -45,7 +45,11 @@ export function useSignup() {
         nickname: data.nickname,
         location: data.region,
         interests: data.interests,
-        children: data.children,
+        children: data.children.map(child => ({
+          name: child.name,
+          age: parseInt(child.age) || 0,
+          gender: child.gender
+        })),
         bio: data.bio
       }
 
