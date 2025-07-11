@@ -24,7 +24,7 @@ export function usePostDetailModal(post: Post, options?: { enabled?: boolean }) 
 
   return {
     incrementViews,
-  }crementViews,
+    crementViews,
     comments,
     isLoadingComments,
     isSubmittingComment: createCommentMutation.isPending,
