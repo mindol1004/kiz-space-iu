@@ -24,13 +24,31 @@ interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isChecking: boolean
-  accessToken: string | null
-  refreshToken: string | null
   login: (user: User) => void
   logout: () => void
+  clearAuth: () => void // 새로 추가
   updateUser: (userData: Partial<User>) => void
   checkAuthStatus: () => Promise<boolean>
-  setTokens: (tokens: { accessToken: string; refreshToken: string }) => void
+}
+
+// 쿠키 유틸리티 함수
+const cookieUtils = {
+  get: (name: string): string | null => {
+    if (typeof window === 'undefined') return null
+    const value = `; ${document.cookie}`
+    const parts = value.split(`; ${name}=`)
+    if (parts.length === 2) {
+      return parts.pop()?.split(';').shift() || null
+    }
+    return null
+  },
+
+  remove: (name: string, path: string = '/', domain?: string) => {
+    if (typeof window === 'undefined') return
+    let cookieString = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}`
+    if (domain) cookieString += `; domain=${domain}`
+    document.cookie = cookieString
+  }
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -39,40 +57,48 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isChecking: false,
-      accessToken: null,
-      refreshToken: null,
+
       login: (user) => {
         set({
           user,
           isAuthenticated: true,
         })
       },
-      logout: () => {
-        // 쿠키 삭제
-        if (typeof document !== 'undefined') {
-          document.cookie = 'accessToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
-          document.cookie = 'refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
-        }
 
-        // 로컬 스토리지 클리어
-        if (typeof localStorage !== 'undefined') {
+      logout: () => {
+        // 쿠키에서 토큰 제거
+        cookieUtils.remove('accessToken', '/')
+        cookieUtils.remove('refreshToken', '/')
+
+        // 상태 초기화
+        set({
+          user: null,
+          isAuthenticated: false,
+        })
+
+        // localStorage에서도 제거 (persist 데이터)
+        if (typeof window !== 'undefined') {
           localStorage.removeItem('auth-storage')
         }
+      },
+
+      clearAuth: () => {
+        // 인증 실패 시 모든 인증 정보 초기화
+        cookieUtils.remove('accessToken', '/')
+        cookieUtils.remove('refreshToken', '/')
 
         set({
           user: null,
           isAuthenticated: false,
-          accessToken: null,
-          refreshToken: null,
           isChecking: false,
         })
+
+        // localStorage에서도 제거
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth-storage')
+        }
       },
-      setTokens: (tokens) => {
-        set({
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-        })
-      },
+
       updateUser: (userData) => {
         const currentUser = get().user
         if (currentUser) {
@@ -81,15 +107,18 @@ export const useAuthStore = create<AuthState>()(
           })
         }
       },
+
       checkAuthStatus: async () => {
-        const { isChecking, isAuthenticated, user } = get()
+        const { isChecking } = get()
         if (isChecking) {
           return false
         }
 
-        // 이미 인증된 상태이면 API 호출하지 않음
-        if (isAuthenticated && user) {
-          return true
+        // 쿠키에서 토큰 확인
+        const token = cookieUtils.get('accessToken')
+        if (!token) {
+          get().clearAuth()
+          return false
         }
 
         set({ isChecking: true })
@@ -97,19 +126,20 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { AuthAPI } = await import('@/features/auth/api/auth-api')
           const response = await AuthAPI.checkAuth()
+
           set({
             user: response.user,
             isAuthenticated: true,
             isChecking: false,
           })
+
           return true
         } catch (error) {
           console.error('Auth check failed:', error)
-          set({
-            user: null,
-            isAuthenticated: false,
-            isChecking: false,
-          })
+
+          // 인증 실패 시 모든 정보 초기화
+          get().clearAuth()
+
           return false
         }
       },
@@ -119,9 +149,17 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
       }),
+      // persist 복원 시 쿠키 토큰 확인
+      onRehydrateStorage: () => (state) => {
+        if (state && typeof window !== 'undefined') {
+          const token = cookieUtils.get('accessToken')
+          if (!token && state.isAuthenticated) {
+            // 쿠키에 토큰이 없으면 인증 상태 초기화
+            state.clearAuth()
+          }
+        }
+      },
     }
   )
 )

@@ -15,15 +15,15 @@ export function useLogin() {
     onSuccess: (data) => {
       // 토큰은 쿠키에 저장되므로 사용자 정보만 저장
       login(data.user)
+      console.log("로그인 성공:", data)
 
       toast({
         title: "로그인 성공",
         description: "환영합니다!",
       })
 
-      // 페이지 이동 전에 잠시 대기하여 상태 업데이트 완료 보장
       setTimeout(() => {
-        router.push("/feed")
+        router.push('/feed')
       }, 100)
     },
     onError: (error: Error) => {
