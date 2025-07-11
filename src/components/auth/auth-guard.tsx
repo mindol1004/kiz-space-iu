@@ -60,39 +60,29 @@ export function AuthGuard({
 
   useEffect(() => {
     const verifyAuth = async () => {
-      console.log('=== Auth verification started ===')
-      console.log('Current path:', currentPath)
-      console.log('Require auth:', requireAuth)
-      console.log('Is authenticated:', isAuthenticated)
-      console.log('User:', user)
 
       // 현재 경로가 public 경로인 경우 인증 체크하지 않음
       if (PUBLIC_PATHS.includes(currentPath)) {
-        console.log('Public path detected, skipping auth check')
         setIsLoading(false)
         return
       }
 
       // requireAuth가 false인 경우 인증 체크하지 않음
       if (!requireAuth) {
-        console.log('Auth not required, skipping check')
         setIsLoading(false)
         return
       }
 
       // 이미 인증된 상태이고 사용자 정보가 있다면 즉시 통과
       if (isAuthenticated && user) {
-        console.log('Already authenticated with user data, skipping API check')
         setIsLoading(false)
         return
       }
 
       // 쿠키에서 JWT 토큰 확인
       const token = getCookie('accessToken')
-      console.log('Access token from cookie:', token ? 'Present' : 'Missing')
 
       if (!token) {
-        console.log('No access token found')
         clearAuth()
         setIsLoading(false)
         router.push(redirectTo)
@@ -101,7 +91,6 @@ export function AuthGuard({
 
       // 토큰 만료 체크
       if (isTokenExpired(token)) {
-        console.log('Token expired')
         clearAuth()
         setIsLoading(false)
         router.push(redirectTo)
@@ -111,17 +100,12 @@ export function AuthGuard({
       // 서버에서 인증 상태 확인 (이미 인증된 경우에만)
       if (!isAuthenticated || !user) {
         try {
-          console.log('Checking auth status via API...')
           const isAuth = await checkAuthStatus()
 
-          if (isAuth) {
-            console.log('Auth verification successful')
-          } else {
-            console.log('Auth check failed')
+          if (!isAuth) {
             router.push(redirectTo)
           }
         } catch (error) {
-          console.error('Auth verification failed:', error)
           clearAuth()
           router.push(redirectTo)
         }

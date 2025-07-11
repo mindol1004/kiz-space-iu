@@ -13,7 +13,6 @@ export function useLogin() {
   return useMutation({
     mutationFn: (data: LoginRequest) => AuthAPI.login(data),
     onSuccess: (data) => {
-      console.log("로그인 성공:", data)
       
       // 사용자 정보와 인증 상태를 즉시 설정
       login(data.user)
@@ -27,7 +26,6 @@ export function useLogin() {
       setTimeout(() => {
         // 상태 확인 후 리다이렉트
         const currentState = useAuthStore.getState()
-        console.log("리다이렉트 전 상태:", currentState)
         router.push('/feed')
       }, 100)
     },
