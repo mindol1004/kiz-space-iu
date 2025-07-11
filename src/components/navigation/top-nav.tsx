@@ -16,6 +16,11 @@ export function TopNav() {
   const [searchOpen, setSearchOpen] = useState(false)
   const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
+  const logoutMutation = useLogout()
+
+  const handleLogout = () => {
+    logoutMutation.mutate()
+  }
 
   return (
     <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
@@ -54,7 +59,7 @@ export function TopNav() {
                       <User className="h-4 w-4 mr-2" />
                       프로필
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={useLogout}>
+                    <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="h-4 w-4 mr-2" />
                       로그아웃
                     </DropdownMenuItem>
