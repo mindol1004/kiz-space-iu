@@ -35,8 +35,7 @@ export function usePostDetailModal(post: Post, options?: { enabled?: boolean }) 
       if (!user || !post.id) throw new Error("로그인이 필요합니다")
       return CommentsAPI.createComment({
         postId: post.id,
-        content,
-        authorId: user.id,
+        content
       })
     },
     onSuccess: () => {
