@@ -5,7 +5,7 @@ import { verifyAccessToken } from "@/lib/jwt"
 
 export async function POST(request: NextRequest) {
   try {
-    let requestBody = {}
+    let requestBody: { refreshToken?: string; logoutAll?: boolean } = {}
     
     // 요청 본문이 있는지 확인하고 안전하게 파싱
     try {
