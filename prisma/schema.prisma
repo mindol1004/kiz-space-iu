@@ -184,7 +184,9 @@ model Like {
 
   createdAt DateTime @default(now())
 
-  @@unique([userId, postId])
+  // Separate unique constraints for posts and comments
+  @@unique([userId, postId], name: "user_post_like")
+  @@unique([userId, commentId], name: "user_comment_like")
   @@map("likes")
 }
 

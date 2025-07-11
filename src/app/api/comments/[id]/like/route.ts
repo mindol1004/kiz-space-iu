@@ -16,11 +16,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "댓글 ID가 필요합니다" }, { status: 400 })
     }
 
-    // Check if already liked
+    // Check if already liked (댓글 좋아요이므로 commentId만 확인)
     const existingLike = await prisma.like.findFirst({
       where: {
         userId: userId,
         commentId: commentId,
+        postId: null, // 댓글 좋아요는 postId가 null
       },
     })
 
