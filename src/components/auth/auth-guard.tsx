@@ -12,18 +12,12 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, fallback }: AuthGuardProps) {
-  const { isAuthenticated, checkAuthStatus, isChecking } = useAuthStore()
+  const { isAuthenticated, checkAuthStatus, isChecking, user } = useAuthStore()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const verifyAuth = async () => {
-      // 이미 인증된 상태라면 체크하지 않음
-      if (isAuthenticated) {
-        setIsLoading(false)
-        return
-      }
-
       // 로그인/회원가입 페이지에서는 인증 체크하지 않음
       if (typeof window !== 'undefined' && 
           (window.location.pathname === '/login' || window.location.pathname === '/signup')) {
@@ -33,6 +27,21 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
 
       // 현재 페이지가 랜딩 페이지인 경우에도 인증 체크하지 않음
       if (typeof window !== 'undefined' && window.location.pathname === '/') {
+        setIsLoading(false)
+        return
+      }
+
+      // JWT 토큰 확인
+      const hasToken = typeof window !== 'undefined' && 
+        (document.cookie.includes('accessToken=') || localStorage.getItem('auth-storage'))
+
+      if (!hasToken) {
+        router.push("/login")
+        return
+      }
+
+      // 이미 인증된 상태이고 사용자 정보가 있다면 API 호출하지 않음
+      if (isAuthenticated && user) {
         setIsLoading(false)
         return
       }
@@ -49,7 +58,7 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
     }
 
     verifyAuth()
-  }, [checkAuthStatus, router, isAuthenticated])
+  }, [checkAuthStatus, router, isAuthenticated, user])
 
   // 로딩 중이거나 인증 체크 중인 경우
   if (isLoading || isChecking || !isAuthenticated) {

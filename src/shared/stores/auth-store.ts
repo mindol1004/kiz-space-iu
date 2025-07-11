@@ -1,4 +1,3 @@
-
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
@@ -49,11 +48,23 @@ export const useAuthStore = create<AuthState>()(
         })
       },
       logout: () => {
+        // 쿠키 삭제
+        if (typeof document !== 'undefined') {
+          document.cookie = 'accessToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+          document.cookie = 'refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+        }
+
+        // 로컬 스토리지 클리어
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('auth-storage')
+        }
+
         set({
           user: null,
           isAuthenticated: false,
           accessToken: null,
           refreshToken: null,
+          isChecking: false,
         })
       },
       setTokens: (tokens) => {
@@ -82,7 +93,7 @@ export const useAuthStore = create<AuthState>()(
         }
 
         set({ isChecking: true })
-        
+
         try {
           const { AuthAPI } = await import('@/features/auth/api/auth-api')
           const response = await AuthAPI.checkAuth()
