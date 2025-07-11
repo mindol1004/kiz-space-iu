@@ -19,7 +19,7 @@ export function usePostActions(post: Post) {
     onMutate: async () => {
       // 현재 상태 저장
       const previousState = { ...localState }
-
+      
       // 낙관적 업데이트
       const newIsLiked = !localState.isLiked
       const newLikeCount = newIsLiked ? localState.likeCount + 1 : localState.likeCount - 1
@@ -55,13 +55,13 @@ export function usePostActions(post: Post) {
           likesCount: data.likesCount,
         }
       })
-
+      
       // 게시글 목록 캐시 업데이트
       queryClient.setQueriesData(
         { queryKey: ["posts"] },
         (oldData: any) => {
           if (!oldData?.pages) return oldData
-
+          
           return {
             ...oldData,
             pages: oldData.pages.map((page: any) => ({
@@ -76,7 +76,8 @@ export function usePostActions(post: Post) {
         }
       )
 
-      // 게시글 목록 쿼리 무효화 제거 (불필요한 API 호출 방지)
+      // 관련된 모든 쿼리 무효화하여 재동기화
+      queryClient.invalidateQueries({ queryKey: ["posts"] })
     },
   })
 
@@ -112,13 +113,13 @@ export function usePostActions(post: Post) {
         isBookmarked: data.bookmarked,
         bookmarksCount: data.bookmarksCount,
       }))
-
+      
       // 게시글 목록 캐시에서 해당 게시글만 업데이트
       queryClient.setQueriesData(
         { queryKey: ["posts"] },
         (oldData: any) => {
           if (!oldData?.pages) return oldData
-
+          
           return {
             ...oldData,
             pages: oldData.pages.map((page: any) => ({
