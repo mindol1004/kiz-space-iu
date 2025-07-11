@@ -4,7 +4,9 @@ import { useMutation } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { useValidateEmail, useValidatePassword, useValidateNickname } from "@/features/auth/hooks/use-validation"
+import { AuthAPI } from "../api/auth-api"
 import type { SignupFormData } from "../types/auth-types"
+import type { RegisterRequest } from "../types/auth-api-types"
 
 export function useSignup() {
   const { toast } = useToast()
@@ -14,7 +16,7 @@ export function useSignup() {
   const { validateNickname } = useValidateNickname();
 
   const mutation = useMutation({
-    mutationFn: async (data: SignupFormData): Promise<any> => {
+    mutationFn: async (data: SignupFormData) => {
       // 데이터 검증
       if (!validateEmail(data.email)) {
         throw new Error("올바른 이메일 형식을 입력해주세요")
@@ -36,32 +38,26 @@ export function useSignup() {
         throw new Error("거주 지역을 선택해주세요")
       }
 
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || "회원가입에 실패했습니다")
+      // SignupFormData를 RegisterRequest 형태로 변환
+      const registerData: RegisterRequest = {
+        email: data.email,
+        password: data.password,
+        nickname: data.nickname,
+        location: data.region,
+        interests: data.interests,
+        children: data.children,
+        bio: data.bio
       }
 
-      return result
+      return AuthAPI.register(registerData)
     },
     onSuccess: (data) => {
-      // 토큰 저장
-      localStorage.setItem("auth-token", data.token)
-
       toast({
         title: "회원가입 완료! 🎉",
-        description: `${data.user.name}님, KIZ-SPACE에 오신 것을 환영합니다!`,
+        description: `${data.user.nickname}님, KIZ-SPACE에 오신 것을 환영합니다!`,
       })
 
-      // 온보딩 페이지로 이동
+      // 로그인 페이지로 이동
       router.push("/login")
     },
     onError: (error) => {
