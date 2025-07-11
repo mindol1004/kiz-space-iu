@@ -1,14 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { CommentsAPI } from "../api/comment-api"
-import { 
-  Comment, 
-  CreateCommentData, 
-  UseCommentsParams,
-  CreateReplyData
-} from "../types/comment-types"
+import { Comment, CreateCommentData } from "../types/comment-types"
+import { toast } from "sonner"
 
 export function useComments(postId: string, options?: { enabled?: boolean }) {
   return useQuery({
@@ -24,110 +18,80 @@ export function useComments(postId: string, options?: { enabled?: boolean }) {
 }
 
 export function useCreateComment() {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
   const { user } = useAuthStore()
+  const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (data: Omit<CreateCommentData, 'authorId'>) => {
-      if (!user) {
-        throw new Error("로그인이 필요합니다")
-      }
-
-      return CommentsAPI.createComment({
-        ...data,
-        authorId: user.id
-      })
+    mutationFn: async (data: CreateCommentData) => {
+      if (!user) throw new Error("로그인이 필요합니다")
+      return CommentsAPI.createComment(data)
     },
-    onSuccess: (comment: Comment) => {
-      queryClient.invalidateQueries({ queryKey: ["comments", comment.postId] })
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-      toast({
-        title: "댓글 작성 완료",
-        description: "댓글이 성공적으로 작성되었습니다.",
+    onSuccess: (comment) => {
+      // 해당 게시글의 댓글 목록 무효화
+      queryClient.invalidateQueries({ 
+        queryKey: ["comments", comment.postId] 
       })
+      toast.success("댓글이 작성되었습니다.")
     },
-    onError: (error: Error) => {
-      toast({
-        title: "댓글 작성 실패",
-        description: error.message,
-        variant: "destructive",
-      })
+    onError: (error) => {
+      console.error("댓글 작성 오류:", error)
+      toast.error("댓글 작성 중 오류가 발생했습니다.")
     },
   })
 }
 
 export function useDeleteComment() {
   const queryClient = useQueryClient()
-  const { toast } = useToast()
 
   return useMutation({
-    mutationFn: (commentId: string) => CommentsAPI.deleteComment(commentId),
+    mutationFn: CommentsAPI.deleteComment,
     onSuccess: () => {
+      // 모든 댓글 쿼리 무효화
       queryClient.invalidateQueries({ queryKey: ["comments"] })
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-      toast({
-        title: "댓글 삭제 완료",
-        description: "댓글이 삭제되었습니다.",
-      })
+      toast.success("댓글이 삭제되었습니다.")
     },
-    onError: (error: Error) => {
-      toast({
-        title: "댓글 삭제 실패",
-        description: error.message,
-        variant: "destructive",
-      })
+    onError: (error) => {
+      console.error("댓글 삭제 오류:", error)
+      toast.error("댓글 삭제 중 오류가 발생했습니다.")
     },
   })
 }
 
 export function useLikeComment() {
   const queryClient = useQueryClient()
-  const { toast } = useToast()
 
   return useMutation({
-    mutationFn: (commentId: string) => CommentsAPI.likeComment(commentId),
+    mutationFn: CommentsAPI.likeComment,
     onSuccess: (data, commentId) => {
+      // 댓글 목록 쿼리 무효화
       queryClient.invalidateQueries({ queryKey: ["comments"] })
-      // 옵티미스틱 업데이트도 가능
     },
-    onError: (error: Error) => {
-      toast({
-        title: "좋아요 실패",
-        description: error.message,
-        variant: "destructive",
-      })
+    onError: (error) => {
+      console.error("댓글 좋아요 오류:", error)
+      toast.error("좋아요 처리 중 오류가 발생했습니다.")
     },
   })
 }
 
 export function useCreateReply() {
-  const queryClient = useQueryClient()
-  const { toast } = useToast()
   const { user } = useAuthStore()
+  const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ parentId, content, postId }: CreateReplyData) => {
-      if (!user) {
-        throw new Error("로그인이 필요합니다")
-      }
-
+    mutationFn: async ({ parentId, content, postId }: { parentId: string; content: string; postId: string }) => {
+      if (!user) throw new Error("로그인이 필요합니다")
       return CommentsAPI.createReply(parentId, { content, postId })
     },
-    onSuccess: (comment: Comment) => {
-      queryClient.invalidateQueries({ queryKey: ["comments", comment.postId] })
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-      toast({
-        title: "답글 작성 완료",
-        description: "답글이 성공적으로 작성되었습니다.",
+    onSuccess: (reply) => {
+      // 해당 게시글의 댓글 목록 무효화
+      queryClient.invalidateQueries({ 
+        queryKey: ["comments", reply.postId] 
       })
+      toast.success("답글이 작성되었습니다.")
     },
-    onError: (error: Error) => {
-      toast({
-        title: "답글 작성 실패",
-        description: error.message,
-        variant: "destructive",
-      })
+    onError: (error) => {
+      console.error("답글 작성 오류:", error)
+      toast.error("답글 작성 중 오류가 발생했습니다.")
     },
   })
 }
