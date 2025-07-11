@@ -29,7 +29,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       // 좋아요 제거
       await prisma.like.delete({
         where: {
-          userId_postId: {
+          user_post_like: {
             userId: userId,
             postId: postId,
           },
