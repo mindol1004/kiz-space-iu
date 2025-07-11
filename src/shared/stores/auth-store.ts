@@ -71,9 +71,14 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       checkAuthStatus: async () => {
-        const { isChecking } = get()
+        const { isChecking, isAuthenticated } = get()
         if (isChecking) {
           return false
+        }
+
+        // 이미 인증된 상태이면 API 호출하지 않음
+        if (isAuthenticated) {
+          return true
         }
 
         set({ isChecking: true })

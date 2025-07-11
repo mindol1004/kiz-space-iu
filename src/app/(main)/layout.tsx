@@ -25,6 +25,12 @@ export default function MainLayout({
         return
       }
 
+      // 로그인/회원가입 페이지에서는 인증 체크하지 않음
+      if (typeof window !== 'undefined' && 
+          (window.location.pathname === '/login' || window.location.pathname === '/signup')) {
+        return
+      }
+
       setIsLoading(true)
       const isAuth = await checkAuthStatus()
       
