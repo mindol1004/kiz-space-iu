@@ -13,19 +13,23 @@ export function useLogin() {
   return useMutation({
     mutationFn: (data: LoginRequest) => AuthAPI.login(data),
     onSuccess: (data) => {
-      // 토큰은 쿠키에 저장되므로 사용자 정보만 저장
-      login(data.user)
       console.log("로그인 성공:", data)
+      
+      // 사용자 정보와 인증 상태를 즉시 설정
+      login(data.user)
 
       toast({
         title: "로그인 성공",
         description: "환영합니다!",
       })
 
-      // 상태 업데이트를 위해 약간의 지연 후 리다이렉트
+      // 상태가 확실히 저장된 후 리다이렉트
       setTimeout(() => {
+        // 상태 확인 후 리다이렉트
+        const currentState = useAuthStore.getState()
+        console.log("리다이렉트 전 상태:", currentState)
         router.push('/feed')
-      }, 500)
+      }, 100)
     },
     onError: (error: Error) => {
       toast({

@@ -64,6 +64,7 @@ export function AuthGuard({
       console.log('Current path:', currentPath)
       console.log('Require auth:', requireAuth)
       console.log('Is authenticated:', isAuthenticated)
+      console.log('User:', user)
 
       // 현재 경로가 public 경로인 경우 인증 체크하지 않음
       if (PUBLIC_PATHS.includes(currentPath)) {
@@ -75,6 +76,13 @@ export function AuthGuard({
       // requireAuth가 false인 경우 인증 체크하지 않음
       if (!requireAuth) {
         console.log('Auth not required, skipping check')
+        setIsLoading(false)
+        return
+      }
+
+      // 이미 인증된 상태이고 사용자 정보가 있다면 즉시 통과
+      if (isAuthenticated && user) {
+        console.log('Already authenticated with user data, skipping API check')
         setIsLoading(false)
         return
       }
@@ -100,31 +108,26 @@ export function AuthGuard({
         return
       }
 
-      // 이미 인증된 상태이고 사용자 정보가 있다면 추가 체크 안함
-      if (isAuthenticated && user) {
-        console.log('Already authenticated with user data')
-        setIsLoading(false)
-        return
-      }
+      // 서버에서 인증 상태 확인 (이미 인증된 경우에만)
+      if (!isAuthenticated || !user) {
+        try {
+          console.log('Checking auth status via API...')
+          const isAuth = await checkAuthStatus()
 
-      // 서버에서 인증 상태 확인
-      try {
-        console.log('Checking auth status via API...')
-        const isAuth = await checkAuthStatus()
-
-        if (isAuth) {
-          console.log('Auth verification successful')
-        } else {
-          console.log('Auth check failed')
+          if (isAuth) {
+            console.log('Auth verification successful')
+          } else {
+            console.log('Auth check failed')
+            router.push(redirectTo)
+          }
+        } catch (error) {
+          console.error('Auth verification failed:', error)
+          clearAuth()
           router.push(redirectTo)
         }
-      } catch (error) {
-        console.error('Auth verification failed:', error)
-        clearAuth()
-        router.push(redirectTo)
-      } finally {
-        setIsLoading(false)
       }
+      
+      setIsLoading(false)
     }
 
     if (currentPath) {

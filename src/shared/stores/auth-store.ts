@@ -59,10 +59,12 @@ export const useAuthStore = create<AuthState>()(
       isChecking: false,
 
       login: (user) => {
+        console.log("Auth store login called with user:", user)
         set({
           user,
           isAuthenticated: true,
         })
+        console.log("Auth store state after login:", get())
       },
 
       logout: () => {
@@ -154,14 +156,19 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-      // persist 복원 시 쿠키 토큰 확인
+      // persist 복원 시 로그 추가하고 토큰 확인을 지연시킴
       onRehydrateStorage: () => (state) => {
+        console.log("Auth store rehydrated with state:", state)
         if (state && typeof window !== 'undefined') {
-          const token = cookieUtils.get('accessToken')
-          if (!token && state.isAuthenticated) {
-            // 쿠키에 토큰이 없으면 인증 상태 초기화
-            state.clearAuth()
-          }
+          // 페이지 로드 완료 후 토큰 확인 (로그인 직후 쿠키 설정 대기)
+          setTimeout(() => {
+            const token = cookieUtils.get('accessToken')
+            console.log("Token check after rehydration:", token ? 'Present' : 'Missing')
+            if (!token && state.isAuthenticated) {
+              console.log("No token found, clearing auth state")
+              state.clearAuth()
+            }
+          }, 1000)
         }
       },
     }
