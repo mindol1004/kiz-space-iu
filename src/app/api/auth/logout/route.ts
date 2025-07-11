@@ -5,7 +5,20 @@ import { verifyAccessToken } from "@/lib/jwt"
 
 export async function POST(request: NextRequest) {
   try {
-    const { refreshToken: clientRefreshToken, logoutAll = false } = await request.json()
+    let requestBody = {}
+    
+    // 요청 본문이 있는지 확인하고 안전하게 파싱
+    try {
+      const body = await request.text()
+      if (body.trim()) {
+        requestBody = JSON.parse(body)
+      }
+    } catch (parseError) {
+      // JSON 파싱 실패 시 빈 객체 사용
+      console.warn("Failed to parse request body, using empty object:", parseError)
+    }
+    
+    const { refreshToken: clientRefreshToken, logoutAll = false } = requestBody
     
     // Get tokens from cookies or request body
     const accessToken = request.cookies.get('accessToken')?.value || request.headers.get('authorization')?.replace('Bearer ', '')

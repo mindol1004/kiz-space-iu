@@ -15,7 +15,7 @@ export class AuthAPI {
   }
 
   static async logout(): Promise<LogoutResponse> {
-    const response = await apiClient.post<LogoutResponse>('/auth/logout')
+    const response = await apiClient.post<LogoutResponse>('/auth/logout', {})
     return response.data
   }
 
