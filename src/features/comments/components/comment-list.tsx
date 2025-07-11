@@ -1,91 +1,37 @@
-
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Loader2 } from "lucide-react"
-import { useAuthStore } from "@/shared/stores/auth-store"
-import { useComments, useCreateComment } from "../hooks/use-comments"
 import { CommentItem } from "./comment-item"
+import { useComments } from "../hooks/use-comments"
+import { Loader2 } from "lucide-react"
 
 interface CommentListProps {
   postId: string
 }
 
 export function CommentList({ postId }: CommentListProps) {
-  const { user } = useAuthStore()
-  const [comment, setComment] = useState("")
-  
   const { data: commentsData, isLoading } = useComments(postId)
-  const createCommentMutation = useCreateComment()
-
-  const handleCommentSubmit = async () => {
-    if (!comment.trim() || !user?.id) return
-
-    try {
-      await createCommentMutation.mutateAsync({
-        postId,
-        content: comment.trim(),
-      })
-      setComment("")
-    } catch (error) {
-      console.error("댓글 작성 실패:", error)
-    }
-  }
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-4">
-        <Loader2 className="h-6 w-6 animate-spin" />
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-pink-500" />
       </div>
     )
   }
 
-  const comments = commentsData?.comments || []
+  if (!commentsData) {
+    return null
+  }
+
+  const { comments } = commentsData
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold">댓글 {commentsData?.total || 0}개</h3>
+        <h3 className="text-lg font-semibold">
+          댓글 {comments.length}개
+        </h3>
       </div>
-
-      {/* 댓글 작성 폼 */}
-      {user && (
-        <div className="space-y-3">
-          <div className="flex space-x-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={user.avatar} />
-              <AvatarFallback>{user.nickname[0]}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <Textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="댓글을 작성하세요..."
-                className="min-h-[80px]"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <Button
-              onClick={handleCommentSubmit}
-              disabled={!comment.trim() || createCommentMutation.isPending}
-              size="sm"
-            >
-              {createCommentMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  작성 중...
-                </>
-              ) : (
-                "댓글 작성"
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* 댓글 목록 */}
       <div className="space-y-4">
