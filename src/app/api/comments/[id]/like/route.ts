@@ -53,12 +53,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         likesCount: Math.max(0, updatedComment.likesCount),
       })
     } else {
-      // Add like (댓글 좋아요이므로 commentId만 설정)
+      // Add like (댓글 좋아요이므로 commentId만 설정, postId는 null)
       await prisma.like.create({
         data: {
           userId: userId,
           commentId: commentId,
-          // postId는 설정하지 않음 (null)
+          postId: null,
         },
       })
 
