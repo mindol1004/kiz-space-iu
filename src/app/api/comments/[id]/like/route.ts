@@ -58,6 +58,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         data: {
           userId: userId,
           commentId: commentId,
+          // postId는 설정하지 않음 (댓글 좋아요이므로)
         },
       })
 
