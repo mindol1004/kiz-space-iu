@@ -18,7 +18,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // 기존 좋아요 확인
     const existingLike = await prisma.like.findUnique({
       where: {
-        userId_postId: {
+        user_post_like: {
           userId: userId,
           postId: postId,
         },
