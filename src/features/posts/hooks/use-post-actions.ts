@@ -1,89 +1,103 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { PostsAPI } from "../api/post-api"
-import { Post } from "../types/post-type"
+import { Post, LikeApiResponse, BookmarkApiResponse, ViewsApiResponse } from "../types/post-type"
 import { useEffect, useState } from "react"
+
+// Mutation context 타입 정의
+interface MutationContext {
+  previousState: {
+    isLiked: boolean;
+    isBookmarked: boolean;
+    likeCount: number;
+    bookmarksCount: number;
+    viewsCount: number;
+  };
+}
 
 export function usePostActions(post: Post) {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
+  
   const [localState, setLocalState] = useState({
     isLiked: post.isLiked || false,
     isBookmarked: post.isBookmarked || false,
     likeCount: post.likesCount || 0,
+    bookmarksCount: post.bookmarksCount || 0,
     viewsCount: post.viewsCount || 0,
   })
 
-  const likeMutation = useMutation({
+  // 좋아요 뮤테이션
+  const likeMutation = useMutation<LikeApiResponse, Error, void, MutationContext>({
     mutationFn: () => PostsAPI.likePost(post.id),
     onMutate: async () => {
-      // 현재 상태 저장
       const previousState = { ...localState }
-
-      // 낙관적 업데이트
       const newIsLiked = !localState.isLiked
       const newLikeCount = newIsLiked ? localState.likeCount + 1 : localState.likeCount - 1
 
       setLocalState(prev => ({
         ...prev,
         isLiked: newIsLiked,
-        likeCount: newLikeCount,
+        likeCount: Math.max(0, newLikeCount), // 0 이하로 떨어지지 않도록
       }))
 
       return { previousState }
     },
-    onError: (err, variables, context) => {
-      // 에러 시 이전 상태로 되돌리기
+    onError: (error, _, context) => {
+      console.error("좋아요 처리 중 오류:", error)
+      
+      // 에러 시 이전 상태로 복구
       if (context?.previousState) {
         setLocalState(context.previousState)
       }
     },
     onSuccess: (data) => {
-      // 서버 응답으로 최종 상태 업데이트 - 항상 서버 데이터를 우선
-      setLocalState(prev => ({
-        ...prev,
-        isLiked: data.liked,
-        likeCount: data.likesCount,
-      }))
-
-      // 개별 게시글 캐시 업데이트
-      queryClient.setQueryData(["post", post.id], (oldData: Post | undefined) => {
-        if (!oldData) return oldData
-        return {
-          ...oldData,
+      if (data && data.success) {
+        // 서버 응답으로 상태 업데이트
+        setLocalState(prev => ({
+          ...prev,
           isLiked: data.liked,
-          likesCount: data.likesCount,
-        }
-      })
+          likeCount: data.likesCount,
+        }))
 
-      // 게시글 목록 캐시 업데이트
-      queryClient.setQueriesData(
-        { queryKey: ["posts"] },
-        (oldData: any) => {
-          if (!oldData?.pages) return oldData
-
+        // 개별 게시글 캐시 업데이트
+        queryClient.setQueryData(["post", post.id], (oldData: Post | undefined) => {
+          if (!oldData) return oldData
           return {
             ...oldData,
-            pages: oldData.pages.map((page: any) => ({
-              ...page,
-              posts: page.posts.map((p: Post) => 
-                p.id === post.id 
-                  ? { ...p, isLiked: data.liked, likesCount: data.likesCount }
-                  : p
-              )
-            }))
+            isLiked: data.liked,
+            likesCount: data.likesCount,
           }
-        }
-      )
+        })
 
-      // 게시글 목록 쿼리 무효화 제거 (불필요한 API 호출 방지)
+        // 게시글 목록 캐시 업데이트
+        queryClient.setQueriesData(
+          { queryKey: ["posts"] },
+          (oldData: any) => {
+            if (!oldData?.pages) return oldData
+
+            return {
+              ...oldData,
+              pages: oldData.pages.map((page: any) => ({
+                ...page,
+                posts: page.posts.map((p: Post) => 
+                  p.id === post.id 
+                    ? { ...p, isLiked: data.liked, likesCount: data.likesCount }
+                    : p
+                )
+              }))
+            }
+          }
+        )
+      }
     },
   })
 
-  const bookmarkMutation = useMutation({
+  // 북마크 뮤테이션
+  const bookmarkMutation = useMutation<BookmarkApiResponse, Error, void, MutationContext>({
     mutationFn: () => PostsAPI.bookmarkPost(post.id),
     onMutate: async () => {
-      // 낙관적 업데이트
+      const previousState = { ...localState }
       const newIsBookmarked = !localState.isBookmarked
 
       setLocalState(prev => ({
@@ -91,79 +105,103 @@ export function usePostActions(post: Post) {
         isBookmarked: newIsBookmarked,
       }))
 
-      return { previousState: localState }
+      return { previousState }
     },
-    onError: (err, variables, context) => {
-      // 에러 시 이전 상태로 되돌리기
+    onError: (error, _, context) => {
+      console.error("북마크 처리 중 오류:", error)
+      
+      // 에러 시 이전 상태로 복구
       if (context?.previousState) {
         setLocalState(context.previousState)
       }
     },
     onSuccess: (data) => {
-      // 서버 응답으로 최종 상태 업데이트
-      setLocalState(prev => ({
-        ...prev,
-        isBookmarked: data.bookmarked,
-      }))
+      if (data && data.success) {
+        // 서버 응답으로 상태 업데이트
+        setLocalState(prev => ({
+          ...prev,
+          isBookmarked: data.isBookmarked,
+          bookmarksCount: data.bookmarksCount,
+        }))
 
-      // 캐시 업데이트
-      queryClient.setQueryData(["post", post.id], (oldData: Post) => ({
-        ...oldData,
-        isBookmarked: data.bookmarked,
-        bookmarksCount: data.bookmarksCount,
-      }))
-
-      // 게시글 목록 캐시에서 해당 게시글만 업데이트
-      queryClient.setQueriesData(
-        { queryKey: ["posts"] },
-        (oldData: any) => {
-          if (!oldData?.pages) return oldData
-
+        // 개별 게시글 캐시 업데이트
+        queryClient.setQueryData(["post", post.id], (oldData: Post | undefined) => {
+          if (!oldData) return oldData
           return {
             ...oldData,
-            pages: oldData.pages.map((page: any) => ({
-              ...page,
-              posts: page.posts.map((p: Post) => 
-                p.id === post.id 
-                  ? { ...p, isBookmarked: data.bookmarked, bookmarksCount: data.bookmarksCount }
-                  : p
-              )
-            }))
+            isBookmarked: data.isBookmarked,
+            bookmarksCount: data.bookmarksCount,
           }
-        }
-      )
+        })
+
+        // 게시글 목록 캐시 업데이트
+        queryClient.setQueriesData(
+          { queryKey: ["posts"] },
+          (oldData: any) => {
+            if (!oldData?.pages) return oldData
+
+            return {
+              ...oldData,
+              pages: oldData.pages.map((page: any) => ({
+                ...page,
+                posts: page.posts.map((p: Post) => 
+                  p.id === post.id 
+                    ? { ...p, isBookmarked: data.isBookmarked, bookmarksCount: data.bookmarksCount }
+                    : p
+                )
+              }))
+            }
+          }
+        )
+      }
     },
   })
 
-  const viewMutation = useMutation({
+  // 조회수 뮤테이션
+  const viewMutation = useMutation<ViewsApiResponse, Error, void>({
     mutationFn: () => PostsAPI.incrementViews(post.id, user?.id),
     onSuccess: (data) => {
-      setLocalState(prev => ({
-        ...prev,
-        viewsCount: data.viewsCount,
-      }))
+      if (data && data.viewsCount) {
+        setLocalState(prev => ({
+          ...prev,
+          viewsCount: data.viewsCount,
+        }))
 
-      // 캐시 업데이트
-      queryClient.setQueryData(["post", post.id], (oldData: Post) => ({
-        ...oldData,
-        viewsCount: data.viewsCount,
-      }))
+        // 캐시 업데이트
+        queryClient.setQueryData(["post", post.id], (oldData: Post | undefined) => {
+          if (!oldData) return oldData
+          return {
+            ...oldData,
+            viewsCount: data.viewsCount,
+          }
+        })
+      }
     },
   })
 
   // 게시글 데이터가 변경될 때 로컬 상태 동기화
   useEffect(() => {
-    // mutation이 진행 중이 아닐 때만 상태 동기화
+    // 뮤테이션 진행 중이 아닐 때만 상태 동기화
     if (!likeMutation.isPending && !bookmarkMutation.isPending) {
       setLocalState({
         isLiked: post.isLiked || false,
         isBookmarked: post.isBookmarked || false,
         likeCount: post.likesCount || 0,
+        bookmarksCount: post.bookmarksCount || 0,
         viewsCount: post.viewsCount || 0,
       })
     }
-  }, [post.isLiked, post.isBookmarked, post.likesCount, post.viewsCount, likeMutation.isPending, bookmarkMutation.isPending])
+  }, [
+    post.isLiked, 
+    post.isBookmarked, 
+    post.likesCount, 
+    post.bookmarksCount, 
+    post.viewsCount, 
+    likeMutation.isPending, 
+    bookmarkMutation.isPending
+  ])
 
+  // 이벤트 핸들러들
   const handleLike = (e?: React.MouseEvent) => {
     e?.stopPropagation()
     if (!user) {
@@ -184,20 +222,48 @@ export function usePostActions(post: Post) {
 
   const handleShare = (e?: React.MouseEvent) => {
     e?.stopPropagation()
-    if (navigator.share) {
-      navigator.share({
-        title: "게시글 공유",
-        text: post.content,
-        url: window.location.href,
-      })
+    
+    const currentUrl = window.location.href
+    const shareData = {
+      title: "게시글 공유",
+      text: post.content?.substring(0, 100) + "...",
+      url: currentUrl,
+    }
+
+    if (navigator.share && navigator.canShare?.(shareData)) {
+      navigator.share(shareData)
+        .catch((error) => {
+          console.error("공유 실패:", error)
+          fallbackCopyToClipboard(currentUrl)
+        })
     } else {
-      navigator.clipboard.writeText(window.location.href)
-      alert("링크가 클립보드에 복사되었습니다.")
+      fallbackCopyToClipboard(currentUrl)
+    }
+  }
+
+  const fallbackCopyToClipboard = (url: string) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url)
+        .then(() => alert("링크가 클립보드에 복사되었습니다."))
+        .catch(() => alert("링크 복사에 실패했습니다."))
+    } else {
+      // 구형 브라우저 지원
+      const textArea = document.createElement("textarea")
+      textArea.value = url
+      document.body.appendChild(textArea)
+      textArea.select()
+      try {
+        document.execCommand("copy")
+        alert("링크가 클립보드에 복사되었습니다.")
+      } catch (err) {
+        alert("링크 복사에 실패했습니다.")
+      }
+      document.body.removeChild(textArea)
     }
   }
 
   const incrementViews = () => {
-    if (user) {
+    if (user && viewMutation.isIdle) {
       viewMutation.mutate()
     }
   }
@@ -206,6 +272,7 @@ export function usePostActions(post: Post) {
     isLiked: localState.isLiked,
     isBookmarked: localState.isBookmarked,
     likeCount: localState.likeCount,
+    bookmarksCount: localState.bookmarksCount,
     viewsCount: localState.viewsCount,
     handleLike,
     handleBookmark,

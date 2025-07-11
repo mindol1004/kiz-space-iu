@@ -1,4 +1,3 @@
-
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getUserIdFromCookies } from "@/lib/auth-utils"
@@ -16,7 +15,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "포스트 ID가 필요합니다" }, { status: 400 })
     }
 
-    // Check if already liked
+    // 기존 좋아요 확인
     const existingLike = await prisma.like.findUnique({
       where: {
         userId_postId: {
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     })
 
     if (existingLike) {
-      // Remove like
+      // 좋아요 제거
       await prisma.like.delete({
         where: {
           userId_postId: {
@@ -37,7 +36,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         },
       })
 
-      // Update post like count
+      // 게시글 좋아요 수 감소
       const updatedPost = await prisma.post.update({
         where: { id: postId },
         data: {
@@ -50,11 +49,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
       return NextResponse.json({
         success: true,
-        isLiked: false,
-        likesCount: updatedPost.likesCount,
+        liked: false,
+        likesCount: Math.max(0, updatedPost.likesCount), // 0 이하로 떨어지지 않도록
       })
     } else {
-      // Add like
+      // 좋아요 추가
       await prisma.like.create({
         data: {
           userId: userId,
@@ -62,7 +61,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         },
       })
 
-      // Update post like count
+      // 게시글 좋아요 수 증가
       const updatedPost = await prisma.post.update({
         where: { id: postId },
         data: {
@@ -75,12 +74,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
       return NextResponse.json({
         success: true,
-        isLiked: true,
+        liked: true,
         likesCount: updatedPost.likesCount,
       })
     }
   } catch (error) {
-    console.error("Error toggling like:", error)
+    console.error("좋아요 처리 중 오류:", error)
     return NextResponse.json({ error: "좋아요 처리에 실패했습니다" }, { status: 500 })
   }
 }

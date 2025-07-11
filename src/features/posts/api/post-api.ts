@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/axios-config'
-import { CreatePostData, Post, PostsResponse, UsePostsParams } from '../types/post-type'
+import { CreatePostData, Post, PostsResponse, UsePostsParams, LikeApiResponse, BookmarkApiResponse, ViewsApiResponse } from '../types/post-type'
 
 export class PostsAPI {
   // 게시글 목록 조회
@@ -51,25 +51,19 @@ export class PostsAPI {
   }
 
   // 게시글 좋아요 토글
-  static async likePost(postId: string): Promise<{ liked: boolean; likesCount: number }> {
-    const response = await apiClient.post<{ success: boolean; liked: boolean; likesCount: number }>(`/posts/${postId}/like`)
-    return {
-      liked: response.data.liked,
-      likesCount: response.data.likesCount
-    }
+  static async likePost(postId: string): Promise<LikeApiResponse> {
+    const response = await apiClient.post<LikeApiResponse>(`/posts/${postId}/like`)
+    return response.data
   }
 
   // 게시글 북마크 토글
-  static async bookmarkPost(postId: string): Promise<{ bookmarked: boolean; bookmarksCount: number }> {
-    const response = await apiClient.post<{ success: boolean; bookmarked: boolean; bookmarksCount: number }>(`/posts/${postId}/bookmark`)
-    return {
-      bookmarked: response.data.bookmarked,
-      bookmarksCount: response.data.bookmarksCount
-    }
+  static async bookmarkPost(postId: string): Promise<BookmarkApiResponse> {
+    const response = await apiClient.post<BookmarkApiResponse>(`/posts/${postId}/bookmark`)
+    return response.data
   }
 
-  static async incrementViews(postId: string, userId?: string) {
-    const response = await apiClient.post(`/posts/${postId}/views`, { userId })
+  static async incrementViews(postId: string, userId?: string): Promise<ViewsApiResponse> {
+    const response = await apiClient.post<ViewsApiResponse>(`/posts/${postId}/views`, { userId })
     return response.data
   }
 }

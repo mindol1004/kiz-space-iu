@@ -45,10 +45,6 @@ export function usePostDetailModal(post: Post, options?: { enabled?: boolean }) 
     }
   }, [post?.id, viewMutation])
 
-  useEffect(() => {
-    console.log("Comments changed:", comments)
-  }, [comments])
-
   return {
     comment,
     setComment,

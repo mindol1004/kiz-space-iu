@@ -36,9 +36,14 @@ export function PostActions({ post, variant = "card", onCommentClick, commentsCo
           size="sm"
           onClick={handleLike}
           disabled={isLoading}
-          className={`flex items-center space-x-1 ${isLiked ? "text-red-500" : "text-gray-500"}`}
+          className={`flex items-center space-x-1 hover:bg-red-50 ${
+            isLiked ? "text-red-500" : "text-gray-500"
+          }`}
         >
-          <motion.div whileTap={{ scale: 0.8 }} transition={{ type: "spring", stiffness: 400, damping: 17 }}>
+          <motion.div 
+            whileTap={{ scale: 0.8 }} 
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
             <Heart className={`${iconSize} ${isLiked ? "fill-current" : ""}`} />
           </motion.div>
           <span className={textSize}>{likeCount}</span>
@@ -47,7 +52,7 @@ export function PostActions({ post, variant = "card", onCommentClick, commentsCo
         <Button
           variant="ghost"
           size="sm"
-          className={`flex items-center space-x-1 text-gray-500`}
+          className={`flex items-center space-x-1 text-gray-500 hover:bg-blue-50`}
           onClick={onCommentClick}
         >
           <MessageCircle className={iconSize} />
@@ -68,11 +73,24 @@ export function PostActions({ post, variant = "card", onCommentClick, commentsCo
           size="sm"
           onClick={handleBookmark}
           disabled={isLoading}
-          className={`${isBookmarked ? "text-yellow-500" : "text-gray-500"}`}
+          className={`flex items-center space-x-1 hover:bg-yellow-50 ${
+            isBookmarked ? "text-yellow-500" : "text-gray-500"
+          }`}
         >
-          <Bookmark className={`${iconSize} ${isBookmarked ? "fill-current" : ""}`} />
+          <motion.div 
+            whileTap={{ scale: 0.8 }} 
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <Bookmark className={`${iconSize} ${isBookmarked ? "fill-current" : ""}`} />
+          </motion.div>
         </Button>
-        <Button variant="ghost" size="sm" className="text-gray-500" onClick={handleShare}>
+        
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="text-gray-500 hover:bg-gray-50" 
+          onClick={handleShare}
+        >
           <Share2 className={iconSize} />
         </Button>
       </div>

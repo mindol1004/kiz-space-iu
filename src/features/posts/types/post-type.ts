@@ -67,3 +67,19 @@ export interface BookmarkPostParams {
   postId: string
   userId: string
 }
+
+export interface LikeApiResponse {
+  success: boolean
+  liked: boolean
+  likesCount: number
+}
+
+export interface BookmarkApiResponse {
+  success: boolean
+  isBookmarked: boolean
+  bookmarksCount: number
+}
+
+export interface ViewsApiResponse {
+  viewsCount: number
+}
