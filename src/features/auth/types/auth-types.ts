@@ -1,7 +1,7 @@
 export interface Child {
   id: string
   name: string
-  age: string
+  age: number
   birthDate: string
   gender: "boy" | "girl" | ""
   ageGroup: string

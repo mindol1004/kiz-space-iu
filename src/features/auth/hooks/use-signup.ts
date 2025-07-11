@@ -43,13 +43,9 @@ export function useSignup() {
         email: data.email,
         password: data.password,
         nickname: data.nickname,
-        location: data.region,
+        region: data.region,
         interests: data.interests,
-        children: data.children.map(child => ({
-          name: child.name,
-          age: parseInt(child.age) || 0,
-          gender: child.gender
-        })),
+        children: data.children,
         bio: data.bio
       }
 
@@ -58,7 +54,7 @@ export function useSignup() {
     onSuccess: (data) => {
       toast({
         title: "회원가입 완료! 🎉",
-        description: `${data.user.nickname}님, KIZ-SPACE에 오신 것을 환영합니다!`,
+        description: `${data.user?.nickname}님, KIZ-SPACE에 오신 것을 환영합니다!`,
       })
 
       // 로그인 페이지로 이동
