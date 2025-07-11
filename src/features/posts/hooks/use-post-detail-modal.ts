@@ -5,13 +5,13 @@ import { PostsAPI } from "../api/post-api"
 import { useComments, useCreateComment } from "@/features/comments/hooks/use-comments"
 import { Post } from "../types/post-type"
 
-export function usePostDetailModal(post: Post) {
+export function usePostDetailModal(post: Post, options?: { enabled?: boolean }) {
   const { user } = useAuthStore()
   const [comment, setComment] = useState("")
   const queryClient = useQueryClient()
 
-  // 댓글 데이터 가져오기
-  const { data: commentsData, isLoading: isLoadingComments } = useComments(post?.id || "", true)
+  // 댓글 데이터 가져오기 - 모달이 열릴 때만 조회
+  const { data: commentsData, isLoading: isLoadingComments } = useComments(post?.id || "", { enabled: options?.enabled !== false })
   const comments = commentsData || { comments: [], total: 0 }
   const createCommentMutation = useCreateComment()
 
