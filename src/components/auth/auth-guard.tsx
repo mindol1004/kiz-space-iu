@@ -31,6 +31,12 @@ export function AuthGuard({ children, fallback }: AuthGuardProps) {
         return
       }
 
+      // 현재 페이지가 랜딩 페이지인 경우에도 인증 체크하지 않음
+      if (typeof window !== 'undefined' && window.location.pathname === '/') {
+        setIsLoading(false)
+        return
+      }
+
       setIsLoading(true)
       const isAuth = await checkAuthStatus()
       

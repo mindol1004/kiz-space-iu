@@ -43,11 +43,13 @@ export function useLogout() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: () => AuthAPI.logout(),
-    onSuccess: () => {
+    mutationFn: () => {
+      // 로그아웃 API 호출 전에 먼저 로컬 상태 초기화
       logout()
       queryClient.clear()
-
+      return AuthAPI.logout()
+    },
+    onSuccess: () => {
       toast({
         title: "로그아웃 완료",
         description: "안전하게 로그아웃되었습니다.",
@@ -56,10 +58,7 @@ export function useLogout() {
       router.push("/login")
     },
     onError: (error: Error) => {
-      // API 호출이 실패해도 로컬 상태는 초기화
-      logout()
-      queryClient.clear()
-      
+      // 이미 로컬 상태는 초기화되었으므로 토스트만 표시
       toast({
         title: "로그아웃 완료",
         description: "로그아웃되었습니다.",
