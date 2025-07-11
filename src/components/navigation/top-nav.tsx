@@ -8,18 +8,14 @@ import { Search, User, LogOut } from "lucide-react"
 import { NotificationCenter } from "@/features/notifications/components/notification-center"
 import { SearchModal } from "@/features/search/components/search-modal"
 import { useAuthStore } from "@/shared/stores/auth-store"
+import { useLogout } from "@/features/auth/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 export function TopNav() {
   const [searchOpen, setSearchOpen] = useState(false)
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const router = useRouter()
-
-  const handleLogout = () => {
-    logout()
-    router.push("/")
-  }
 
   return (
     <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
@@ -58,7 +54,7 @@ export function TopNav() {
                       <User className="h-4 w-4 mr-2" />
                       프로필
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout}>
+                    <DropdownMenuItem onClick={useLogout}>
                       <LogOut className="h-4 w-4 mr-2" />
                       로그아웃
                     </DropdownMenuItem>
