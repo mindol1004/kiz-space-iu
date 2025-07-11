@@ -56,9 +56,6 @@ api.interceptors.response.use(
           useAuthStore.getState().setTokens({
             accessToken: newAccessToken,
             refreshToken: newRefreshToken,
-          })e().setTokens({
-            accessToken: newAccessToken,
-            refreshToken: newRefreshToken,
           })
 
           // 원래 요청에 새 토큰 추가
