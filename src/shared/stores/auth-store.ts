@@ -109,9 +109,16 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuthStatus: async () => {
-        const { isChecking } = get()
+        const { isChecking, isAuthenticated, user } = get()
+        
+        // 이미 체크 중이거나 인증된 상태라면 중복 체크 안함
         if (isChecking) {
-          return false
+          return isAuthenticated
+        }
+
+        // 이미 인증되어 있고 사용자 정보가 있다면 추가 체크 안함
+        if (isAuthenticated && user) {
+          return true
         }
 
         // 쿠키에서 토큰 확인
@@ -136,10 +143,7 @@ export const useAuthStore = create<AuthState>()(
           return true
         } catch (error) {
           console.error('Auth check failed:', error)
-
-          // 인증 실패 시 모든 정보 초기화
           get().clearAuth()
-
           return false
         }
       },
