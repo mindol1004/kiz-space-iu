@@ -57,11 +57,16 @@ export function useLogout() {
       router.push("/login")
     },
     onError: (error: Error) => {
+      // API 호출이 실패해도 로컬 상태는 초기화
+      logout()
+      queryClient.clear()
+      
       toast({
-        title: "로그아웃 실패",
-        description: error.message,
-        variant: "destructive",
+        title: "로그아웃 완료",
+        description: "로그아웃되었습니다.",
       })
+      
+      router.push("/login")
     },
   })
 }

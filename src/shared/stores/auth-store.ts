@@ -25,10 +25,13 @@ interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isChecking: boolean
+  accessToken: string | null
+  refreshToken: string | null
   login: (user: User) => void
   logout: () => void
   updateUser: (userData: Partial<User>) => void
   checkAuthStatus: () => Promise<boolean>
+  setTokens: (tokens: { accessToken: string; refreshToken: string }) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -37,6 +40,8 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isChecking: false,
+      accessToken: null,
+      refreshToken: null,
       login: (user) => {
         set({
           user,
@@ -47,6 +52,14 @@ export const useAuthStore = create<AuthState>()(
         set({
           user: null,
           isAuthenticated: false,
+          accessToken: null,
+          refreshToken: null,
+        })
+      },
+      setTokens: (tokens) => {
+        set({
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
         })
       },
       updateUser: (userData) => {
@@ -90,6 +103,8 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
       }),
     }
   )
