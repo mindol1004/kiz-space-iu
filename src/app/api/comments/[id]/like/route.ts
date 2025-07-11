@@ -1,4 +1,3 @@
-
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getUserIdFromCookies } from "@/lib/auth-utils"
@@ -16,12 +15,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "댓글 ID가 필요합니다" }, { status: 400 })
     }
 
-    // Check if already liked (댓글 좋아요이므로 commentId만 확인)
-    const existingLike = await prisma.like.findFirst({
+    // 기존 좋아요 확인
+    const existingLike = await prisma.like.findUnique({
       where: {
-        userId: userId,
-        commentId: commentId,
-        postId: null, // 댓글 좋아요는 postId가 null
+        user_comment_like: {
+          userId: userId,
+          commentId: commentId,
+        },
       },
     })
 
@@ -29,7 +29,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       // Remove like
       await prisma.like.delete({
         where: {
-          id: existingLike.id,
+          user_comment_like: {
+            userId: userId,
+            commentId: commentId,
+          },
         },
       })
 
