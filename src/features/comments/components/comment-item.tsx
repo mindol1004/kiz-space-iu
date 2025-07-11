@@ -84,7 +84,7 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
           </div>
           
           <div className="flex items-center space-x-4 text-xs text-gray-500">
-            <span>{formatDate(comment.createdAt)}</span>
+            <span>{formatDate(new Date(comment.createdAt))}</span>
             
             <Button
               variant="ghost"
@@ -182,7 +182,7 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
                 </div>
                 
                 <div className="flex items-center space-x-3 text-xs text-gray-500">
-                  <span>{formatDate(reply.createdAt)}</span>
+                  <span>{formatDate(new Date(reply.createdAt))}</span>
                   
                   <Button
                     variant="ghost"
