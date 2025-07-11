@@ -1,3 +1,4 @@
+
 export interface CommentAuthor {
   id: string
   nickname: string
@@ -11,7 +12,7 @@ export interface Comment {
   createdAt: string
   updatedAt?: string
   postId: string
-  parentId?: string
+  parentId?: string | null
   replies?: Comment[]
   likesCount: number
   repliesCount: number
@@ -21,7 +22,8 @@ export interface Comment {
 export interface CreateCommentData {
   content: string
   postId: string
-  parentId?: string
+  parentId?: string | null
+  authorId?: string
 }
 
 export interface UpdateCommentData {
@@ -34,6 +36,7 @@ export interface CommentsResponse {
   page?: number
   limit?: number
   hasMore?: boolean
+  nextPage?: number
 }
 
 export interface CommentLikeResponse {
@@ -45,4 +48,35 @@ export interface UseCommentsParams {
   postId: string
   page?: number
   limit?: number
+}
+
+export interface CreateReplyData {
+  parentId: string
+  content: string
+  postId: string
+}
+
+// API Response 타입들
+export interface CommentApiResponse {
+  success: boolean
+  comment: Comment
+}
+
+export interface CommentsApiResponse {
+  success: boolean
+  comments: Comment[]
+  total: number
+  hasMore: boolean
+  nextPage?: number
+}
+
+export interface CommentLikeApiResponse {
+  success: boolean
+  isLiked: boolean
+  likesCount: number
+}
+
+export interface CommentDeleteApiResponse {
+  success: boolean
+  message: string
 }

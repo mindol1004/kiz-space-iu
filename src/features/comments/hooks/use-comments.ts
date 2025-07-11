@@ -1,8 +1,14 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { CommentsAPI } from "../api/comment-api"
-import { Comment, CreateCommentData, UseCommentsParams } from "../types/comment-types"
+import { 
+  Comment, 
+  CreateCommentData, 
+  UseCommentsParams,
+  CreateReplyData
+} from "../types/comment-types"
 
 export function useComments(postId: string, options?: { enabled?: boolean }) {
   return useQuery({
@@ -11,7 +17,7 @@ export function useComments(postId: string, options?: { enabled?: boolean }) {
       const response = await CommentsAPI.getComments(postId)
       return response
     },
-    enabled: !!postId && (options?.enabled !== false) ,
+    enabled: !!postId && (options?.enabled !== false),
     staleTime: 30000, // 30초간 캐시 유지
     refetchOnWindowFocus: false, // 윈도우 포커스시 refetch 비활성화
   })
@@ -31,9 +37,9 @@ export function useCreateComment() {
       return CommentsAPI.createComment({
         ...data,
         authorId: user.id
-      } as CreateCommentData)
+      })
     },
-    onSuccess: (comment) => {
+    onSuccess: (comment: Comment) => {
       queryClient.invalidateQueries({ queryKey: ["comments", comment.postId] })
       queryClient.invalidateQueries({ queryKey: ["posts"] })
       toast({
@@ -101,14 +107,14 @@ export function useCreateReply() {
   const { user } = useAuthStore()
 
   return useMutation({
-    mutationFn: async ({ parentId, content, postId }: { parentId: string; content: string; postId: string }) => {
+    mutationFn: async ({ parentId, content, postId }: CreateReplyData) => {
       if (!user) {
         throw new Error("로그인이 필요합니다")
       }
 
       return CommentsAPI.createReply(parentId, { content, postId })
     },
-    onSuccess: (comment) => {
+    onSuccess: (comment: Comment) => {
       queryClient.invalidateQueries({ queryKey: ["comments", comment.postId] })
       queryClient.invalidateQueries({ queryKey: ["posts"] })
       toast({
