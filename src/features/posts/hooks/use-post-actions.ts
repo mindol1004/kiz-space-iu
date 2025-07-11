@@ -14,19 +14,6 @@ export function usePostActions(post: Post) {
     viewsCount: post.viewsCount || 0,
   })
 
-  // 게시글 데이터가 변경될 때 로컬 상태 동기화
-  useEffect(() => {
-    // mutation이 진행 중이 아닐 때만 상태 동기화
-    if (!likeMutation.isPending && !bookmarkMutation.isPending) {
-      setLocalState({
-        isLiked: post.isLiked || false,
-        isBookmarked: post.isBookmarked || false,
-        likeCount: post.likesCount || 0,
-        viewsCount: post.viewsCount || 0,
-      })
-    }
-  }, [post.isLiked, post.isBookmarked, post.likesCount, post.viewsCount, likeMutation.isPending, bookmarkMutation.isPending])
-
   const likeMutation = useMutation({
     mutationFn: () => PostsAPI.likePost(post.id),
     onMutate: async () => {
@@ -164,6 +151,19 @@ export function usePostActions(post: Post) {
       }))
     },
   })
+
+  // 게시글 데이터가 변경될 때 로컬 상태 동기화
+  useEffect(() => {
+    // mutation이 진행 중이 아닐 때만 상태 동기화
+    if (!likeMutation.isPending && !bookmarkMutation.isPending) {
+      setLocalState({
+        isLiked: post.isLiked || false,
+        isBookmarked: post.isBookmarked || false,
+        likeCount: post.likesCount || 0,
+        viewsCount: post.viewsCount || 0,
+      })
+    }
+  }, [post.isLiked, post.isBookmarked, post.likesCount, post.viewsCount, likeMutation.isPending, bookmarkMutation.isPending])
 
   const handleLike = (e?: React.MouseEvent) => {
     e?.stopPropagation()
