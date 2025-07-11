@@ -9,7 +9,12 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "KIZ-SPACE - 안전한 육아 커뮤니티",
   description: "유아부터 초등학생 자녀를 둔 부모들을 위한 안전하고 신뢰할 수 있는 육아 정보 공유 플랫폼",
-  generator: 'mindol'
+  generator: 'mindol',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  }
 }
 
 export default function RootLayout({
