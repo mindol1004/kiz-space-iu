@@ -1,10 +1,9 @@
+
 "use client"
 import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/shared/stores/auth-store"
-import { usePathname } from "next/navigation"
-import { AuthAPI } from "@/features/auth/api/auth-api"
 import { cookieUtils } from "@/lib/cookie"
 
 interface AuthGuardProps {
@@ -17,22 +16,7 @@ interface AuthGuardProps {
 // 인증이 필요하지 않은 public 경로들
 const PUBLIC_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password', '/']
 
-// 쿠키 유틸리티 함수
-const getCookie = (name: string): string | null => {
-  if (typeof window === 'undefined') return null
-  try {
-    const value = `; ${document.cookie}`
-    const parts = value.split(`; ${name}=`)
-    if (parts.length === 2) {
-      return parts.pop()?.split(';').shift() || null
-    }
-    return null
-  } catch (error) {
-    console.error('Error reading cookie:', error)
-    return null
-  }
-}
-
+// JWT 토큰 만료 체크
 const isTokenExpired = (token: string): boolean => {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]))
@@ -50,105 +34,113 @@ export function AuthGuard({
   redirectTo = "/login",
   requireAuth = true 
 }: AuthGuardProps) {
-  const { isAuthenticated, checkAuthStatus, isChecking, user, clearAuth } = useAuthStore()
+  const { isAuthenticated, user, checkAuthStatus, clearAuth } = useAuthStore()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
-  const [currentPath, setCurrentPath] = useState<string>("")
+  const [mounted, setMounted] = useState(false)
 
+  // 클라이언트 사이드에서만 실행되도록 보장
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCurrentPath(window.location.pathname)
-    }
+    setMounted(true)
   }, [])
 
   useEffect(() => {
-    const verifyAuth = async () => {
+    if (!mounted) return
 
-      // 현재 경로가 public 경로인 경우 
-      if (PUBLIC_PATHS.includes(currentPath)) {
-        // 이미 로그인된 사용자가 로그인/회원가입 페이지에 접근하는 경우 피드로 리다이렉트
-        if ((currentPath === '/login' || currentPath === '/signup') && isAuthenticated && user) {
-          router.replace('/feed')
+    const verifyAuth = async () => {
+      try {
+        const currentPath = window.location.pathname
+        console.log('AuthGuard: Current path:', currentPath)
+
+        // public 경로 처리
+        if (PUBLIC_PATHS.includes(currentPath)) {
+          // 이미 로그인된 사용자가 로그인/회원가입 페이지에 접근하는 경우
+          if ((currentPath === '/login' || currentPath === '/signup')) {
+            const token = cookieUtils.get('accessToken')
+            const userInfo = cookieUtils.get('userInfo')
+            
+            if (token && !isTokenExpired(token) && userInfo) {
+              console.log('AuthGuard: Already authenticated, redirecting to feed')
+              router.replace('/feed')
+              return
+            }
+          }
+          setIsLoading(false)
           return
         }
-        setIsLoading(false)
-        return
-      }
 
-      // requireAuth가 false인 경우 인증 체크하지 않음
-      if (!requireAuth) {
-        setIsLoading(false)
-        return
-      }
-
-      // 쿠키에서 JWT 토큰 확인
-      const token = getCookie('accessToken')
-
-      if (!token) {
-        console.log('No access token found, clearing auth')
-        clearAuth()
-        setIsLoading(false)
-        router.push(redirectTo)
-        return
-      }
-
-      // 토큰 만료 체크
-      if (isTokenExpired(token)) {
-        console.log('Access token expired, clearing auth')
-        clearAuth()
-        setIsLoading(false)
-        router.push(redirectTo)
-        return
-      }
-
-      // 쿠키에서 사용자 정보도 확인
-      const userInfo = getCookie('userInfo')
-      
-      // 이미 인증된 상태이고 사용자 정보가 있다면 즉시 통과
-      if (isAuthenticated && user && token && userInfo) {
-        setIsLoading(false)
-        return
-      }
-
-      // 토큰과 사용자 정보가 쿠키에 있지만 store에는 없는 경우
-      if (token && userInfo && (!isAuthenticated || !user)) {
-        try {
-          const parsedUser = JSON.parse(userInfo)
-          // Store에 사용자 정보 설정하지 말고 서버 확인을 통해 설정
-          const isAuth = await checkAuthStatus()
-          if (isAuth) {
-            setIsLoading(false)
-            return
-          }
-        } catch (error) {
-          console.error('Error parsing user info from cookie:', error)
+        // 인증이 필요하지 않은 경우
+        if (!requireAuth) {
+          setIsLoading(false)
+          return
         }
-      }
 
-      // 서버에서 인증 상태 확인
-      if (!isAuthenticated || !user) {
-        try {
-          const isAuth = await checkAuthStatus()
+        // 인증이 필요한 페이지 처리
+        const token = cookieUtils.get('accessToken')
+        const userInfo = cookieUtils.get('userInfo')
 
-          if (!isAuth) {
-            router.push(redirectTo)
-          }
-        } catch (error) {
+        console.log('AuthGuard: Token exists:', !!token)
+        console.log('AuthGuard: UserInfo exists:', !!userInfo)
+        console.log('AuthGuard: Store authenticated:', isAuthenticated)
+        console.log('AuthGuard: Store user:', !!user)
+
+        // 토큰이 없거나 만료된 경우
+        if (!token || isTokenExpired(token)) {
+          console.log('AuthGuard: No valid token, clearing auth and redirecting')
           clearAuth()
           router.push(redirectTo)
+          setIsLoading(false)
+          return
         }
+
+        // 사용자 정보가 없는 경우
+        if (!userInfo) {
+          console.log('AuthGuard: No user info, clearing auth and redirecting')
+          clearAuth()
+          router.push(redirectTo)
+          setIsLoading(false)
+          return
+        }
+
+        // 스토어에 인증 상태가 없는 경우 서버에서 확인
+        if (!isAuthenticated || !user) {
+          console.log('AuthGuard: Store not authenticated, checking with server')
+          try {
+            const isAuth = await checkAuthStatus()
+            if (!isAuth) {
+              console.log('AuthGuard: Server auth check failed, redirecting')
+              router.push(redirectTo)
+            } else {
+              console.log('AuthGuard: Server auth check success')
+            }
+          } catch (error) {
+            console.error('AuthGuard: Auth check error:', error)
+            clearAuth()
+            router.push(redirectTo)
+          }
+        } else {
+          console.log('AuthGuard: Already authenticated in store')
+        }
+
+        setIsLoading(false)
+      } catch (error) {
+        console.error('AuthGuard: Verification error:', error)
+        clearAuth()
+        router.push(redirectTo)
+        setIsLoading(false)
       }
-
-      setIsLoading(false)
     }
 
-    if (currentPath) {
-      verifyAuth()
-    }
-  }, [currentPath, requireAuth, redirectTo, isAuthenticated, user, checkAuthStatus, clearAuth, router])
+    verifyAuth()
+  }, [mounted, requireAuth, redirectTo, isAuthenticated, user, checkAuthStatus, clearAuth, router])
 
-  // 로딩 중이거나 인증 체크 중인 경우
-  if (isLoading || isChecking) {
+  // SSR 방지
+  if (!mounted) {
+    return null
+  }
+
+  // 로딩 중인 경우
+  if (isLoading) {
     return fallback || (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

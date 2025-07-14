@@ -1,3 +1,4 @@
+
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { cookieUtils } from "@/lib/cookie"
@@ -27,13 +28,11 @@ interface AuthState {
   isChecking: boolean
   login: (user: User) => void
   logout: () => void
-  clearAuth: () => void // 새로 추가
+  clearAuth: () => void
   updateUser: (userData: Partial<User>) => void
   checkAuthStatus: () => Promise<boolean>
   updateTokens: (tokens: { accessToken: string; refreshToken: string }) => void
 }
-
-
 
 const initializeAuthFromCookies = () => {
   if (typeof window === 'undefined') return { user: null, isAuthenticated: false }
@@ -42,9 +41,31 @@ const initializeAuthFromCookies = () => {
     const token = cookieUtils.get('accessToken')
     const userInfo = cookieUtils.get('userInfo')
 
+    console.log('Initializing auth from cookies:', { hasToken: !!token, hasUserInfo: !!userInfo })
+
     if (token && userInfo) {
-      const user = JSON.parse(userInfo)
-      return { user, isAuthenticated: true }
+      // 토큰 만료 체크
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        const currentTime = Math.floor(Date.now() / 1000)
+        const isExpired = payload.exp && payload.exp < currentTime
+
+        if (isExpired) {
+          console.log('Token expired during initialization')
+          // 만료된 쿠키 삭제
+          cookieUtils.remove('accessToken', '/')
+          cookieUtils.remove('refreshToken', '/')
+          cookieUtils.remove('userInfo', '/')
+          return { user: null, isAuthenticated: false }
+        }
+
+        const user = JSON.parse(userInfo)
+        console.log('Successfully initialized auth from cookies')
+        return { user, isAuthenticated: true }
+      } catch (error) {
+        console.error('Error parsing token during initialization:', error)
+        return { user: null, isAuthenticated: false }
+      }
     }
   } catch (error) {
     console.error('Error initializing auth from cookies:', error)
@@ -64,51 +85,64 @@ export const useAuthStore = create<AuthState>()(
         isChecking: false,
 
         login: (user: User) => {
-          // 사용자 정보를 쿠키에도 저장
-          cookieUtils.set('userInfo', JSON.stringify({
+          console.log('Auth store: Login called with user:', user.email)
+          
+          // 사용자 정보를 쿠키에 저장
+          const userInfo = {
             id: user.id,
             email: user.email,
             nickname: user.nickname,
             avatar: user.avatar,
             verified: user.verified
-          }), {
+          }
+
+          cookieUtils.set('userInfo', JSON.stringify(userInfo), {
             path: '/',
             expires: 15 / (24 * 60) // 15분을 일 단위로 변환
           })
 
           set({ user, isAuthenticated: true })
+          console.log('Auth store: Login completed')
         },
 
         logout: () => {
+          console.log('Auth store: Logout called')
           // 쿠키 삭제
           cookieUtils.remove('accessToken', '/')
           cookieUtils.remove('refreshToken', '/')
           cookieUtils.remove('userInfo', '/')
           set({ user: null, isAuthenticated: false })
+          console.log('Auth store: Logout completed')
         },
 
         clearAuth: () => {
+          console.log('Auth store: Clear auth called')
           cookieUtils.remove('accessToken', '/')
           cookieUtils.remove('refreshToken', '/')
           cookieUtils.remove('userInfo', '/')
           set({ user: null, isAuthenticated: false, isChecking: false })
+          console.log('Auth store: Clear auth completed')
         },
 
         updateUser: (userData: Partial<User>) => {
           const currentUser = get().user
           if (currentUser) {
             const updatedUser = { ...currentUser, ...userData }
+            
             // 쿠키의 사용자 정보도 업데이트
-            cookieUtils.set('userInfo', JSON.stringify({
+            const userInfo = {
               id: updatedUser.id,
               email: updatedUser.email,
               nickname: updatedUser.nickname,
               avatar: updatedUser.avatar,
               verified: updatedUser.verified
-            }), {
+            }
+
+            cookieUtils.set('userInfo', JSON.stringify(userInfo), {
               path: '/',
               expires: 15 / (24 * 60)
             })
+            
             set({ user: updatedUser })
           }
         },
@@ -118,9 +152,11 @@ export const useAuthStore = create<AuthState>()(
 
           // 이미 인증되어 있고 사용자 정보가 있다면 바로 반환
           if (isAuthenticated && user) {
+            console.log('Auth store: Already authenticated')
             return true
           }
 
+          console.log('Auth store: Checking auth status with server')
           set({ isChecking: true })
 
           try {
@@ -128,6 +164,7 @@ export const useAuthStore = create<AuthState>()(
             const token = cookieUtils.get('accessToken')
 
             if (!token) {
+              console.log('Auth store: No access token found')
               set({ user: null, isAuthenticated: false, isChecking: false })
               return false
             }
@@ -137,14 +174,18 @@ export const useAuthStore = create<AuthState>()(
             const response = await AuthAPI.checkAuth()
 
             if (response.user) {
+              console.log('Auth store: Server auth check successful')
+              
               // 사용자 정보를 쿠키에도 저장
-              cookieUtils.set('userInfo', JSON.stringify({
+              const userInfo = {
                 id: response.user.id,
                 email: response.user.email,
                 nickname: response.user.nickname,
                 avatar: response.user.avatar,
                 verified: response.user.verified
-              }), {
+              }
+
+              cookieUtils.set('userInfo', JSON.stringify(userInfo), {
                 path: '/',
                 expires: 15 / (24 * 60)
               })
@@ -156,11 +197,12 @@ export const useAuthStore = create<AuthState>()(
               })
               return true
             } else {
+              console.log('Auth store: Server auth check failed - no user')
               set({ user: null, isAuthenticated: false, isChecking: false })
               return false
             }
           } catch (error) {
-            console.error('Auth check failed:', error)
+            console.error('Auth store: Auth check failed:', error)
             // 인증 실패 시 쿠키 삭제
             cookieUtils.remove('accessToken', '/')
             cookieUtils.remove('refreshToken', '/')
@@ -172,7 +214,7 @@ export const useAuthStore = create<AuthState>()(
 
         updateTokens: (tokens: { accessToken: string; refreshToken: string }) => {
           // 토큰은 httpOnly 쿠키로 관리되므로 여기서는 별도 처리 불필요
-          // 필요시 추가 로직 구현
+          console.log('Auth store: Tokens updated')
         }
       }
     },
@@ -182,16 +224,16 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-      // persist 복원 시 토큰 확인
       onRehydrateStorage: () => (state) => {
         if (state && typeof window !== 'undefined') {
+          console.log('Auth store: Rehydrating from storage')
           // 즉시 토큰 확인
           const token = cookieUtils.get('accessToken')
           if (!token && state.isAuthenticated) {
-            console.log('No token found, clearing auth state')
+            console.log('Auth store: No token found during rehydration, clearing auth state')
             state.clearAuth()
           } else if (token && state.isAuthenticated) {
-            console.log('Token found, maintaining auth state')
+            console.log('Auth store: Token found during rehydration, maintaining auth state')
           }
         }
       },

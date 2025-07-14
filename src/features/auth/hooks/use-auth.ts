@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/shared/stores/auth-store"
@@ -13,6 +14,8 @@ export function useLogin() {
   return useMutation({
     mutationFn: (data: LoginRequest) => AuthAPI.login(data),
     onSuccess: (data) => {
+      console.log('Login mutation success:', data.user.email)
+      
       // 사용자 정보와 인증 상태를 즉시 설정
       login(data.user)
 
@@ -21,11 +24,14 @@ export function useLogin() {
         description: "환영합니다!",
       })
 
-      // 상태가 확실히 저장된 후 리다이렉트 (더 긴 대기 시간)
+      console.log('Login: Preparing to redirect to feed')
+      
+      // 상태 업데이트 후 충분한 시간을 두고 리다이렉트
       setTimeout(() => {
-        // 강제로 페이지 새로고침하여 인증 상태 확실히 반영
-        window.location.href = '/feed'
-      }, 200)
+        console.log('Login: Executing redirect to feed')
+        // router.push 대신 router.replace 사용하여 뒤로가기 방지
+        router.replace('/feed')
+      }, 100)
     },
     onError: (error: Error) => {
       console.error("로그인 실패:", error)
@@ -45,11 +51,18 @@ export function useLogout() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       // 로그아웃 API 호출 전에 먼저 로컬 상태 초기화
       logout()
       queryClient.clear()
-      return AuthAPI.logout()
+      
+      try {
+        return await AuthAPI.logout()
+      } catch (error) {
+        // API 호출 실패해도 로컬 상태는 이미 초기화됨
+        console.warn('Logout API failed, but local state cleared:', error)
+        return { success: true }
+      }
     },
     onSuccess: () => {
       toast({
