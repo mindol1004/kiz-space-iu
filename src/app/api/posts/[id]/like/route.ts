@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getUserIdFromCookies } from "@/lib/auth-utils"
+import { LikeType } from "@prisma/client"
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -16,23 +17,21 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     // 기존 좋아요 확인
-    const existingLike = await prisma.like.findUnique({
+    const existingLike = await prisma.like.findFirst({
       where: {
-        user_post_like: {
-          userId: userId,
-          postId: postId,
-        },
+        userId: userId,
+        postId: postId,
+        type: LikeType.POST,
       },
     })
 
     if (existingLike) {
       // 좋아요 제거
-      await prisma.like.delete({
+      await prisma.like.deleteMany({
         where: {
-          user_post_like: {
-            userId: userId,
-            postId: postId,
-          },
+          userId: userId,
+          postId: postId,
+          type: LikeType.POST,
         },
       })
 
@@ -58,6 +57,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         data: {
           userId: userId,
           postId: postId,
+          type: LikeType.POST, // Add type explicitly
         },
       })
 

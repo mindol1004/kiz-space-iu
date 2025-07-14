@@ -9,13 +9,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChatRoomCard } from "./chat-room-card"
 import { ChatQuickActions } from "./chat-quick-actions"
 import { ChatEmptyState } from "./chat-empty-state"
-import { mockChatRooms } from "../data/mock-chat-data"
+import { MOCK_CHAT_ROOMS } from "@/shared/constants/common-data"
 
 export function ChatList() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
 
-  const filteredChats = mockChatRooms.filter((chat) => {
+  const filteredChats = MOCK_CHAT_ROOMS.filter((chat) => {
     const matchesSearch =
       chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())

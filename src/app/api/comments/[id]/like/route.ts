@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getUserIdFromCookies } from "@/lib/auth-utils"
+import { LikeType } from "@prisma/client"
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -16,23 +17,21 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     // 기존 좋아요 확인
-    const existingLike = await prisma.like.findUnique({
+    const existingLike = await prisma.like.findFirst({
       where: {
-        user_comment_like: {
-          userId: userId,
-          commentId: commentId,
-        },
+        userId: userId,
+        commentId: commentId,
+        type: LikeType.COMMENT,
       },
     })
 
     if (existingLike) {
       // Remove like
-      await prisma.like.delete({
+      await prisma.like.deleteMany({
         where: {
-          user_comment_like: {
-            userId: userId,
-            commentId: commentId,
-          },
+          userId: userId,
+          commentId: commentId,
+          type: LikeType.COMMENT,
         },
       })
 
@@ -53,12 +52,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         likesCount: Math.max(0, updatedComment.likesCount),
       })
     } else {
-      // Add like (댓글 좋아요이므로 commentId만 설정)
+      // Add like (댓글 좋아요이므로 commentId와 type을 설정하고 postId는 null로 명시)
       await prisma.like.create({
         data: {
           userId: userId,
           commentId: commentId,
-          // postId는 설정하지 않음 (댓글 좋아요이므로)
+          type: LikeType.COMMENT,
         },
       })
 
