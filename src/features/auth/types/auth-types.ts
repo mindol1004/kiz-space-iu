@@ -33,6 +33,7 @@ export interface User {
   interests: string[]
   children: Child[]
   avatar?: string
+  verified?: boolean
   createdAt: Date
   updatedAt: Date
 }

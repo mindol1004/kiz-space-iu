@@ -12,7 +12,11 @@ export const UserSchema = z.object({
   verified: z.boolean().default(false),
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
-  bio: z.string().optional()
+  bio: z.string().optional(),
+  postsCount: z.number().optional(),
+  followersCount: z.number().optional(),
+  followingCount: z.number().optional(),
+  lastSeenAt: z.date().optional()
 })
 
 // Child Profile Schema

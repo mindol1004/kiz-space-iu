@@ -28,6 +28,7 @@ export interface LoginResponse {
     interests: string[]
     children: any[]
     avatar?: string
+    verified?: boolean
     createdAt: Date
     updatedAt: Date
   }
@@ -58,6 +59,7 @@ export interface CheckAuthResponse {
     interests: string[]
     children: any[]
     avatar?: string
+    verified?: boolean
     createdAt: Date
     updatedAt: Date
   }
