@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import { Heart, MessageCircle, MoreHorizontal, X, Loader2 } from "lucide-react"
+import { Heart, MessageCircle, MoreHorizontal, XCircle, Loader2, Send } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { Comment } from "../types/comment-types"
 import { useLikeComment, useCreateReply, useDeleteComment } from "../hooks/use-comments"
@@ -130,20 +130,20 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
                     setShowReplyInput(false)
                     setReplyContent("")
                   }}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-500"
                 >
-                  <X className="h-4 w-4" />
+                  <XCircle className="h-4 w-4" />
                 </Button>
                 <Button
                   size="sm"
                   onClick={handleReplySubmit}
                   disabled={!replyContent.trim() || createReplyMutation.isPending}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-500"
                 >
                   {createReplyMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <MessageCircle className="h-4 w-4" />
+                    <Send className="h-4 w-4" />
                   )}
                 </Button>
               </div>
