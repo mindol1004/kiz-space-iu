@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import { Heart, MessageCircle, MoreHorizontal } from "lucide-react"
+import { Heart, MessageCircle, MoreHorizontal, X, Loader2 } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { Comment } from "../types/comment-types"
 import { useLikeComment, useCreateReply, useDeleteComment } from "../hooks/use-comments"
@@ -130,15 +130,21 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
                     setShowReplyInput(false)
                     setReplyContent("")
                   }}
+                  className="h-8 w-8 p-0"
                 >
-                  취소
+                  <X className="h-4 w-4" />
                 </Button>
                 <Button
                   size="sm"
                   onClick={handleReplySubmit}
                   disabled={!replyContent.trim() || createReplyMutation.isPending}
+                  className="h-8 w-8 p-0"
                 >
-                  {createReplyMutation.isPending ? "작성 중..." : "답글 작성"}
+                  {createReplyMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <MessageCircle className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
