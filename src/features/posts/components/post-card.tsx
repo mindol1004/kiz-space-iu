@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import { MoreHorizontal } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { PostDetailModal } from "./post-detail-modal"
+import { EditPostModal } from "./edit-post-modal"
 import { usePostCard } from "../hooks/use-post-card"
 import { Post } from "../types/post-type"
 import { getCategoryLabel, getAgeGroupLabel } from "@/shared/constants/common-data"
 import { PostActions } from "./post-actions"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Trash2, Loader2 } from "lucide-react"
+import { Trash2, Loader2, Edit } from "lucide-react"
 
 interface PostCardProps {
   post: Post
@@ -27,6 +28,8 @@ export function PostCard({ post }: PostCardProps) {
     setShowDetailModal,
     showDeleteDialog,
     setShowDeleteDialog,
+    showEditModal,
+    setShowEditModal,
     handleCardClick,
     getTruncatedContent,
     handleDelete,
@@ -69,6 +72,15 @@ export function PostCard({ post }: PostCardProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowEditModal(true)
+                      }}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      수정
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.stopPropagation()
@@ -133,6 +145,7 @@ export function PostCard({ post }: PostCardProps) {
       </motion.div>
 
       <PostDetailModal post={post} open={showDetailModal} onOpenChange={setShowDetailModal} />
+      <EditPostModal post={post} open={showEditModal} onOpenChange={setShowEditModal} />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

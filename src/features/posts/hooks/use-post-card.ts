@@ -8,6 +8,7 @@ import { Post } from "../types/post-type"
 export function usePostCard(post: Post) {
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false)
+  const [showEditModal, setShowEditModal] = useState<boolean>(false)
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
@@ -43,6 +44,8 @@ export function usePostCard(post: Post) {
     setShowDetailModal,
     showDeleteDialog,
     setShowDeleteDialog,
+    showEditModal,
+    setShowEditModal,
     handleCardClick,
     getTruncatedContent,
     handleDelete,
