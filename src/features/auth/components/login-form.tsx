@@ -2,7 +2,8 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +16,14 @@ export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const loginMutation = useLogin()
+  const router = useRouter()
+
+  // Handle successful login redirect
+  useEffect(() => {
+    if (loginMutation.isSuccess) {
+      router.replace('/feed')
+    }
+  }, [loginMutation.isSuccess, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

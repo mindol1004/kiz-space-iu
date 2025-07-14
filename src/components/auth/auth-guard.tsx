@@ -64,8 +64,13 @@ export function AuthGuard({
   useEffect(() => {
     const verifyAuth = async () => {
 
-      // 현재 경로가 public 경로인 경우 인증 체크하지 않음
+      // 현재 경로가 public 경로인 경우 
       if (PUBLIC_PATHS.includes(currentPath)) {
+        // 이미 로그인된 사용자가 로그인/회원가입 페이지에 접근하는 경우 피드로 리다이렉트
+        if ((currentPath === '/login' || currentPath === '/signup') && isAuthenticated && user) {
+          router.replace('/feed')
+          return
+        }
         setIsLoading(false)
         return
       }

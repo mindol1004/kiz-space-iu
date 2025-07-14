@@ -23,7 +23,7 @@ export function useLogin() {
 
       // 상태가 확실히 저장된 후 리다이렉트
       setTimeout(() => {
-        router.push('/feed')
+        router.replace('/feed')
       }, 100)
     },
     onError: (error: Error) => {
