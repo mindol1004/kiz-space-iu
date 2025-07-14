@@ -104,35 +104,10 @@ export function useUpdateComment() {
     mutationFn: ({ commentId, content }: { commentId: string; content: string }) =>
       CommentsAPI.updateComment(commentId, content),
     onSuccess: (updatedComment) => {
-      // 댓글 목록 캐시 업데이트
-      queryClient.setQueriesData(
-        { queryKey: ["comments"] },
-        (oldData: any) => {
-          if (!oldData?.pages) return oldData
-
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page: any) => ({
-              ...page,
-              comments: page.comments.map((comment: Comment) => {
-                if (comment.id === updatedComment.id) {
-                  return updatedComment
-                }
-                // 대댓글도 업데이트
-                if (comment.replies) {
-                  return {
-                    ...comment,
-                    replies: comment.replies.map((reply: Comment) =>
-                      reply.id === updatedComment.id ? updatedComment : reply
-                    )
-                  }
-                }
-                return comment
-              })
-            }))
-          }
-        }
-      )
+      // 해당 게시글의 댓글 목록 무효화하여 최신 데이터 다시 가져오기
+      queryClient.invalidateQueries({ 
+        queryKey: ["comments", updatedComment.postId] 
+      })
       toast.success("댓글이 수정되었습니다.")
     },
     onError: (error) => {

@@ -5,12 +5,12 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import { Heart, MessageCircle, MoreHorizontal, XCircle, Loader2, Send, Edit } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Heart, MessageCircle, MoreHorizontal, XCircle, Loader2, Send, Edit, Trash2 } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { Comment } from "../types/comment-types"
 import { useLikeComment, useCreateReply, useDeleteComment, useUpdateComment } from "../hooks/use-comments"
 import { useAuthStore } from "@/shared/stores/auth-store"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface CommentItemProps {
   comment: Comment
