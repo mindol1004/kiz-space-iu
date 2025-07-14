@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import { cookieUtils } from "@/lib/cookie"
 
 interface User {
   id: string
@@ -32,25 +33,7 @@ interface AuthState {
   updateTokens: (tokens: { accessToken: string; refreshToken: string }) => void
 }
 
-// 쿠키 유틸리티 함수
-const cookieUtils = {
-  get: (name: string): string | null => {
-    if (typeof window === 'undefined') return null
-    const value = `; ${document.cookie}`
-    const parts = value.split(`; ${name}=`)
-    if (parts.length === 2) {
-      return parts.pop()?.split(';').shift() || null
-    }
-    return null
-  },
 
-  remove: (name: string, path: string = '/', domain?: string) => {
-    if (typeof window === 'undefined') return
-    let cookieString = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path}`
-    if (domain) cookieString += `; domain=${domain}`
-    document.cookie = cookieString
-  }
-}
 
 const initializeAuthFromCookies = () => {
   if (typeof window === 'undefined') return { user: null, isAuthenticated: false }
@@ -88,7 +71,10 @@ export const useAuthStore = create<AuthState>()(
             nickname: user.nickname,
             avatar: user.avatar,
             verified: user.verified
-          }), '/') // 15분
+          }), {
+            path: '/',
+            expires: 15 / (24 * 60) // 15분을 일 단위로 변환
+          })
 
           set({ user, isAuthenticated: true })
         },
@@ -119,7 +105,10 @@ export const useAuthStore = create<AuthState>()(
               nickname: updatedUser.nickname,
               avatar: updatedUser.avatar,
               verified: updatedUser.verified
-            }), '/')
+            }), {
+              path: '/',
+              expires: 15 / (24 * 60)
+            })
             set({ user: updatedUser })
           }
         },
@@ -155,7 +144,10 @@ export const useAuthStore = create<AuthState>()(
                 nickname: response.user.nickname,
                 avatar: response.user.avatar,
                 verified: response.user.verified
-              }), '/')
+              }), {
+                path: '/',
+                expires: 15 / (24 * 60)
+              })
 
               set({ 
                 user: response.user, 
