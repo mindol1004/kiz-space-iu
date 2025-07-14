@@ -14,7 +14,13 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use(
   (config) => {
     try {
-      const { accessToken } = useAuthStore.getState()
+      // Get access token from cookies instead of store state
+      const accessToken = typeof window !== 'undefined' 
+        ? document.cookie
+            .split('; ')
+            .find(row => row.startsWith('accessToken='))
+            ?.split('=')[1]
+        : null
 
       if (accessToken && config.headers) {
         config.headers.Authorization = `Bearer ${accessToken}`
