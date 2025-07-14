@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { CommentsAPI } from "../api/comment-api"
@@ -132,16 +133,6 @@ export function useUpdateComment() {
           }
         }
       )
-      toast.success("댓글이 수정되었습니다.")
-    },
-    onError: (error) => {
-      console.error("댓글 수정 오류:", error)
-      toast.error("댓글 수정 중 오류가 발생했습니다.")
-    },, content }: { commentId: string; content: string }) => 
-      CommentsAPI.updateComment(commentId, content),
-    onSuccess: () => {
-      // 모든 댓글 쿼리 무효화
-      queryClient.invalidateQueries({ queryKey: ["comments"] })
       toast.success("댓글이 수정되었습니다.")
     },
     onError: (error) => {
