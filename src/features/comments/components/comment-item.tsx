@@ -5,10 +5,10 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import { Heart, MessageCircle, MoreHorizontal, XCircle, Loader2, Send } from "lucide-react"
+import { Heart, MessageCircle, MoreHorizontal, XCircle, Loader2, Send, Edit } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import { Comment } from "../types/comment-types"
-import { useLikeComment, useCreateReply, useDeleteComment } from "../hooks/use-comments"
+import { useLikeComment, useCreateReply, useDeleteComment, useUpdateComment } from "../hooks/use-comments"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -21,10 +21,13 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
   const { user } = useAuthStore()
   const [showReplyInput, setShowReplyInput] = useState(false)
   const [replyContent, setReplyContent] = useState("")
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState(comment.content)
 
   const likeCommentMutation = useLikeComment()
   const createReplyMutation = useCreateReply()
   const deleteCommentMutation = useDeleteComment()
+  const updateCommentMutation = useUpdateComment()
 
   const handleLike = () => {
     likeCommentMutation.mutate(comment.id)
@@ -50,6 +53,25 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
     deleteCommentMutation.mutate(comment.id)
   }
 
+  const handleEditSubmit = async () => {
+    if (!editContent.trim()) return
+
+    try {
+      await updateCommentMutation.mutateAsync({
+        commentId: comment.id,
+        content: editContent.trim()
+      })
+      setIsEditing(false)
+    } catch (error) {
+      console.error("댓글 수정 실패:", error)
+    }
+  }
+
+  const handleEditCancel = () => {
+    setEditContent(comment.content)
+    setIsEditing(false)
+  }
+
   const isOwner = user?.id === comment.author.id
 
   return (
@@ -72,6 +94,10 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                      <Edit className="h-3 w-3 mr-2" />
+                      수정
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleDelete} className="text-red-600">
                       삭제
                     </DropdownMenuItem>
@@ -79,7 +105,39 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
                 </DropdownMenu>
               )}
             </div>
-            <p className="text-sm text-gray-700">{comment.content}</p>
+            {isEditing ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="min-h-[60px] text-sm"
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleEditCancel}
+                    className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-500"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleEditSubmit}
+                    disabled={!editContent.trim() || updateCommentMutation.isPending}
+                    className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-500"
+                  >
+                    {updateCommentMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-700">{comment.content}</p>
+            )}
           </div>
 
           <div className="flex items-center space-x-4 text-xs text-gray-500">
@@ -173,6 +231,16 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              // 대댓글 수정 기능 추가
+                              setEditContent(reply.content)
+                              setIsEditing(true)
+                            }}
+                          >
+                            <Edit className="h-2 w-2 mr-1" />
+                            수정
+                          </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => deleteCommentMutation.mutate(reply.id)}
                             className="text-red-600"

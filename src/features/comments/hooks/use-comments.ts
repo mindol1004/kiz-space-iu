@@ -100,7 +100,44 @@ export function useUpdateComment() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ commentId, content }: { commentId: string; content: string }) => 
+    mutationFn: ({ commentId, content }: { commentId: string; content: string }) =>
+      CommentsAPI.updateComment(commentId, content),
+    onSuccess: (updatedComment) => {
+      // 댓글 목록 캐시 업데이트
+      queryClient.setQueriesData(
+        { queryKey: ["comments"] },
+        (oldData: any) => {
+          if (!oldData?.pages) return oldData
+
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => ({
+              ...page,
+              comments: page.comments.map((comment: Comment) => {
+                if (comment.id === updatedComment.id) {
+                  return updatedComment
+                }
+                // 대댓글도 업데이트
+                if (comment.replies) {
+                  return {
+                    ...comment,
+                    replies: comment.replies.map((reply: Comment) =>
+                      reply.id === updatedComment.id ? updatedComment : reply
+                    )
+                  }
+                }
+                return comment
+              })
+            }))
+          }
+        }
+      )
+      toast.success("댓글이 수정되었습니다.")
+    },
+    onError: (error) => {
+      console.error("댓글 수정 오류:", error)
+      toast.error("댓글 수정 중 오류가 발생했습니다.")
+    },, content }: { commentId: string; content: string }) => 
       CommentsAPI.updateComment(commentId, content),
     onSuccess: () => {
       // 모든 댓글 쿼리 무효화
