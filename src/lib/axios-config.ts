@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { useAuthStore } from '@/shared/stores/auth-store'
+import { cookieUtils } from '@/lib/cookie'
 
 // API 인스턴스 생성
 const api: AxiosInstance = axios.create({
@@ -14,13 +15,8 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use(
   (config) => {
     try {
-      // Get access token from cookies instead of store state
-      const accessToken = typeof window !== 'undefined' 
-        ? document.cookie
-            .split('; ')
-            .find(row => row.startsWith('accessToken='))
-            ?.split('=')[1]
-        : null
+      // Get access token from cookies using cookieUtils
+      const accessToken = cookieUtils.get('accessToken')
 
       if (accessToken && config.headers) {
         config.headers.Authorization = `Bearer ${accessToken}`
