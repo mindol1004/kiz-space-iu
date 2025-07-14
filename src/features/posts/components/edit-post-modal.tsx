@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { X, Upload, Loader2 } from "lucide-react"
 import { Post } from "../types/post-type"
 import { useEditPost } from "../hooks/use-edit-post"
-import { getCategoryLabel, getAgeGroupLabel, categories, ageGroups, MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/constants/common-data"
+import { getCategoryLabel, getAgeGroupLabel, CATEGORIES, AGE_GROUPS, MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/constants/common-data"
 
 interface EditPostModalProps {
   post: Post
@@ -69,7 +69,7 @@ export function EditPostModal({ post, open, onOpenChange }: EditPostModalProps) 
                   <SelectValue placeholder="카테고리 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
+                  {CATEGORIES.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
                     </SelectItem>
@@ -84,7 +84,7 @@ export function EditPostModal({ post, open, onOpenChange }: EditPostModalProps) 
                   <SelectValue placeholder="연령대 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ageGroups.map((age) => (
+                  {AGE_GROUPS.map((age) => (
                     <SelectItem key={age.value} value={age.value}>
                       {age.label}
                     </SelectItem>
