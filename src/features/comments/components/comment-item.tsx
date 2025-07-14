@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -22,7 +21,7 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
   const { user } = useAuthStore()
   const [showReplyInput, setShowReplyInput] = useState(false)
   const [replyContent, setReplyContent] = useState("")
-  
+
   const likeCommentMutation = useLikeComment()
   const createReplyMutation = useCreateReply()
   const deleteCommentMutation = useDeleteComment()
@@ -60,7 +59,7 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
           <AvatarImage src={comment.author.avatar} />
           <AvatarFallback>{comment.author.nickname[0]}</AvatarFallback>
         </Avatar>
-        
+
         <div className="flex-1 space-y-2">
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="flex items-center justify-between mb-1">
@@ -82,10 +81,10 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
             </div>
             <p className="text-sm text-gray-700">{comment.content}</p>
           </div>
-          
+
           <div className="flex items-center space-x-4 text-xs text-gray-500">
             <span>{formatDate(new Date(comment.createdAt))}</span>
-            
+
             <Button
               variant="ghost"
               size="sm"
@@ -102,7 +101,7 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
               </motion.div>
               <span>{comment.likesCount}</span>
             </Button>
-            
+
             <Button
               variant="ghost"
               size="sm"
@@ -113,7 +112,7 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
               <span>답글</span>
             </Button>
           </div>
-          
+
           {showReplyInput && user && (
             <div className="space-y-2">
               <Textarea
@@ -151,7 +150,7 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
           )}
         </div>
       </div>
-      
+
       {/* 대댓글 목록 */}
       {comment.replies && comment.replies.length > 0 && (
         <div className="ml-11 space-y-3">
@@ -161,7 +160,7 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
                 <AvatarImage src={reply.author.avatar} />
                 <AvatarFallback>{reply.author.nickname[0]}</AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1 space-y-1">
                 <div className="bg-gray-50 rounded-lg p-2">
                   <div className="flex items-center justify-between mb-1">
@@ -186,10 +185,10 @@ export function CommentItem({ comment, postId }: CommentItemProps) {
                   </div>
                   <p className="text-xs text-gray-700">{reply.content}</p>
                 </div>
-                
+
                 <div className="flex items-center space-x-3 text-xs text-gray-500">
                   <span>{formatDate(new Date(reply.createdAt))}</span>
-                  
+
                   <Button
                     variant="ghost"
                     size="sm"

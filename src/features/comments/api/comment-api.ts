@@ -28,6 +28,12 @@ export class CommentsAPI {
     await apiClient.delete<CommentDeleteApiResponse>(`/comments/${commentId}`)
   }
 
+  // 댓글 수정
+  static async updateComment(commentId: string, content: string): Promise<Comment> {
+    const response = await apiClient.put<CommentApiResponse>(`/comments/${commentId}`, { content })
+    return response.data.comment
+  }
+
   // 댓글 좋아요 토글
   static async likeComment(commentId: string): Promise<CommentLikeResponse> {
     const response = await apiClient.post<CommentLikeApiResponse>(`/comments/${commentId}/like`)

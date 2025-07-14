@@ -2,6 +2,89 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { withAuth } from "@/lib/auth-middleware"
 
+export const PUT = withAuth(async (
+  request: NextRequest,
+  auth: { user: any },
+  { params }: { params: { id: string } }
+) => {
+  try {
+    const commentId = params.id
+    const body = await request.json()
+    const { content } = body
+
+    if (!content || !content.trim()) {
+      return NextResponse.json({ error: "댓글 내용이 필요합니다" }, { status: 400 })
+    }
+
+    // 댓글 존재 여부 및 작성자 확인
+    const existingComment = await prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { authorId: true }
+    })
+
+    if (!existingComment) {
+      return NextResponse.json({ error: "댓글을 찾을 수 없습니다" }, { status: 404 })
+    }
+
+    // 작성자 본인만 수정 가능
+    if (existingComment.authorId !== auth.user.id) {
+      return NextResponse.json({ error: "수정 권한이 없습니다" }, { status: 403 })
+    }
+
+    // 댓글 수정
+    const updatedComment = await prisma.comment.update({
+      where: { id: commentId },
+      data: {
+        content: content.trim(),
+        updatedAt: new Date(),
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            nickname: true,
+            avatar: true,
+          }
+        },
+        _count: {
+          select: {
+            likes: true
+          }
+        }
+      }
+    })
+
+    // 좋아요 상태 확인
+    const userLike = await prisma.like.findFirst({
+      where: {
+        userId: auth.user.id,
+        commentId: commentId,
+      }
+    })
+
+    const responseComment = {
+      id: updatedComment.id,
+      content: updatedComment.content,
+      postId: updatedComment.postId,
+      parentId: updatedComment.parentId,
+      author: updatedComment.author,
+      likesCount: updatedComment._count.likes,
+      isLiked: !!userLike,
+      createdAt: updatedComment.createdAt,
+      updatedAt: updatedComment.updatedAt,
+      replies: []
+    }
+
+    return NextResponse.json({
+      success: true,
+      comment: responseComment
+    })
+  } catch (error) {
+    console.error("댓글 수정 오류:", error)
+    return NextResponse.json({ error: "댓글 수정 중 오류가 발생했습니다" }, { status: 500 })
+  }
+})
+
 export const DELETE = withAuth(async (
   request: NextRequest,
   auth: { user: any },
