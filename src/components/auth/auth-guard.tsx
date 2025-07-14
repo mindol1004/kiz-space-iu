@@ -76,16 +76,11 @@ export function AuthGuard({
         return
       }
 
-      // 이미 인증된 상태이고 사용자 정보가 있다면 즉시 통과
-      if (isAuthenticated && user) {
-        setIsLoading(false)
-        return
-      }
-
       // 쿠키에서 JWT 토큰 확인
       const token = getCookie('accessToken')
 
       if (!token) {
+        console.log('No access token found, clearing auth')
         clearAuth()
         setIsLoading(false)
         router.push(redirectTo)
@@ -94,9 +89,16 @@ export function AuthGuard({
 
       // 토큰 만료 체크
       if (isTokenExpired(token)) {
+        console.log('Access token expired, clearing auth')
         clearAuth()
         setIsLoading(false)
         router.push(redirectTo)
+        return
+      }
+
+      // 이미 인증된 상태이고 사용자 정보가 있다면 즉시 통과
+      if (isAuthenticated && user) {
+        setIsLoading(false)
         return
       }
 

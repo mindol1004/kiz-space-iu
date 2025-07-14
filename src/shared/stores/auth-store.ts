@@ -106,21 +106,40 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuthStatus: async () => {
-        const { isChecking, isAuthenticated, user } = get()
+        const { isChecking } = get()
 
-        // 이미 체크 중이거나 인증된 상태라면 중복 체크 안함
+        // 이미 체크 중이라면 대기
         if (isChecking) {
-          return isAuthenticated
-        }
-
-        // 이미 인증되어 있고 사용자 정보가 있다면 추가 체크 안함
-        if (isAuthenticated && user) {
-          return true
+          return new Promise<boolean>((resolve) => {
+            const checkInterval = setInterval(() => {
+              const currentState = get()
+              if (!currentState.isChecking) {
+                clearInterval(checkInterval)
+                resolve(currentState.isAuthenticated)
+              }
+            }, 100)
+          })
         }
 
         // 쿠키에서 토큰 확인
         const token = cookieUtils.get('accessToken')
         if (!token) {
+          console.log('No token found in checkAuthStatus')
+          get().clearAuth()
+          return false
+        }
+
+        // 토큰 만료 체크
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          const currentTime = Math.floor(Date.now() / 1000)
+          if (payload.exp && payload.exp < currentTime) {
+            console.log('Token expired in checkAuthStatus')
+            get().clearAuth()
+            return false
+          }
+        } catch (error) {
+          console.log('Invalid token format in checkAuthStatus')
           get().clearAuth()
           return false
         }
@@ -140,6 +159,7 @@ export const useAuthStore = create<AuthState>()(
           return true
         } catch (error) {
           console.error('Auth check failed:', error)
+          set({ isChecking: false })
           get().clearAuth()
           return false
         }
@@ -151,16 +171,17 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-      // persist 복원 시 로그 추가하고 토큰 확인을 지연시킴
+      // persist 복원 시 토큰 확인
       onRehydrateStorage: () => (state) => {
         if (state && typeof window !== 'undefined') {
-          // 페이지 로드 완료 후 토큰 확인 (로그인 직후 쿠키 설정 대기)
-          setTimeout(() => {
-            const token = cookieUtils.get('accessToken')
-            if (!token && state.isAuthenticated) {
-              state.clearAuth()
-            }
-          }, 1000)
+          // 즉시 토큰 확인
+          const token = cookieUtils.get('accessToken')
+          if (!token && state.isAuthenticated) {
+            console.log('No token found, clearing auth state')
+            state.clearAuth()
+          } else if (token && state.isAuthenticated) {
+            console.log('Token found, maintaining auth state')
+          }
         }
       },
     }
