@@ -29,6 +29,7 @@ interface AuthState {
   clearAuth: () => void // 새로 추가
   updateUser: (userData: Partial<User>) => void
   checkAuthStatus: () => Promise<boolean>
+  updateTokens: (tokens: { accessToken: string; refreshToken: string }) => void
 }
 
 // 쿠키 유틸리티 함수
@@ -83,20 +84,16 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearAuth: () => {
-        // 인증 실패 시 모든 인증 정보 초기화
-        cookieUtils.remove('accessToken', '/')
-        cookieUtils.remove('refreshToken', '/')
-
         set({
           user: null,
           isAuthenticated: false,
           isChecking: false,
         })
+      },
 
-        // localStorage에서도 제거
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('auth-storage')
-        }
+      updateTokens: (tokens: { accessToken: string; refreshToken: string }) => {
+        // 토큰은 httpOnly 쿠키로 관리되므로 여기서는 별도 처리 불필요
+        // 필요시 추가 로직 구현
       },
 
       updateUser: (userData) => {
@@ -110,7 +107,7 @@ export const useAuthStore = create<AuthState>()(
 
       checkAuthStatus: async () => {
         const { isChecking, isAuthenticated, user } = get()
-        
+
         // 이미 체크 중이거나 인증된 상태라면 중복 체크 안함
         if (isChecking) {
           return isAuthenticated

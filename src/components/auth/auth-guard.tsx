@@ -3,6 +3,9 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/shared/stores/auth-store"
+import { usePathname } from "next/navigation"
+import { AuthAPI } from "@/features/auth/api/auth-api"
+import { cookieUtils } from "@/lib/cookie"
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -110,7 +113,7 @@ export function AuthGuard({
           router.push(redirectTo)
         }
       }
-      
+
       setIsLoading(false)
     }
 

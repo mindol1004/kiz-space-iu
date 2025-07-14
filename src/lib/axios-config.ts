@@ -38,25 +38,22 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    // 토큰 만료 시 리프레시 토큰으로 재발급
+    // 토큰 만료로 인한 401 에러인 경우 토큰 갱신 시도
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
 
       try {
-        const { refreshToken } = useAuthStore.getState()
+        const refreshResponse = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include', // 쿠키 포함
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
 
-        if (refreshToken) {
-          const response = await axios.post('/api/auth/refresh', {
-            refreshToken,
-          })
-
-          const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data.tokens
-
-          // 스토어에 새 토큰 저장
-          useAuthStore.getState().setTokens({
-            accessToken: newAccessToken,
-            refreshToken: newRefreshToken,
-          })
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json()
+          const { accessToken: newAccessToken } = data.tokens
 
           // 원래 요청에 새 토큰 추가
           if (originalRequest.headers) {
@@ -64,6 +61,8 @@ api.interceptors.response.use(
           }
 
           return api(originalRequest)
+        } else {
+          throw new Error('Token refresh failed')
         }
       } catch (refreshError) {
         // 리프레시 토큰도 만료된 경우 로그아웃
