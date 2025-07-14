@@ -18,12 +18,7 @@ export function LoginForm() {
   const loginMutation = useLogin()
   const router = useRouter()
 
-  // Handle successful login redirect
-  useEffect(() => {
-    if (loginMutation.isSuccess) {
-      router.replace('/feed')
-    }
-  }, [loginMutation.isSuccess, router])
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

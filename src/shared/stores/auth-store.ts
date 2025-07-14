@@ -52,119 +52,138 @@ const cookieUtils = {
   }
 }
 
+const initializeAuthFromCookies = () => {
+  if (typeof window === 'undefined') return { user: null, isAuthenticated: false }
+
+  try {
+    const token = cookieUtils.get('accessToken')
+    const userInfo = cookieUtils.get('userInfo')
+
+    if (token && userInfo) {
+      const user = JSON.parse(userInfo)
+      return { user, isAuthenticated: true }
+    }
+  } catch (error) {
+    console.error('Error initializing auth from cookies:', error)
+  }
+
+  return { user: null, isAuthenticated: false }
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
-      user: null,
-      isAuthenticated: false,
-      isChecking: false,
+    (set, get) => {
+      const initialState = initializeAuthFromCookies()
 
-      login: (user) => {
-        set({
-          user,
-          isAuthenticated: true,
-        })
-      },
+      return {
+        user: initialState.user,
+        isAuthenticated: initialState.isAuthenticated,
+        isChecking: false,
 
-      logout: () => {
-        // 쿠키에서 토큰 제거
-        cookieUtils.remove('accessToken', '/')
-        cookieUtils.remove('refreshToken', '/')
+        login: (user: User) => {
+          // 사용자 정보를 쿠키에도 저장
+          cookieUtils.set('userInfo', JSON.stringify({
+            id: user.id,
+            email: user.email,
+            nickname: user.nickname,
+            avatar: user.avatar,
+            verified: user.verified
+          }), '/') // 15분
 
-        // 상태 초기화
-        set({
-          user: null,
-          isAuthenticated: false,
-        })
+          set({ user, isAuthenticated: true })
+        },
 
-        // localStorage에서도 제거 (persist 데이터)
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('auth-storage')
-        }
-      },
+        logout: () => {
+          // 쿠키 삭제
+          cookieUtils.remove('accessToken', '/')
+          cookieUtils.remove('refreshToken', '/')
+          cookieUtils.remove('userInfo', '/')
+          set({ user: null, isAuthenticated: false })
+        },
 
-      clearAuth: () => {
-        set({
-          user: null,
-          isAuthenticated: false,
-          isChecking: false,
-        })
-      },
+        clearAuth: () => {
+          cookieUtils.remove('accessToken', '/')
+          cookieUtils.remove('refreshToken', '/')
+          cookieUtils.remove('userInfo', '/')
+          set({ user: null, isAuthenticated: false, isChecking: false })
+        },
 
-      updateTokens: (tokens: { accessToken: string; refreshToken: string }) => {
-        // 토큰은 httpOnly 쿠키로 관리되므로 여기서는 별도 처리 불필요
-        // 필요시 추가 로직 구현
-      },
+        updateUser: (userData: Partial<User>) => {
+          const currentUser = get().user
+          if (currentUser) {
+            const updatedUser = { ...currentUser, ...userData }
+            // 쿠키의 사용자 정보도 업데이트
+            cookieUtils.set('userInfo', JSON.stringify({
+              id: updatedUser.id,
+              email: updatedUser.email,
+              nickname: updatedUser.nickname,
+              avatar: updatedUser.avatar,
+              verified: updatedUser.verified
+            }), '/')
+            set({ user: updatedUser })
+          }
+        },
 
-      updateUser: (userData) => {
-        const currentUser = get().user
-        if (currentUser) {
-          set({
-            user: { ...currentUser, ...userData },
-          })
-        }
-      },
+        checkAuthStatus: async () => {
+          const { isAuthenticated, user } = get()
 
-      checkAuthStatus: async () => {
-        const { isChecking } = get()
+          // 이미 인증되어 있고 사용자 정보가 있다면 바로 반환
+          if (isAuthenticated && user) {
+            return true
+          }
 
-        // 이미 체크 중이라면 대기
-        if (isChecking) {
-          return new Promise<boolean>((resolve) => {
-            const checkInterval = setInterval(() => {
-              const currentState = get()
-              if (!currentState.isChecking) {
-                clearInterval(checkInterval)
-                resolve(currentState.isAuthenticated)
-              }
-            }, 100)
-          })
-        }
+          set({ isChecking: true })
 
-        // 쿠키에서 토큰 확인
-        const token = cookieUtils.get('accessToken')
-        if (!token) {
-          console.log('No token found in checkAuthStatus')
-          get().clearAuth()
-          return false
-        }
+          try {
+            // 쿠키에서 토큰 확인
+            const token = cookieUtils.get('accessToken')
 
-        // 토큰 만료 체크
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]))
-          const currentTime = Math.floor(Date.now() / 1000)
-          if (payload.exp && payload.exp < currentTime) {
-            console.log('Token expired in checkAuthStatus')
-            get().clearAuth()
+            if (!token) {
+              set({ user: null, isAuthenticated: false, isChecking: false })
+              return false
+            }
+
+            // 서버에서 인증 확인
+            const { AuthAPI } = await import('@/features/auth/api/auth-api')
+            const response = await AuthAPI.checkAuth()
+
+            if (response.user) {
+              // 사용자 정보를 쿠키에도 저장
+              cookieUtils.set('userInfo', JSON.stringify({
+                id: response.user.id,
+                email: response.user.email,
+                nickname: response.user.nickname,
+                avatar: response.user.avatar,
+                verified: response.user.verified
+              }), '/')
+
+              set({ 
+                user: response.user, 
+                isAuthenticated: true, 
+                isChecking: false 
+              })
+              return true
+            } else {
+              set({ user: null, isAuthenticated: false, isChecking: false })
+              return false
+            }
+          } catch (error) {
+            console.error('Auth check failed:', error)
+            // 인증 실패 시 쿠키 삭제
+            cookieUtils.remove('accessToken', '/')
+            cookieUtils.remove('refreshToken', '/')
+            cookieUtils.remove('userInfo', '/')
+            set({ user: null, isAuthenticated: false, isChecking: false })
             return false
           }
-        } catch (error) {
-          console.log('Invalid token format in checkAuthStatus')
-          get().clearAuth()
-          return false
+        },
+
+        updateTokens: (tokens: { accessToken: string; refreshToken: string }) => {
+          // 토큰은 httpOnly 쿠키로 관리되므로 여기서는 별도 처리 불필요
+          // 필요시 추가 로직 구현
         }
-
-        set({ isChecking: true })
-
-        try {
-          const { AuthAPI } = await import('@/features/auth/api/auth-api')
-          const response = await AuthAPI.checkAuth()
-
-          set({
-            user: response.user,
-            isAuthenticated: true,
-            isChecking: false,
-          })
-
-          return true
-        } catch (error) {
-          console.error('Auth check failed:', error)
-          set({ isChecking: false })
-          get().clearAuth()
-          return false
-        }
-      },
-    }),
+      }
+    },
     {
       name: "auth-storage",
       partialize: (state) => ({

@@ -101,13 +101,31 @@ export function AuthGuard({
         return
       }
 
+      // 쿠키에서 사용자 정보도 확인
+      const userInfo = getCookie('userInfo')
+      
       // 이미 인증된 상태이고 사용자 정보가 있다면 즉시 통과
-      if (isAuthenticated && user) {
+      if (isAuthenticated && user && token && userInfo) {
         setIsLoading(false)
         return
       }
 
-      // 서버에서 인증 상태 확인 (이미 인증된 경우에만)
+      // 토큰과 사용자 정보가 쿠키에 있지만 store에는 없는 경우
+      if (token && userInfo && (!isAuthenticated || !user)) {
+        try {
+          const parsedUser = JSON.parse(userInfo)
+          // Store에 사용자 정보 설정하지 말고 서버 확인을 통해 설정
+          const isAuth = await checkAuthStatus()
+          if (isAuth) {
+            setIsLoading(false)
+            return
+          }
+        } catch (error) {
+          console.error('Error parsing user info from cookie:', error)
+        }
+      }
+
+      // 서버에서 인증 상태 확인
       if (!isAuthenticated || !user) {
         try {
           const isAuth = await checkAuthStatus()

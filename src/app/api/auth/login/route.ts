@@ -1,4 +1,3 @@
-
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { 
@@ -87,19 +86,37 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Set httpOnly cookies for security
-    response.cookies.set('accessToken', accessToken, {
+    // 쿠키 설정
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 15 * 60 // 15 minutes
+      sameSite: 'lax' as const,
+      path: '/',
+    }
+
+    response.cookies.set('accessToken', accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60, // 15분
     })
 
     response.cookies.set('refreshToken', refreshToken, {
-      httpOnly: true,
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60, // 7일
+    })
+
+    // 사용자 정보도 쿠키에 설정 (클라이언트에서 즉시 접근 가능하도록)
+    response.cookies.set('userInfo', JSON.stringify({
+      id: user.id,
+      email: user.email,
+      nickname: user.nickname,
+      avatar: user.avatar,
+      verified: user.verified
+    }), {
+      httpOnly: false, // 클라이언트에서 접근 가능
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 // 7 days
+      sameSite: 'lax' as const,
+      path: '/',
+      maxAge: 15 * 60, // 15분
     })
 
     return response

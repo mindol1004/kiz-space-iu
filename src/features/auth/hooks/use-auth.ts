@@ -21,10 +21,11 @@ export function useLogin() {
         description: "환영합니다!",
       })
 
-      // 상태가 확실히 저장된 후 리다이렉트
+      // 상태가 확실히 저장된 후 리다이렉트 (더 긴 대기 시간)
       setTimeout(() => {
-        router.replace('/feed')
-      }, 100)
+        // 강제로 페이지 새로고침하여 인증 상태 확실히 반영
+        window.location.href = '/feed'
+      }, 200)
     },
     onError: (error: Error) => {
       console.error("로그인 실패:", error)
