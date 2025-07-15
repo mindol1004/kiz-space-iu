@@ -104,21 +104,6 @@ export async function POST(request: NextRequest) {
       maxAge: 7 * 24 * 60 * 60, // 7일
     })
 
-    // 사용자 정보도 쿠키에 설정 (클라이언트에서 즉시 접근 가능하도록)
-    response.cookies.set('userInfo', JSON.stringify({
-      id: user.id,
-      email: user.email,
-      nickname: user.nickname,
-      avatar: user.avatar,
-      verified: user.verified
-    }), {
-      httpOnly: false, // 클라이언트에서 접근 가능
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
-      path: '/',
-      maxAge: 15 * 60, // 15분
-    })
-
     return response
   } catch (error) {
     console.error("Login error:", error)

@@ -14,17 +14,10 @@ const api: AxiosInstance = axios.create({
 // Request 인터셉터 - 토큰 자동 추가
 api.interceptors.request.use(
   (config) => {
-    try {
-      // Get access token from cookies using cookieUtils
-      const accessToken = cookieUtils.get('accessToken')
-
-      if (accessToken && config.headers) {
-        config.headers.Authorization = `Bearer ${accessToken}`
-      }
-    } catch (error) {
-      console.warn('Failed to get access token:', error)
-    }
-
+    // NOTE: If accessToken is httpOnly, we should NOT try to get it from cookies
+    // and manually set the Authorization header. The browser will automatically
+    // send httpOnly cookies with the request. The server should handle authentication
+    // by reading the httpOnly cookies directly.
     return config
   },
   (error) => {
@@ -54,14 +47,18 @@ api.interceptors.response.use(
         })
 
         if (refreshResponse.ok) {
-          const data = await refreshResponse.json()
-          const { accessToken: newAccessToken } = data.tokens
+          // IMPORTANT: If accessToken is httpOnly and server sets it via Set-Cookie header,
+          // we should NOT try to get it from refreshResponse.json() and manually set Authorization.
+          // The browser will automatically include the new httpOnly cookie with the retried request.
+          // The following lines are removed because they are likely problematic for httpOnly tokens.
+          // const data = await refreshResponse.json()
+          // const { accessToken: newAccessToken } = data.tokens
+          // if (originalRequest.headers) {
+          //   originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+          // }
 
-          // 원래 요청에 새 토큰 추가
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
-          }
-
+          // We just need to re-dispatch the original request.
+          // The browser will automatically include the fresh httpOnly cookie.
           return api(originalRequest)
         } else {
           throw new Error('Token refresh failed')

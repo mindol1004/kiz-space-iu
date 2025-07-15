@@ -10,9 +10,20 @@ import {
 } from "@/lib/jwt"
 
 export async function POST(request: NextRequest) {
+  let clientRefreshToken: string | null = null;
   try {
-    const { refreshToken: clientRefreshToken } = await request.json()
+    // Only attempt to parse JSON if the content-type is application/json
+    if (request.headers.get('content-type')?.includes('application/json')) {
+      const body = await request.json();
+      clientRefreshToken = body.refreshToken;
+    }
+  } catch (error) {
+    // If JSON parsing fails (e.g., empty body or malformed JSON),
+    // proceed without clientRefreshToken from body.
+    console.warn("Could not parse request body as JSON, will check cookies for refresh token:", error);
+  }
     
+  try {
     // Try to get refresh token from cookie if not provided in body
     const refreshToken = clientRefreshToken || request.cookies.get('refreshToken')?.value
 
