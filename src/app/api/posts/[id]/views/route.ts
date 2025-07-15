@@ -28,7 +28,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           where: { id: postId },
           select: { viewsCount: true },
         })
-        return NextResponse.json({ viewsCount: post?.viewsCount || 0 })
+        return NextResponse.json({ viewsCount: post?.viewsCount || 0 }, { status: 200 })
       }
 
       // 새로운 조회 기록 생성
@@ -51,9 +51,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       select: { viewsCount: true },
     })
 
-    return NextResponse.json({ viewsCount: updatedPost.viewsCount })
+    return NextResponse.json({ viewsCount: updatedPost.viewsCount }, { status: 200 })
   } catch (error) {
-    console.error("Error incrementing views:", error)
+    console.error("Error incrementing views:", error instanceof Error ? error.message : String(error))
     return NextResponse.json({ error: "조회수 증가에 실패했습니다" }, { status: 500 })
   }
 }

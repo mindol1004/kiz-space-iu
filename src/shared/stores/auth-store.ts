@@ -1,4 +1,3 @@
-
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
@@ -25,6 +24,7 @@ interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isChecking: boolean
+  hasCheckedInitialAuth: boolean
   login: (user: User) => void
   logout: () => void
   clearAuth: () => void
@@ -46,17 +46,31 @@ export const useAuthStore = create<AuthState>()(
         user: initialState.user,
         isAuthenticated: initialState.isAuthenticated,
         isChecking: false,
+        hasCheckedInitialAuth: false,
 
         login: (user: User) => {
-          set({ user, isAuthenticated: true })
+          set({ 
+            user, 
+            isAuthenticated: true, 
+            hasCheckedInitialAuth: true 
+          })
         },
 
-        logout: () => {          
-          set({ user: null, isAuthenticated: false })
+        logout: () => {
+          set({ 
+            user: null, 
+            isAuthenticated: false, 
+            hasCheckedInitialAuth: true // 로그아웃도 체크 완료 상태
+          })
         },
 
         clearAuth: () => {
-          set({ user: null, isAuthenticated: false, isChecking: false })
+          set({ 
+            user: null, 
+            isAuthenticated: false, 
+            isChecking: false,
+            hasCheckedInitialAuth: true // 인증 초기화도 체크 완료 상태
+          })
         },
 
         updateUser: (userData: Partial<User>) => {
@@ -70,7 +84,9 @@ export const useAuthStore = create<AuthState>()(
         checkAuthStatus: async () => {
           const { isAuthenticated, user, isChecking } = get()
 
+          // 이미 인증된 상태이고 체크 중이 아니면 바로 반환
           if ((isAuthenticated && user) && !isChecking) {
+            set({ hasCheckedInitialAuth: true })
             return true
           }
 
@@ -81,19 +97,30 @@ export const useAuthStore = create<AuthState>()(
             const response = await AuthAPI.checkAuth()
 
             if (response.user) {
-              set({ 
-                user: response.user, 
-                isAuthenticated: true, 
-                isChecking: false 
+              set({
+                user: response.user,
+                isAuthenticated: true,
+                isChecking: false,
+                hasCheckedInitialAuth: true // 서버 체크 완료
               })
               return true
             } else {
-              set({ user: null, isAuthenticated: false, isChecking: false })
+              set({ 
+                user: null, 
+                isAuthenticated: false, 
+                isChecking: false,
+                hasCheckedInitialAuth: true // 서버 체크 완료 (인증 실패)
+              })
               return false
             }
           } catch (error) {
             console.error('Auth store: Auth check failed:', error)
-            set({ user: null, isAuthenticated: false, isChecking: false })
+            set({ 
+              user: null, 
+              isAuthenticated: false, 
+              isChecking: false,
+              hasCheckedInitialAuth: true // 에러 발생도 체크 완료 상태
+            })
             return false
           }
         },
@@ -108,12 +135,20 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        hasCheckedInitialAuth: state.hasCheckedInitialAuth, // persist에 추가
       }),
       onRehydrateStorage: () => (state) => {
         if (state && typeof window !== 'undefined') {
+          // 불일치 상태 정리
           if (state.user && !state.isAuthenticated) {
+            state.clearAuth?.()
           } else if (!state.user && state.isAuthenticated) {
-             state.clearAuth();
+            state.clearAuth?.()
+          }
+          
+          // 페이지 새로고침 시 초기 체크 상태 리셋 (서버 재확인 필요)
+          if (state.hasCheckedInitialAuth && state.isAuthenticated) {
+            state.hasCheckedInitialAuth = false
           }
         }
       },

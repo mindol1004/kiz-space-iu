@@ -31,7 +31,14 @@ export function AuthGuard({
   redirectTo = "/login",
   requireAuth = true
 }: AuthGuardProps) {
-  const { isAuthenticated, user, isChecking, checkAuthStatus, clearAuth } = useAuthStore()
+  const { 
+    isAuthenticated, 
+    user, 
+    isChecking, 
+    checkAuthStatus, 
+    clearAuth,
+    hasCheckedInitialAuth // 초기 인증 체크 완료 여부
+  } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
   const [isMounted, setIsMounted] = useState(false)
@@ -57,19 +64,24 @@ export function AuthGuard({
     }
 
     if (!isAuthenticated) {
-      try {
-        const success = await checkAuthStatus()
-        if (!success) {
+      // 초기 인증 체크가 완료되지 않은 경우에만 서버 체크
+      if (!hasCheckedInitialAuth) {
+        try {
+          const success = await checkAuthStatus()
+          if (!success) {
+            clearAuth()
+            router.replace(redirectTo)
+          }
+        } catch (error) {
+          console.error('AuthGuard: Auth check error:', error)
           clearAuth()
           router.replace(redirectTo)
         }
-      } catch (error) {
-        console.error('AuthGuard: Auth check error:', error)
-        clearAuth()
+      } else {
         router.replace(redirectTo)
       }
     }
-  }, [isChecking, isAuthenticated, checkAuthStatus, clearAuth, router, redirectTo])
+  }, [isChecking, isAuthenticated, hasCheckedInitialAuth, checkAuthStatus, clearAuth, router, redirectTo])
 
   // 메인 인증 로직
   useEffect(() => {
