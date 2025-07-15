@@ -1,4 +1,3 @@
-
 export const CATEGORIES = [
   { value: "PLAY", label: "놀이/활동" },
   { value: "HEALTH", label: "건강/안전" },
@@ -30,7 +29,7 @@ export const AGE_GROUPS = [
   { value: "PRESCHOOL_3_5Y", label: "유치원 (3-5세)" },
   { value: "SCHOOL_5_8Y", label: "초등 저학년 (5-8세)" },
   { value: "TWEEN_8_12Y", label: "초등 고학년 (8-12세)" },
-  { value: "ALL", label: "전체 연령" },
+  { value: "ALL", label: "전체" },
 ]
 
 export const FILTER_CATEGORIES = [
@@ -85,106 +84,6 @@ export const REGIONS = [
   "경상북도",
   "경상남도",
   "제주특별자치도",
-]
-
-export const TRENDING_TAGS: string[] = [
-  "신생아케어",
-  "유아놀이",
-  "초등교육",
-  "편식해결",
-  "수면교육",
-  "장난감추천",
-  "책추천",
-  "외출준비",
-  "안전용품",
-  "성장발달",
-]
-
-export const POPULAR_GROUPS = [
-  { id: "1", name: "서울 강남구 엄마들", members: 1234, category: "지역" },
-  { id: "2", name: "홈스쿨링 모임", members: 856, category: "교육" },
-  { id: "3", name: "워킹맘 소통방", members: 2341, category: "라이프" },
-  { id: "4", name: "신생아 육아 정보", members: 1876, category: "연령별" },
-]
-
-export interface WeeklyEvent {
-  id: string
-  title: string
-  description: string
-  date: string
-  bgColor: string
-  textColor: string
-  participants: number
-  category: string
-}
-
-export const WEEKLY_EVENTS: WeeklyEvent[] = [
-  {
-    id: "1",
-    title: "온라인 육아 세미나",
-    description: "소아과 전문의와 함께하는 신생아 케어",
-    date: "1월 20일 오후 2시",
-    bgColor: "bg-gradient-to-r from-pink-50 to-purple-50",
-    textColor: "text-pink-600",
-    participants: 0,
-    category: "건강"
-  },
-  {
-    id: "2",
-    title: "유아 요리 클래스",
-    description: "아이와 함께하는 간단한 요리 만들기",
-    date: "1월 22일 오전 10시",
-    bgColor: "bg-gradient-to-r from-yellow-50 to-orange-50",
-    textColor: "text-orange-600",
-    participants: 0,
-    category: "요리"
-  },
-  {
-    id: "3",
-    title: "놀이터 모임",
-    description: "동네 엄마들과 함께하는 야외 활동",
-    date: "1월 25일 오후 3시",
-    bgColor: "bg-gradient-to-r from-green-50 to-blue-50",
-    textColor: "text-green-600",
-    participants: 0,
-    category: "야외활동"
-  },
-]
-
-export interface PopularGroup {
-  id: string
-  name: string
-  description: string
-  memberCount: number
-  category: string
-  isJoined: boolean
-}
-
-export const MOCK_POPULAR_GROUPS: PopularGroup[] = [
-  {
-    id: "1",
-    name: "신생아 케어 모임",
-    description: "0-12개월 아기를 키우는 부모들의 모임",
-    memberCount: 1234,
-    category: "신생아",
-    isJoined: false,
-  },
-  {
-    id: "2",
-    name: "워킹맘 소통방",
-    description: "일하는 엄마들의 육아와 커리어 이야기",
-    memberCount: 856,
-    category: "워킹맘",
-    isJoined: true,
-  },
-  {
-    id: "3",
-    name: "유치원 준비반",
-    description: "유치원 입학을 준비하는 부모들",
-    memberCount: 642,
-    category: "유치원",
-    isJoined: false,
-  },
 ]
 
 export interface ChatRoom {

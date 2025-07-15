@@ -1,44 +1,28 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-
-interface PopularGroup {
-  id: string
-  name: string
-  description: string
-  memberCount: number
-  category: string
-  isPrivate: boolean
-}
-
-interface TrendingTag {
-  id: string
-  name: string
-  postCount: number
-  trend: "up" | "down" | "stable"
-}
-
-interface WeeklyEvent {
-  id: string
-  title: string
-  description: string
-  date: string
-  location: string
-  participantCount: number
-}
+import { type WeeklyEvent, type PopularGroup, type TrendingTag } from "@/features/explore/types/explore-types"
 
 export function usePopularGroups() {
   return useQuery({
     queryKey: ["popularGroups"],
     queryFn: async (): Promise<PopularGroup[]> => {
-      const response = await fetch("/api/explore/groups")
+      const response = await fetch("/api/groups")
       const result = await response.json()
 
       if (!response.ok) {
         throw new Error(result.error || "인기 그룹을 불러오는데 실패했습니다")
       }
 
-      return result.groups
+      // Map Prisma Group model to PopularGroup interface
+      return result.groups.map((group: any) => ({
+        id: group.id,
+        name: group.name,
+        description: group.description,
+        memberCount: group.membersCount, // Map from membersCount
+        category: group.category,
+        isJoined: false, // This needs to be determined on the client-side or from a user-specific API
+      }))
     },
   })
 }
@@ -47,14 +31,20 @@ export function useTrendingTags() {
   return useQuery({
     queryKey: ["trendingTags"],
     queryFn: async (): Promise<TrendingTag[]> => {
-      const response = await fetch("/api/explore/tags")
+      const response = await fetch("/api/tags/trending")
       const result = await response.json()
 
       if (!response.ok) {
         throw new Error(result.error || "트렌딩 태그를 불러오는데 실패했습니다")
       }
 
-      return result.tags
+      // Map Prisma Tag model to TrendingTag interface
+      return result.tags.map((tag: any) => ({
+        id: tag.id,
+        name: tag.name,
+        count: tag.usageCount, // Map from usageCount
+        growth: 0, // This needs to be calculated based on historical data
+      }))
     },
   })
 }
@@ -63,14 +53,24 @@ export function useWeeklyEvents() {
   return useQuery({
     queryKey: ["weeklyEvents"],
     queryFn: async (): Promise<WeeklyEvent[]> => {
-      const response = await fetch("/api/explore/events")
+      const response = await fetch("/api/events/weekly")
       const result = await response.json()
 
       if (!response.ok) {
         throw new Error(result.error || "주간 이벤트를 불러오는데 실패했습니다")
       }
 
-      return result.events
+      // Map Prisma Event model to WeeklyEvent interface
+      return result.events.map((event: any) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        date: new Date(event.startDate).toISOString(), // Map startDate to date string
+        participants: event.participantsCount, // Map from participantsCount
+        category: event.type, // Map Event's type to category (assuming this intent)
+        bgColor: event.bgColor || "#000000", // Provide default if null
+        textColor: event.textColor || "#FFFFFF", // Provide default if null
+      }))
     },
   })
 }

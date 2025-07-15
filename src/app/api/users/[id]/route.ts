@@ -2,6 +2,48 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getUserIdFromCookies } from "@/lib/auth-utils"
 import { withAuth } from "@/lib/auth-middleware"
+import { z } from "zod"
+
+const userUpdateSchema = z.object({
+    nickname: z.string().min(2, "닉네임은 2자 이상이어야 합니다.").optional(),
+    avatar: z.string().url("유효한 URL이 아닙니다.").optional(),
+    location: z.string().optional(),
+    interests: z.array(z.string()).optional(),
+    bio: z.string().max(200, "소개는 200자를 넘을 수 없습니다.").optional(),
+});
+
+
+/**
+ * 관심사(태그) 변경을 처리하는 헬퍼 함수
+ * @param oldTags - 사용자의 기존 관심사 배열
+ * @param newTags - 사용자의 새로운 관심사 배열
+ */
+async function handleInterestTagsChange(oldTags: string[], newTags: string[]) {
+  const tagsToRemove = oldTags.filter(tag => !newTags.includes(tag));
+  const tagsToAdd = newTags.filter(tag => !oldTags.includes(tag));
+
+  // 사라진 태그 카운트 감소
+  if (tagsToRemove.length > 0) {
+    await prisma.tag.updateMany({
+      where: { name: { in: tagsToRemove } },
+      data: { usageCount: { decrement: 1 } },
+    });
+  }
+
+  // 추가된 태그 카운트 증가 (upsert 사용)
+  if (tagsToAdd.length > 0) {
+    await Promise.all(
+      tagsToAdd.map(tagName => 
+        prisma.tag.upsert({
+          where: { name: tagName },
+          update: { usageCount: { increment: 1 } },
+          create: { name: tagName, usageCount: 1 },
+        })
+      )
+    );
+  }
+}
+
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -58,20 +100,34 @@ export const PUT = withAuth(async (request: NextRequest, auth: { user: any }, { 
       return NextResponse.json({ error: "권한이 없습니다" }, { status: 403 })
     }
 
-    const { nickname, avatar, location, interests, bio } = await request.json()
+    const body = await request.json();
+    const validation = userUpdateSchema.safeParse(body);
 
-    const updateData: any = {}
-    if (nickname !== undefined) updateData.nickname = nickname
-    if (avatar !== undefined) updateData.avatar = avatar
-    if (location !== undefined) updateData.location = location
-    if (interests !== undefined) updateData.interests = interests
-    if (bio !== undefined) updateData.bio = bio
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { interests, ...updateData } = validation.data;
+    
+    // --- 관심사 태그 처리 로직 추가 ---
+    if (interests) {
+        const currentUser = await prisma.user.findUnique({
+            where: { id: auth.user.id },
+            select: { interests: true }
+        });
+        const oldInterests = currentUser?.interests || [];
+        await handleInterestTagsChange(oldInterests, interests);
+    }
+    // ------------------------------------
 
     const user = await prisma.user.update({
       where: {
         id: params.id
       },
-      data: updateData,
+      data: {
+        ...updateData,
+        interests // 업데이트된 관심사 정보 저장
+      },
       select: {
         id: true,
         email: true,

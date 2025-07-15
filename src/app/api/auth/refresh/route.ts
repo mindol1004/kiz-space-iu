@@ -12,14 +12,14 @@ import {
 export async function POST(request: NextRequest) {
   let clientRefreshToken: string | null = null;
   try {
-    // Only attempt to parse JSON if the content-type is application/json
-    if (request.headers.get('content-type')?.includes('application/json')) {
+    const contentLength = request.headers.get('content-length');
+    // Only attempt to parse JSON if there is a body
+    if (contentLength && parseInt(contentLength, 10) > 0) {
       const body = await request.json();
       clientRefreshToken = body.refreshToken;
     }
   } catch (error) {
-    // If JSON parsing fails (e.g., empty body or malformed JSON),
-    // proceed without clientRefreshToken from body.
+    // If JSON parsing fails, log a warning and continue.
     console.warn("Could not parse request body as JSON, will check cookies for refresh token:", error);
   }
     

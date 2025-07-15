@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Users, MapPin, Calendar, Heart, MessageCircle } from "lucide-react"
+import { Users, MapPin, Calendar, Heart, MessageCircle, X } from "lucide-react"
 import type { PopularGroup } from "@/features/explore/types/explore-types"
+import { toast } from "sonner"
 
 interface GroupDetailModalProps {
   group: PopularGroup
@@ -14,13 +16,52 @@ interface GroupDetailModalProps {
   onOpenChange: (open: boolean) => void
 }
 
+async function joinOrLeaveGroup(params: { groupId: string; isJoined: boolean }) {
+  const { groupId, isJoined } = params
+  const method = isJoined ? "DELETE" : "POST"
+
+  const response = await fetch(`/api/groups/${groupId}/join`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json()
+    throw new Error(errorData.error || "An error occurred.")
+  }
+
+  return response.json()
+}
+
 export function GroupDetailModal({ group, open, onOpenChange }: GroupDetailModalProps) {
-  const [isJoined, setIsJoined] = useState(false)
+  const queryClient = useQueryClient()
+  const [isJoined, setIsJoined] = useState(group.isJoined)
   const [memberCount, setMemberCount] = useState(group.memberCount)
 
-  const handleJoinGroup = () => {
-    setIsJoined(!isJoined)
-    setMemberCount((prev) => (isJoined ? prev - 1 : prev + 1))
+  useEffect(() => {
+    setIsJoined(group.isJoined)
+    setMemberCount(group.memberCount)
+  }, [group])
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: joinOrLeaveGroup,
+    onSuccess: (data) => {
+      const newIsJoined = !isJoined
+      setIsJoined(newIsJoined)
+      setMemberCount((prev) => (newIsJoined ? prev + 1 : prev - 1))
+      toast.success(data.message)
+      // Invalidate and refetch popular groups to update the UI across the app
+      queryClient.invalidateQueries({ queryKey: ["popularGroups"] })
+    },
+    onError: (error) => {
+      toast.error(`Error: ${error.message}`)
+    },
+  })
+
+  const handleJoinClick = () => {
+    mutate({ groupId: group.id, isJoined })
   }
 
   const recentPosts = [
@@ -40,25 +81,19 @@ export function GroupDetailModal({ group, open, onOpenChange }: GroupDetailModal
       likes: 8,
       comments: 5,
     },
-    {
-      id: "3",
-      title: "육아용품 추천 부탁드려요",
-      author: "박엄마",
-      time: "6시간 전",
-      likes: 15,
-      comments: 12,
-    },
   ]
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle>그룹 정보</DialogTitle>
         </DialogHeader>
+        <button onClick={() => onOpenChange(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+          <X className="h-5 w-5" />
+        </button>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          {/* 그룹 헤더 */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 p-6">
           <div className="text-center space-y-4">
             <div className="w-20 h-20 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center mx-auto">
               <span className="text-2xl text-white">{group.name[0]}</span>
@@ -69,7 +104,6 @@ export function GroupDetailModal({ group, open, onOpenChange }: GroupDetailModal
             </div>
           </div>
 
-          {/* 그룹 정보 */}
           <div className="space-y-3">
             <div className="flex items-center space-x-3 text-gray-600">
               <Users className="h-5 w-5" />
@@ -88,19 +122,18 @@ export function GroupDetailModal({ group, open, onOpenChange }: GroupDetailModal
             </div>
           </div>
 
-          {/* 가입 버튼 */}
           <Button
-            onClick={handleJoinGroup}
-            className={`w-full ${
+            onClick={handleJoinClick}
+            disabled={isPending}
+            className={`w-full transition-colors ${
               isJoined
                 ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 : "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
             }`}
           >
-            {isJoined ? "그룹 나가기" : "그룹 가입하기"}
+            {isPending ? "처리중..." : isJoined ? "그룹 나가기" : "그룹 가입하기"}
           </Button>
 
-          {/* 최근 게시글 */}
           <div className="space-y-4">
             <h3 className="font-semibold">최근 게시글</h3>
             <div className="space-y-3">
@@ -108,7 +141,7 @@ export function GroupDetailModal({ group, open, onOpenChange }: GroupDetailModal
                 <motion.div
                   key={post.id}
                   whileHover={{ scale: 1.02 }}
-                  className="p-3 bg-gray-50 rounded-lg cursor-pointer"
+                  className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer"
                 >
                   <h4 className="font-medium text-sm">{post.title}</h4>
                   <div className="flex items-center justify-between mt-2">
@@ -130,17 +163,6 @@ export function GroupDetailModal({ group, open, onOpenChange }: GroupDetailModal
                   </div>
                 </motion.div>
               ))}
-            </div>
-          </div>
-
-          {/* 그룹 규칙 */}
-          <div className="space-y-3">
-            <h3 className="font-semibold">그룹 규칙</h3>
-            <div className="text-sm text-gray-600 space-y-2">
-              <p>• 서로 존중하며 예의를 지켜주세요</p>
-              <p>• 육아와 관련된 내용만 공유해주세요</p>
-              <p>• 광고성 게시글은 금지됩니다</p>
-              <p>• 개인정보 공유를 주의해주세요</p>
             </div>
           </div>
         </motion.div>

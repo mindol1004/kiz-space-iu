@@ -5,11 +5,14 @@ import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Users, MapPin } from "lucide-react"
-import { MOCK_POPULAR_GROUPS, type PopularGroup } from "@/shared/constants/common-data"
+import { Users } from "lucide-react"
+import { usePopularGroups } from "../hooks/use-explore"
+import { GroupDetailModal } from "./group-detail-modal"
+import { PopularGroup } from "../types/explore-types"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export function PopularGroups() {
+  const { data: popularGroups, isLoading, error } = usePopularGroups()
   const [selectedGroup, setSelectedGroup] = useState<PopularGroup | null>(null)
   const [showModal, setShowModal] = useState(false)
 
@@ -18,12 +21,42 @@ export function PopularGroups() {
     setShowModal(true)
   }
 
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <h3 className="font-semibold text-lg">인기 그룹</h3>
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Card key={index} className="p-4">
+              <div className="flex items-center space-x-3">
+                <Skeleton className="w-12 h-12 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <div className="flex space-x-2">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-4 w-1/4" />
+                  </div>
+                </div>
+                <Skeleton className="h-8 w-16" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return <div className="text-red-500">인기 그룹을 불러오는데 오류가 발생했습니다: {error.message}</div>
+  }
+
   return (
     <>
       <div className="space-y-3">
         <h3 className="font-semibold text-lg">인기 그룹</h3>
         <div className="space-y-3">
-          {MOCK_POPULAR_GROUPS.map((group, index) => (
+          {popularGroups?.map((group, index) => (
             <motion.div
               key={group.id}
               initial={{ opacity: 0, x: -20 }}

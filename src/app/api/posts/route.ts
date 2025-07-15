@@ -2,6 +2,47 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { withAuth } from "@/lib/auth-middleware"
 import { getUserIdFromCookies } from "@/lib/auth-utils"
+import { PostCategory, AgeGroup } from "@prisma/client"
+import { z } from "zod"
+
+// Zod 스키마 정의
+const postCreateSchema = z.object({
+  content: z.string().min(1, "내용을 입력해주세요."),
+  category: z.nativeEnum(PostCategory),
+  ageGroup: z.nativeEnum(AgeGroup),
+  tags: z.array(z.string()).max(5, "태그는 최대 5개까지 추가할 수 있습니다.").optional(),
+  images: z.array(z.string()).optional(),
+});
+
+
+/**
+ * 태그를 처리하는 헬퍼 함수
+ * @param tags - 게시물에 사용된 태그 문자열 배열
+ */
+async function handleTags(tags: string[]) {
+  if (!tags || tags.length === 0) {
+    return;
+  }
+
+  // Promise.all을 사용하여 모든 태그 처리를 병렬로 실행
+  await Promise.all(
+    tags.map(tagName => {
+      return prisma.tag.upsert({
+        where: { name: tagName },
+        update: {
+          usageCount: {
+            increment: 1,
+          },
+        },
+        create: {
+          name: tagName,
+          usageCount: 1,
+        },
+      });
+    })
+  );
+}
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -104,21 +145,25 @@ export const POST = withAuth(async (request: NextRequest, auth: { user: any }) =
       return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
     }
 
-    const { content, images, category, ageGroup, tags } = await request.json()
+    const body = await request.json()
+    const validation = postCreateSchema.safeParse(body);
 
-    if (!content || !category || !ageGroup) {
-      return NextResponse.json(
-        { error: "필수 필드가 누락되었습니다" },
-        { status: 400 }
-      )
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
+    
+    const { content, category, ageGroup, tags, images } = validation.data;
+    
+    // --- 태그 처리 로직 추가 ---
+    if(tags) await handleTags(tags);
+    // -------------------------
 
     const post = await prisma.post.create({
       data: {
         content,
         images: images || [],
-        category: category.toUpperCase(),
-        ageGroup: ageGroup.toUpperCase().replace('-', '_'),
+        category,
+        ageGroup,
         tags: tags || [],
         authorId: auth.user.id,
       },
@@ -139,6 +184,12 @@ export const POST = withAuth(async (request: NextRequest, auth: { user: any }) =
         },
       },
     })
+    
+    // 사용자의 게시물 수 업데이트
+    await prisma.user.update({
+      where: { id: auth.user.id },
+      data: { postsCount: { increment: 1 } },
+    });
 
     return NextResponse.json({
       success: true,

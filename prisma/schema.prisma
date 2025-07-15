@@ -355,6 +355,8 @@ model Event {
   endDate   DateTime?
   location  String?
   type      EventType
+  bgColor   String? // Add bgColor field
+  textColor String? // Add textColor field
 
   // Organization
   organizerId String? @db.ObjectId

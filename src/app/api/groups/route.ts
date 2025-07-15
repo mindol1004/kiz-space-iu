@@ -1,7 +1,7 @@
 
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { withAuth } from "@/lib/auth-middleware"
+import { withAuth, optionalAuth } from "@/lib/auth-middleware"
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
     const location = searchParams.get("location")
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")
+    
+    const user = await optionalAuth(request)
 
     const where: any = {}
     if (category && category !== "all") {
@@ -26,7 +28,12 @@ export async function GET(request: NextRequest) {
           select: {
             members: true
           }
-        }
+        },
+        members: user ? {
+          where: {
+            userId: user.id
+          }
+        } : undefined,
       },
       orderBy: [
         { isVerified: "desc" },
@@ -42,7 +49,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       groups: groups.map(group => ({
         ...group,
-        membersCount: group._count.members
+        membersCount: group._count.members,
+        isJoined: user ? group.members.length > 0 : false
       })),
       hasMore: groups.length === limit,
       nextPage: groups.length === limit ? page + 1 : undefined,
