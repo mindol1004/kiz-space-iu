@@ -33,18 +33,21 @@ export const useFollowUser = () => {
             
             // Optimistic update - 즉시 UI 업데이트
             if (previousPostsData?.pages) {
-                const newPostsData: InfinitePostsData = {
-                    ...previousPostsData,
-                    pages: previousPostsData.pages.map(page => ({
-                        ...page,
-                        posts: page.posts.map(post =>
-                            post.author.id === targetUserId
-                                ? { ...post, isFollowedByCurrentUser: true }
-                                : post
-                        ),
-                    })),
-                };
-                queryClient.setQueryData(['posts'], newPostsData);
+                queryClient.setQueryData(['posts'], (oldData: InfinitePostsData | undefined) => {
+                    if (!oldData) return oldData;
+                    
+                    return {
+                        ...oldData,
+                        pages: oldData.pages.map(page => ({
+                            ...page,
+                            posts: page.posts.map(post =>
+                                post.author.id === targetUserId
+                                    ? { ...post, isFollowedByCurrentUser: true }
+                                    : post
+                            ),
+                        })),
+                    };
+                });
             }
             
             return { previousPostsData };
@@ -86,18 +89,21 @@ export const useFollowUser = () => {
             
             // Optimistic update - 즉시 UI 업데이트
             if (previousPostsData?.pages) {
-                const newPostsData: InfinitePostsData = {
-                    ...previousPostsData,
-                    pages: previousPostsData.pages.map(page => ({
-                        ...page,
-                        posts: page.posts.map(post =>
-                            post.author.id === targetUserId
-                                ? { ...post, isFollowedByCurrentUser: false }
-                                : post
-                        ),
-                    })),
-                };
-                queryClient.setQueryData(['posts'], newPostsData);
+                queryClient.setQueryData(['posts'], (oldData: InfinitePostsData | undefined) => {
+                    if (!oldData) return oldData;
+                    
+                    return {
+                        ...oldData,
+                        pages: oldData.pages.map(page => ({
+                            ...page,
+                            posts: page.posts.map(post =>
+                                post.author.id === targetUserId
+                                    ? { ...post, isFollowedByCurrentUser: false }
+                                    : post
+                            ),
+                        })),
+                    };
+                });
             }
             
             return { previousPostsData };
