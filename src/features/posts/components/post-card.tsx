@@ -44,7 +44,8 @@ export function PostCard({ post }: PostCardProps) {
   const { user: currentUser } = useAuth()
   const { follow, unfollow, isFollowing, isUnfollowing } = useFollowUser()
 
-  const handleFollowToggle = useCallback(() => {
+  const handleFollowToggle = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
     if (post.isFollowedByCurrentUser) {
       unfollow(post.author.id)
     } else {
@@ -81,10 +82,7 @@ export function PostCard({ post }: PostCardProps) {
                   </DropdownMenuTrigger>
                   {!isMyPost && (
                     <DropdownMenuContent align="start">
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation()
-                        handleFollowToggle()
-                      }} disabled={isProcessingFollow}>
+                      <DropdownMenuItem onClick={handleFollowToggle} disabled={isProcessingFollow}>
                         {post.isFollowedByCurrentUser ? (
                           <>
                             <UserMinus className="mr-2 h-4 w-4" />
