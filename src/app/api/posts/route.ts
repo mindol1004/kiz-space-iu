@@ -71,25 +71,38 @@ export async function GET(request: NextRequest) {
             id: true,
             nickname: true,
             avatar: true,
+            followers: currentUserId
+              ? {
+                  where: {
+                    followerId: currentUserId,
+                  },
+                }
+              : false,
           },
         },
-        likes: currentUserId ? {
-          where: {
-            userId: currentUserId
-          }
-        } : false,
-        bookmarks: currentUserId ? {
-          where: {
-            userId: currentUserId
-          }
-        } : false,
         _count: {
           select: {
-            comments: true,
             likes: true,
+            comments: true,
             bookmarks: true,
+            views: true,
           },
         },
+        likes: currentUserId
+          ? {
+              where: {
+                userId: currentUserId,
+                type: "POST",
+              },
+            }
+          : false,
+        bookmarks: currentUserId
+          ? {
+              where: {
+                userId: currentUserId,
+              },
+            }
+          : false,
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
@@ -151,9 +164,9 @@ export const POST = withAuth(async (request: NextRequest, auth: { user: any }) =
     if (!validation.success) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
-    
+
     const { content, category, ageGroup, tags, images } = validation.data;
-    
+
     // --- 태그 처리 로직 추가 ---
     if(tags) await handleTags(tags);
     // -------------------------
@@ -184,7 +197,7 @@ export const POST = withAuth(async (request: NextRequest, auth: { user: any }) =
         },
       },
     })
-    
+
     // 사용자의 게시물 수 업데이트
     await prisma.user.update({
       where: { id: auth.user.id },
