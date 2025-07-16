@@ -1,7 +1,7 @@
 
 "use client"
 
-import type React from "react"
+import React from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -42,9 +42,17 @@ export function PostCard({ post }: PostCardProps) {
 
   const { user: currentUser } = useAuth()
   const { follow, unfollow, isFollowing, isUnfollowing } = useFollowUser()
+  
+  // 로컬 상태로 팔로우 상태 관리
+  const [localFollowState, setLocalFollowState] = React.useState(post.isFollowedByCurrentUser)
+  
+  // post.isFollowedByCurrentUser가 변경될 때 로컬 상태 동기화
+  React.useEffect(() => {
+    setLocalFollowState(post.isFollowedByCurrentUser)
+  }, [post.isFollowedByCurrentUser])
 
-  // 팔로우/언팔로우 핸들러 - 단순하게 처리
-  const handleFollowClick = (e: React.MouseEvent) => {
+  // 팔로우/언팔로우 핸들러
+  const handleFollowClick = async (e: React.MouseEvent) => {
     e.stopPropagation()
     
     if (!currentUser) {
@@ -52,10 +60,19 @@ export function PostCard({ post }: PostCardProps) {
       return
     }
 
-    if (post.isFollowedByCurrentUser) {
-      unfollow(post.author.id)
-    } else {
-      follow(post.author.id)
+    try {
+      if (localFollowState) {
+        // 언팔로우
+        setLocalFollowState(false)
+        await unfollow(post.author.id)
+      } else {
+        // 팔로우
+        setLocalFollowState(true)
+        await follow(post.author.id)
+      }
+    } catch (error) {
+      // 에러 시 상태 되돌리기
+      setLocalFollowState(post.isFollowedByCurrentUser)
     }
   }
 
@@ -93,14 +110,14 @@ export function PostCard({ post }: PostCardProps) {
                         onClick={handleFollowClick}
                         disabled={isProcessingFollow}
                         className={`h-6 px-2 text-xs ${
-                          post.isFollowedByCurrentUser 
+                          localFollowState 
                             ? "text-gray-600 hover:text-red-600" 
                             : "text-blue-600 hover:text-blue-700"
                         }`}
                       >
                         {isProcessingFollow ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : post.isFollowedByCurrentUser ? (
+                        ) : localFollowState ? (
                           <>
                             <UserMinus className="h-3 w-3 mr-1" />
                             언팔로우

@@ -24,52 +24,22 @@ export const useFollowUser = () => {
             const response = await apiClient.post(`/users/${userId}/follow`);
             return response.data;
         },
-        onMutate: async (targetUserId: string) => {
-            // 쿼리 취소
-            await queryClient.cancelQueries({ queryKey: ['posts'] });
+        onSuccess: (data, targetUserId) => {
+            // 성공 시 posts 쿼리 무효화하여 새로운 데이터 가져오기
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
             
-            // 이전 데이터 백업
-            const previousPostsData = queryClient.getQueryData<InfinitePostsData>(['posts']);
-            
-            // Optimistic update - 즉시 UI 업데이트
-            if (previousPostsData?.pages) {
-                queryClient.setQueryData(['posts'], (oldData: InfinitePostsData | undefined) => {
-                    if (!oldData) return oldData;
-                    
-                    return {
-                        ...oldData,
-                        pages: oldData.pages.map(page => ({
-                            ...page,
-                            posts: page.posts.map(post =>
-                                post.author.id === targetUserId
-                                    ? { ...post, isFollowedByCurrentUser: true }
-                                    : post
-                            ),
-                        })),
-                    };
-                });
-            }
-            
-            return { previousPostsData };
+            toast({ 
+                title: "성공", 
+                description: "사용자를 팔로우했습니다." 
+            });
         },
-        onError: (error: any, targetUserId, context) => {
+        onError: (error: any) => {
             console.error('Follow error:', error);
-            
-            // 에러 발생 시 이전 상태로 롤백
-            if (context?.previousPostsData) {
-                queryClient.setQueryData(['posts'], context.previousPostsData);
-            }
             
             toast({ 
                 title: "오류", 
                 description: "팔로우 중 오류가 발생했습니다.", 
                 variant: "destructive" 
-            });
-        },
-        onSuccess: () => {
-            toast({ 
-                title: "성공", 
-                description: "사용자를 팔로우했습니다." 
             });
         },
     });
@@ -80,52 +50,22 @@ export const useFollowUser = () => {
             const response = await apiClient.delete(`/users/${userId}/follow`);
             return response.data;
         },
-        onMutate: async (targetUserId: string) => {
-            // 쿼리 취소
-            await queryClient.cancelQueries({ queryKey: ['posts'] });
+        onSuccess: (data, targetUserId) => {
+            // 성공 시 posts 쿼리 무효화하여 새로운 데이터 가져오기
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
             
-            // 이전 데이터 백업
-            const previousPostsData = queryClient.getQueryData<InfinitePostsData>(['posts']);
-            
-            // Optimistic update - 즉시 UI 업데이트
-            if (previousPostsData?.pages) {
-                queryClient.setQueryData(['posts'], (oldData: InfinitePostsData | undefined) => {
-                    if (!oldData) return oldData;
-                    
-                    return {
-                        ...oldData,
-                        pages: oldData.pages.map(page => ({
-                            ...page,
-                            posts: page.posts.map(post =>
-                                post.author.id === targetUserId
-                                    ? { ...post, isFollowedByCurrentUser: false }
-                                    : post
-                            ),
-                        })),
-                    };
-                });
-            }
-            
-            return { previousPostsData };
+            toast({ 
+                title: "성공", 
+                description: "사용자를 언팔로우했습니다." 
+            });
         },
-        onError: (error: any, targetUserId, context) => {
+        onError: (error: any) => {
             console.error('Unfollow error:', error);
-            
-            // 에러 발생 시 이전 상태로 롤백
-            if (context?.previousPostsData) {
-                queryClient.setQueryData(['posts'], context.previousPostsData);
-            }
             
             toast({ 
                 title: "오류", 
                 description: "언팔로우 중 오류가 발생했습니다.", 
                 variant: "destructive" 
-            });
-        },
-        onSuccess: () => {
-            toast({ 
-                title: "성공", 
-                description: "사용자를 언팔로우했습니다." 
             });
         },
     });
