@@ -32,8 +32,8 @@ export const useFollowUser = () => {
             const previousPostsData = queryClient.getQueryData<InfinitePostsData>(['posts']);
             
             // Optimistic update - 즉시 UI 업데이트
-            if (previousPostsData) {
-                const newPostsData = {
+            if (previousPostsData?.pages) {
+                const newPostsData: InfinitePostsData = {
                     ...previousPostsData,
                     pages: previousPostsData.pages.map(page => ({
                         ...page,
@@ -85,8 +85,8 @@ export const useFollowUser = () => {
             const previousPostsData = queryClient.getQueryData<InfinitePostsData>(['posts']);
             
             // Optimistic update - 즉시 UI 업데이트
-            if (previousPostsData) {
-                const newPostsData = {
+            if (previousPostsData?.pages) {
+                const newPostsData: InfinitePostsData = {
                     ...previousPostsData,
                     pages: previousPostsData.pages.map(page => ({
                         ...page,

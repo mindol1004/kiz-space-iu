@@ -62,6 +62,9 @@ export function PostCard({ post }: PostCardProps) {
   const isMyPost = currentUser?.id === post.author.id
   const isProcessingFollow = isFollowing || isUnfollowing
   const truncatedContent = getTruncatedContent()
+  
+  // 팔로우 상태 - optimistic update 고려
+  const isCurrentlyFollowed = post.isFollowedByCurrentUser
 
   return (
     <>
@@ -93,14 +96,14 @@ export function PostCard({ post }: PostCardProps) {
                         onClick={handleFollowClick}
                         disabled={isProcessingFollow}
                         className={`h-6 px-2 text-xs ${
-                          post.isFollowedByCurrentUser 
+                          isCurrentlyFollowed 
                             ? "text-gray-600 hover:text-red-600" 
                             : "text-blue-600 hover:text-blue-700"
                         }`}
                       >
                         {isProcessingFollow ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : post.isFollowedByCurrentUser ? (
+                        ) : isCurrentlyFollowed ? (
                           <>
                             <UserMinus className="h-3 w-3 mr-1" />
                             언팔로우
