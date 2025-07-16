@@ -51,7 +51,7 @@ export function PostCard({ post }: PostCardProps) {
     } else {
       follow(post.author.id)
     }
-  }, [post.isFollowedByCurrentUser, post.author.id, unfollow, follow])
+  }, [post.author.id, unfollow, follow])
 
   const isMyPost = currentUser?.id === post.author.id
   const isProcessingFollow = isFollowing || isUnfollowing
