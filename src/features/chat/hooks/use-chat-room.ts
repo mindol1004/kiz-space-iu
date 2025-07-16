@@ -1,181 +1,127 @@
- "use client"
 
- import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
- import { useToast } from "@/hooks/use-toast"
- import { type Message, type ChatRoom } from "../types/chat-types"
+import { InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import chatApi from '@/features/chat/api/chat-api';
+import { Message } from '@/features/chat/types/chat-types';
+import { useChat } from './use-chat';
+import { useAuth } from '@/features/auth/hooks/use-auth';
 
- export function useChatRoom(roomId: string) {
-   const { toast } = useToast()
+interface MessagesPage {
+  messages: Message[];
+  nextCursor?: string;
+}
 
-   const {
-     data: chatRoom,
-     isLoading,
-     error,
-     refetch,
-   } = useQuery<ChatRoom, Error>({
-     queryKey: ["chatRoom", roomId],
-     queryFn: async () => {
-       const response = await fetch(`/api/chat/rooms/${roomId}`)
-       const result = await response.json()
+export const useChatRoom = (roomId: string) => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { optimisticUpdateRoom } = useChat();
 
-       if (!response.ok) {
-         throw new Error(result.error || "채팅방 정보를 불러오는데 실패했습니다")
-       }
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+  } = useInfiniteQuery({
+    queryKey: ['messages', roomId],
+    // queryFn의 pageParam 타입을 명시적으로 지정하여 타입 추론 오류를 해결합니다.
+    queryFn: ({ pageParam }: { pageParam: string | undefined }) => chatApi.getMessages(roomId, pageParam),
+    initialPageParam: undefined,
+    // getNextPageParam의 lastPage 타입을 명시적으로 지정합니다.
+    getNextPageParam: (lastPage: MessagesPage) => lastPage.nextCursor,
+    enabled: !!roomId,
+  });
 
-       return result.room as ChatRoom
-     },
-     enabled: !!roomId,
-   })
+  const sendMessageMutation = useMutation({
+    mutationFn: (content: string) => chatApi.sendMessage(roomId, content),
+    onMutate: async (content: string) => {
+      if (!user) return;
 
-   return {
-     chatRoom,
-     isLoading,
-     error,
-     refetch,
-   }
- }
+      await queryClient.cancelQueries({ queryKey: ['messages', roomId] });
 
- export function useChatMessages(roomId: string) {
-   const { toast } = useToast()
+      const optimisticMessage: Message = {
+        id: `optimistic-${Date.now()}`,
+        content,
+        createdAt: new Date().toISOString(),
+        sender: {
+          id: user.id,
+          nickname: user.nickname,
+          avatar: user.avatar,
+        },
+      };
 
-   const {
-     data: messages,
-     isLoading,
-     error,
-     refetch,
-   } = useQuery<Message[], Error>({
-     queryKey: ["messages", roomId],
-     queryFn: async () => {
-       const response = await fetch(`/api/messages?roomId=${roomId}`)
-       const result = await response.json()
+      queryClient.setQueryData<InfiniteData<MessagesPage>>(
+        ['messages', roomId],
+        (oldData) => {
+          const newData = oldData ? { ...oldData } : { pages: [], pageParams: [] };
+          if (newData.pages.length > 0) {
+            newData.pages[0].messages = [optimisticMessage, ...newData.pages[0].messages];
+          } else {
+            newData.pages.push({ messages: [optimisticMessage], nextCursor: undefined });
+          }
+          return newData;
+        }
+      );
 
-       if (!response.ok) {
-         throw new Error(result.error || "메시지를 불러오는데 실패했습니다")
-       }
-       return result.messages
-     },
-     enabled: !!roomId,
-     refetchInterval: 5000, // 5초마다 새로운 메시지 확인
-   })
+      optimisticUpdateRoom({
+        id: roomId,
+        lastMessage: {
+          content: content,
+          createdAt: new Date().toISOString(),
+        },
+        updatedAt: new Date().toISOString(),
+      });
 
-   if (error) {
-     toast({
-       title: "메시지 불러오기 실패",
-       description: error.message,
-       variant: "destructive",
-     })
-   }
+      return { optimisticMessage };
+    },
+    onSuccess: (newMessage, _variables, context) => {
+      queryClient.setQueryData<InfiniteData<MessagesPage>>(
+        ['messages', roomId], 
+        (oldData) => {
+          if (!oldData) return { pages: [], pageParams: [] };
+          
+          const newPages = oldData.pages.map((page) => ({
+            ...page,
+            messages: page.messages.map((msg: Message) =>
+              msg.id === context?.optimisticMessage.id ? newMessage : msg
+            ),
+          }));
+          return { ...oldData, pages: newPages };
+        }
+      );
+    },
+    onError: (_err, _newTodo, context) => {
+      queryClient.setQueryData<InfiniteData<MessagesPage>>(
+        ['messages', roomId],
+        (oldData) => {
+            if (!oldData) return { pages: [], pageParams: [] };
 
-   return {
-     messages: messages || [],
-     isLoading,
-     error,
-     refetch,
-   }
- }
+            const newPages = oldData.pages.map(page => ({
+                ...page,
+                messages: page.messages.filter(
+                    (msg: Message) => msg.id !== context?.optimisticMessage.id
+                )
+            }));
+            return { ...oldData, pages: newPages };
+        }
+      );
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', roomId] });
+      queryClient.invalidateQueries({ queryKey: ['chatRooms'] });
+    },
+  });
 
- export function useSendMessage() {
-   const queryClient = useQueryClient()
-   const { toast } = useToast()
+  const messages = data?.pages.flatMap((page) => page.messages) ?? [];
 
-   return useMutation({
-     mutationFn: async ({ roomId, senderId, content }: { roomId: string; senderId: string; content: string }) => {
-       const response = await fetch("/api/messages", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ roomId, senderId, content }),
-       })
-
-       const result = await response.json()
-
-       if (!response.ok) {
-         throw new Error(result.error || "메시지 전송에 실패했습니다")
-       }
-
-       return result.message as Message
-     },
-     onSuccess: (data, variables) => {
-       // 메시지 목록 업데이트
-       queryClient.invalidateQueries({ queryKey: ["messages", variables.roomId] })
-       // 채팅방 목록 업데이트 (마지막 메시지 변경)
-       queryClient.invalidateQueries({ queryKey: ["chatRooms"] })
-       queryClient.invalidateQueries({ queryKey: ["chatRoom", variables.roomId] })
-     },
-     onError: (error) => {
-       toast({
-         title: "메시지 전송 실패",
-         description: error.message,
-         variant: "destructive",
-       })
-     },
-   })
- }
-
- export function useMarkMessagesAsRead() {
-   const queryClient = useQueryClient()
-
-   return useMutation({
-     mutationFn: async ({ roomId, userId }: { roomId: string; userId: string }) => {
-       const response = await fetch("/api/messages/read", {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ roomId, userId }),
-       })
-
-       const result = await response.json()
-
-       if (!response.ok) {
-         throw new Error(result.error || "읽음 처리에 실패했습니다")
-       }
-
-       return result
-     },
-     onSuccess: (data, variables) => {
-       queryClient.invalidateQueries({ queryKey: ["messages", variables.roomId] })
-       queryClient.invalidateQueries({ queryKey: ["chatRooms"] })
-       queryClient.invalidateQueries({ queryKey: ["chatRoom", variables.roomId] })
-     },
-   })
- }
-
- export function useTypingIndicator(roomId: string) {
-   const queryClient = useQueryClient()
-
-   const startTyping = useMutation({
-     mutationFn: async ({ userId, userName }: { userId: string; userName: string }) => {
-       const response = await fetch(`/api/chat/rooms/${roomId}/typing`, {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ userId, userName, isTyping: true }),
-       })
-
-       if (!response.ok) {
-         throw new Error("타이핑 상태 업데이트 실패")
-       }
-
-       return response.json()
-     },
-   })
-
-   const stopTyping = useMutation({
-     mutationFn: async ({ userId }: { userId: string }) => {
-       const response = await fetch(`/api/chat/rooms/${roomId}/typing`, {
-         method: "POST",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ userId, isTyping: false }),
-       })
-
-       if (!response.ok) {
-         throw new Error("타이핑 상태 업데이트 실패")
-       }
-
-       return response.json()
-     },
-   })
-
-   return {
-     startTyping,
-     stopTyping,
-   }
- }
- 
+  return {
+    messages,
+    isLoading,
+    error,
+    sendMessage: sendMessageMutation.mutate,
+    isSending: sendMessageMutation.isPending,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  };
+};

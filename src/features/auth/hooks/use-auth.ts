@@ -100,3 +100,29 @@ export function useRegister() {
     },
   })
 }
+
+/**
+ * 전역 `useAuthStore`에서 인증 상태와 사용자 정보를 가져오는 커스텀 훅.
+ * 컴포넌트에서 현재 사용자의 인증 여부와 정보를 쉽게 확인할 수 있습니다.
+ * 
+ * @returns {object}
+ * - `user`: 현재 로그인된 사용자 객체 (User | null)
+ * - `isAuthenticated`: 로그인 여부 (boolean)
+ * - `isLoading`: 인증 상태 확인 중인지 여부 (boolean)
+ * - `hasCheckedInitialAuth`: 초기 인증 확인 완료 여부 (boolean)
+ */
+export const useAuth = () => {
+    const { user, isAuthenticated, isChecking, hasCheckedInitialAuth } = useAuthStore(state => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        isChecking: state.isChecking,
+        hasCheckedInitialAuth: state.hasCheckedInitialAuth,
+    }));
+
+    return { 
+        user, 
+        isAuthenticated, 
+        isLoading: isChecking, 
+        hasCheckedInitialAuth 
+    };
+};

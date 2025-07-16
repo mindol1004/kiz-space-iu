@@ -1,27 +1,11 @@
-import { create } from "zustand"
-import { persist } from "zustand/middleware"
 
-interface User {
-  id: string
-  email: string
-  nickname: string
-  avatar?: string
-  region?: string
-  location?: string
-  interests: string[]
-  children?: any[]
-  verified?: boolean
-  bio?: string
-  postsCount?: number
-  followersCount?: number
-  followingCount?: number
-  createdAt: Date
-  updatedAt: Date
-  lastSeenAt?: Date
-}
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { User } from '@/features/auth/types/auth-types';
+import { AuthAPI } from '@/features/auth/api/auth-api';
 
 interface AuthState {
-  user: User | null
+  user: User | null;
   isAuthenticated: boolean
   isChecking: boolean
   hasCheckedInitialAuth: boolean
@@ -145,11 +129,10 @@ export const useAuthStore = create<AuthState>()(
           } else if (!state.user && state.isAuthenticated) {
             state.clearAuth?.()
           }
-          
-          // 페이지 새로고침 시 초기 체크 상태 리셋 (서버 재확인 필요)
-          if (state.hasCheckedInitialAuth && state.isAuthenticated) {
-            state.hasCheckedInitialAuth = false
-          }
+          // !! 문제의 코드 제거 !!
+          // if (state.hasCheckedInitialAuth && state.isAuthenticated) {
+          //   state.hasCheckedInitialAuth = false
+          // }
         }
       },
     }

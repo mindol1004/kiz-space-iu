@@ -8,9 +8,17 @@ import { usePostsList } from "@/features/posts/hooks/use-posts-list"
 import { usePostStore } from "@/shared/stores/post-store"
 import { Loader2, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import React from 'react'; // Import React for useMemo
 
 export default function FeedPage() {
-  const { selectedCategory, selectedAgeGroup } = usePostStore()
+  const { selectedCategory, selectedAgeGroup, resetFilters } = usePostStore()
+
+  // Memoize the params object to ensure stable reference for queryKey
+  const queryParams = React.useMemo(() => ({
+    category: selectedCategory !== "all" ? selectedCategory : undefined,
+    ageGroup: selectedAgeGroup !== "all" ? selectedAgeGroup : undefined,
+  }), [selectedCategory, selectedAgeGroup]); // Dependencies are the actual values
+
   const { 
     data, 
     isLoading, 
@@ -20,16 +28,11 @@ export default function FeedPage() {
     isFetchingNextPage,
     refetch,
     isRefetching
-  } = usePostsList({
-    category: selectedCategory !== "all" ? selectedCategory : undefined,
-    ageGroup: selectedAgeGroup !== "all" ? selectedAgeGroup : undefined,
-  })
+  } = usePostsList(queryParams) // Pass the memoized params
 
-  // 페이지별 데이터를 평면화하여 posts 배열로 변환
-  const posts = data?.pages?.flatMap(page => page.posts) ?? []
+  // 페이지별 데이터를 평면화하여 posts 배열로 변환하고 메모이제이션
+  const posts = React.useMemo(() => data?.pages?.flatMap(page => page.posts) ?? [], [data]);
   const hasMore = hasNextPage
-
-  // React Query가 queryKey 변경을 감지하여 자동으로 refetch하므로 useEffect 제거
 
   const handleRefresh = () => {
     refetch()
@@ -130,11 +133,7 @@ export default function FeedPage() {
           <div className="flex flex-col gap-2">
             <Button 
               variant="outline" 
-              onClick={() => {
-                const postStore = usePostStore.getState()
-                postStore.setSelectedCategory("all")
-                postStore.setSelectedAgeGroup("all")
-              }}
+              onClick={resetFilters}
             >
               전체 게시글 보기
             </Button>

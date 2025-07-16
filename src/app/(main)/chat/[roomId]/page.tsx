@@ -1,68 +1,64 @@
-"use client"
 
-import { useEffect, useRef } from "react"
-import { motion } from "framer-motion"
-import { ChatRoomHeader } from "@/features/chat/components/chat-room-header"
-import { MessageBubble } from "@/features/chat/components/message-bubble"
-import { MessageInput } from "@/features/chat/components/message-input"
-import { useChatRoom } from "@/features/chat/hooks/use-chat-room"
-import { Loader2 } from "lucide-react"
+'use client';
 
-interface ChatRoomPageProps {
-  params: {
-    roomId: string
-  }
-}
+import { useChatRoom } from '@/features/chat/hooks/use-chat-room';
+import { useAuth } from '@/features/auth/hooks/use-auth';
+import { MessageInput } from '@/features/chat/components/message-input';
+import { MessageList } from '@/features/chat/components/message-list';
+import { ChatRoomHeader } from '@/features/chat/components/chat-room-header';
+import { ChatRoomPageProps } from '@/features/chat/types/chat-types';
+import { useChat } from '@/features/chat/hooks/use-chat';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ChatRoomPage({ params }: ChatRoomPageProps) {
-  const { roomId } = params
-  const { room, messages, isLoading, sendMessage } = useChatRoom(roomId)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { roomId } = params;
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const { rooms, isLoading: isLoadingRooms } = useChat(); // 방 정보를 가져오기 위해 필요
+  
+  const { 
+    messages, 
+    sendMessage, 
+    isLoading: isLoadingMessages,
+    isSending,
+  } = useChatRoom(roomId);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  const currentRoom = rooms.find(room => room.id === roomId);
+  const roomName = currentRoom?.name || '채팅';
 
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  if (isLoading) {
+  if (isAuthLoading || isLoadingRooms) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-6 w-6 animate-spin text-pink-500" />
-        <span className="ml-2 text-gray-600">채팅방을 불러오는 중...</span>
+      <div className="flex flex-col h-screen">
+        <div className="p-4 border-b flex items-center space-x-2">
+          <Skeleton className="h-6 w-6 rounded-full" />
+          <Skeleton className="h-6 w-32" />
+        </div>
+        <div className="flex-1 p-4 space-y-4">
+          <Skeleton className="h-16 w-2/3" />
+          <Skeleton className="h-16 w-1/2 self-end ml-auto" />
+          <Skeleton className="h-12 w-3/4" />
+        </div>
+        <div className="p-4 border-t">
+          <Skeleton className="h-10 w-full" />
+        </div>
       </div>
-    )
-  }
-
-  if (!room) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-600">채팅방을 찾을 수 없습니다.</p>
-      </div>
-    )
+    );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <ChatRoomHeader room={room} />
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message, index) => (
-          <motion.div
-            key={message.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <MessageBubble message={message} />
-          </motion.div>
-        ))}
-        <div ref={messagesEndRef} />
+    <div className="flex flex-col h-[calc(100vh-var(--top-nav-height))] bg-background">
+      <ChatRoomHeader roomName={roomName} />
+      <div className="flex-1 overflow-y-auto">
+        {isLoadingMessages ? (
+           <div className="p-4 space-y-4">
+              <Skeleton className="h-16 w-2/3" />
+              <Skeleton className="h-16 w-1/2 self-end ml-auto" />
+              <Skeleton className="h-12 w-3/4" />
+          </div>
+        ) : (
+          <MessageList messages={messages} currentUser={user} />
+        )}
       </div>
-
-      <MessageInput onSendMessage={sendMessage} />
+      <MessageInput onSendMessage={sendMessage} disabled={isSending} />
     </div>
-  )
+  );
 }

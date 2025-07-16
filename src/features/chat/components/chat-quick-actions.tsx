@@ -1,29 +1,31 @@
-"use client"
 
-import { Users, MessageCircle } from "lucide-react"
+'use client'
+
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Users, User } from "lucide-react"
 
-export function ChatQuickActions() {
+interface ChatQuickActionsProps {
+  onNewDirectChat: () => void;
+  onNewGroupChat: () => void;
+}
+
+export function ChatQuickActions({ onNewDirectChat, onNewGroupChat }: ChatQuickActionsProps) {
   return (
-    <div className="mt-8 mb-4">
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">빠른 액션</h3>
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200 cursor-pointer hover:shadow-md transition-shadow">
-          <CardContent className="p-4 text-center">
-            <Users className="h-6 w-6 text-pink-500 mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-700">그룹 채팅</p>
-            <p className="text-xs text-gray-500">새 그룹 만들기</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 cursor-pointer hover:shadow-md transition-shadow">
-          <CardContent className="p-4 text-center">
-            <MessageCircle className="h-6 w-6 text-blue-500 mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-700">개인 채팅</p>
-            <p className="text-xs text-gray-500">친구와 대화하기</p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <Card className="mt-6">
+      <CardContent className="p-4">
+        <h3 className="text-sm font-semibold mb-3">빠른 시작</h3>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" size="sm" className="flex-col h-16" onClick={onNewDirectChat}>
+            <User className="h-5 w-5 mb-1 text-blue-500" />
+            <span className="text-xs">1:1 채팅</span>
+          </Button>
+          <Button variant="outline" size="sm" className="flex-col h-16" onClick={onNewGroupChat}>
+            <Users className="h-5 w-5 mb-1 text-green-500" />
+            <span className="text-xs">그룹 채팅</span>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
