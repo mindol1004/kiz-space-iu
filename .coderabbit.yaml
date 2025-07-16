@@ -23,7 +23,7 @@ rules:
     # Git Conventional Commits (feat, fix, chore 등) 사용을 권장합니다.
     # 예시: feat: Add user authentication
     # 예시: fix: Resolve login bug
-    pattern: "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|merge|temp)(\([a-z-]+\))?: .+"
+    pattern: "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|merge|temp)(\\([a-z-]+\\))?: .+"
     description: "커밋 메시지는 Git Conventional Commits 규칙을 따라야 합니다. (예: feat: Add new feature)"
 
   # TypeScript/JavaScript 컨벤션
