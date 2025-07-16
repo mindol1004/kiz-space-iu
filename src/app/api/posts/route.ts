@@ -125,6 +125,7 @@ export async function GET(request: NextRequest) {
       viewsCount: post.viewsCount,
       isLiked: currentUserId ? (post.likes && post.likes.length > 0) : false,
       isBookmarked: currentUserId ? (post.bookmarks && post.bookmarks.length > 0) : false,
+      isFollowedByCurrentUser: currentUserId ? (post.author.followers && post.author.followers.length > 0) : false,
       createdAt: post.createdAt.toISOString(),
       updatedAt: post.updatedAt.toISOString(),
       authorId: post.authorId,
