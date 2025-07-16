@@ -21,7 +21,7 @@ export function BookmarkList() {
   const { user } = useAuthStore();
   const { bookmarks, isLoading } = useBookmarks(user?.id);
 
-  const filteredBookmarks = bookmarks.filter((bookmark) => {
+  const filteredBookmarks = bookmarks?.filter((bookmark) => {
     const matchesSearch =
       bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       bookmark.content.toLowerCase().includes(searchQuery.toLowerCase()) ||

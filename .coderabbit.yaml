@@ -1,0 +1,162 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+early_access: false
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: true
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+chat:
+  auto_reply: true
+
+# 이 파일은 CodeRabbit을 사용하여 코드 리뷰 자동화를 설정합니다.
+
+# 프로젝트의 일반적인 컨벤션과 가이드라인을 정의합니다.
+rules:
+  # 커밋 메시지 컨벤션
+  commit_message:
+    # Git Conventional Commits (feat, fix, chore 등) 사용을 권장합니다.
+    # 예시: feat: Add user authentication
+    # 예시: fix: Resolve login bug
+    pattern: "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|merge|temp)(\([a-z-]+\))?: .+"
+    description: "커밋 메시지는 Git Conventional Commits 규칙을 따라야 합니다. (예: feat: Add new feature)"
+
+  # TypeScript/JavaScript 컨벤션
+  typescript:
+    # 일관된 코드 포맷팅을 위해 Prettier 사용을 권장합니다.
+    prettier_enabled: true
+    # ESLint 규칙을 따릅니다.
+    eslint_enabled: true
+    # 변수 및 함수명은 camelCase를 사용합니다.
+    naming_convention:
+      variable: camelCase
+      function: camelCase
+      class: PascalCase
+      interface: PascalCase
+      typeAlias: PascalCase
+      enum: PascalCase
+      enumMember: PascalCase
+    strict_type_checking: true
+    no_any: true
+    description: "TypeScript/JavaScript 코드는 Prettier로 포맷하고 ESLint 규칙을 따르며, 변수/함수명은 camelCase를 사용하고 strict type checking을 준수해야 합니다. 'any' 타입 사용을 지양합니다."
+
+  # CSS/Tailwind CSS 컨벤션
+  css:
+    # Tailwind CSS 유틸리티 클래스 사용을 권장하며, 커스텀 CSS는 최소화합니다.
+    tailwind_enabled: true
+    # 클래스명은 kebab-case를 사용합니다.
+    naming_convention:
+      class: kebab-case
+    description: "스타일링은 Tailwind CSS를 우선적으로 사용하고, 클래스명은 kebab-case를 따릅니다."
+
+  # React 컴포넌트 컨벤션
+  react:
+    # 함수형 컴포넌트와 React Hooks 사용을 권장합니다.
+    functional_components_only: true
+    # Props 타입 정의에는 TypeScript 인터페이스 또는 타입을 사용합니다.
+    props_type_definition: "typescript"
+    # 클라이언트 컴포넌트에는 'use client' 지시문을 명시합니다.
+    use_client_directive: true
+    # 컴포넌트 파일명은 PascalCase를 사용합니다.
+    file_naming_convention: PascalCase
+    description: "React 컴포넌트는 함수형으로 작성하고 Hooks를 활용하며, props는 TypeScript로 명확하게 정의해야 합니다. 클라이언트 컴포넌트는 'use client'를 명시하고, 파일명은 PascalCase를 사용합니다."
+
+  # Next.js 컨벤션
+  nextjs:
+    # API 라우트는 src/app/api 폴더에 정의합니다.
+    api_route_location: "src/app/api"
+    # 서버 컴포넌트 사용을 권장하며, 클라이언트 컴포넌트 사용은 최소화합니다.
+    prefer_server_components: true
+    description: "Next.js API 라우트는 src/app/api에 정의하고, 서버 컴포넌트 사용을 우선시합니다."
+  
+  # Prisma 컨벤션
+  prisma:
+    # schema.prisma 파일의 일관된 포맷을 유지합니다.
+    schema_formatting: true
+    # 모델 및 필드명은 camelCase를 사용합니다.
+    naming_convention:
+      model: PascalCase
+      field: camelCase
+    description: "Prisma 스키마는 일관되게 포맷하고, 모델명은 PascalCase, 필드명은 camelCase를 사용합니다."
+
+  # Zustand 컨벤션
+  zustand:
+    # Zustand 스토어는 src/shared/stores에 정의합니다.
+    store_location: "src/shared/stores"
+    # 스토어 파일명은 '-store.ts' 접미사를 사용합니다.
+    file_naming_convention: "kebab-case-with-store-suffix" # 예: auth-store.ts
+    description: "Zustand 스토어는 src/shared/stores에 위치시키고, 파일명은 '-store.ts' 접미사를 사용합니다."
+
+  # API 라우트 컨벤션 (src/app/api)
+  api_routes:
+    # API 응답은 일관된 JSON 형식을 따릅니다.
+    response_format: "json"
+    # 적절한 HTTP 상태 코드를 사용합니다.
+    proper_http_status_codes: true
+    # 에러 응답은 명확하고 상세한 메시지를 포함합니다.
+    error_response_detail: true
+    description: "API 라우트는 일관된 JSON 응답 형식과 적절한 HTTP 상태 코드를 사용하며, 에러 발생 시 상세한 메시지를 제공해야 합니다."
+
+  # 테스트 코드 컨벤션 (Jest, React Testing Library 등)
+  testing:
+    # 각 기능/컴포넌트에는 적절한 단위 및 통합 테스트 코드를 포함합니다.
+    has_tests: true
+    description: "새로운 기능이나 버그 수정 시에는 관련 테스트 코드를 작성해야 합니다."
+
+  # 주석 및 문서화
+  documentation:
+    # 복잡한 로직이나 public API에는 JSDoc 스타일 주석을 사용하여 문서화합니다.
+    jsdoc_required: true
+    # 한국어 주석이 포함될 수 있으므로, 인코딩 문제를 방지합니다.
+    encoding: "UTF-8"
+    description: "복잡한 코드에는 JSDoc을 사용하여 문서화하며, 한국어 주석 사용 시 UTF-8 인코딩을 준수해야 합니다."
+
+# CodeRabbit이 코드 리뷰 시 제공할 수 있는 추가 제안 및 팁
+suggestions:
+  # 성능 최적화 제안
+  performance_optimization:
+    description: "성능 병목 현상이 예상되는 부분에 대해 최적화 방안을 제안합니다. (예: useCallback, useMemo 활용)"
+  
+  # 보안 취약점 경고
+  security_vulnerability:
+    description: "잠재적인 보안 취약점 (예: XSS, CSRF, SQL Injection)에 대해 경고하고 해결책을 제시합니다."
+
+  # 코드 중복 제거
+  code_duplication:
+    description: "반복되는 코드 패턴을 감지하고 재사용 가능한 유틸리티 함수나 컴포넌트로 분리할 것을 제안합니다."
+
+  # 에러 핸들링 개선
+  error_handling:
+    description: "누락되었거나 불충분한 에러 핸들링 로직에 대해 개선을 제안합니다. (예: try-catch 블록, 전역 에러 핸들러)"
+
+  # 코드 가독성 향상
+  code_readability:
+    description: "코드 가독성을 높이기 위한 제안을 합니다. (예: 변수명 명확화, 함수 분리)"
+
+# CodeRabbit이 리뷰 시 무시할 파일 또는 디렉토리
+ignore:
+  - "node_modules/**"
+  - "dist/**"
+  - ".next/**"
+  - "build/**"
+  - "package-lock.json"
+  - "attached_assets/**" # 첨부된 에셋 파일 무시
+  - "public/**" # 정적 파일 무시
+
+# CodeRabbit이 리뷰 코멘트를 생성할 때 사용할 지침
+prompts:
+  # 기본 리뷰 코멘트 스타일
+  default_review_comment: "간결하고 명확하게 변경 사항에 대한 피드백을 제공합니다."
+  # 한국어 주석에 대한 특별 처리 지침
+  korean_comment_review: "한국어 주석의 의미를 파악하고, 필요시 번역하거나 문맥에 맞는 피드백을 제공합니다."
+  # Prisma 관련 에러 메시지에 대한 지침
+  prisma_error_review: "Prisma 스키마 유효성 검사 또는 쿼리 오류에 대해 구체적인 해결책을 제시합니다."
+  # Next.js API 라우트 관련 지침
+  nextjs_api_review: "Next.js API 라우트의 구조, 에러 핸들링 및 데이터 유효성 검사에 대한 피드백을 제공합니다."
+  # React 컴포넌트 관련 지침
+  react_component_review: "React 컴포넌트의 구조, props 사용, 상태 관리 및 렌더링 최적화에 대한 피드백을 제공합니다."
