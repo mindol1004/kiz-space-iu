@@ -112,12 +112,10 @@ export function useRegister() {
  * - `hasCheckedInitialAuth`: 초기 인증 확인 완료 여부 (boolean)
  */
 export const useAuth = () => {
-    const { user, isAuthenticated, isChecking, hasCheckedInitialAuth } = useAuthStore(state => ({
-        user: state.user,
-        isAuthenticated: state.isAuthenticated,
-        isChecking: state.isChecking,
-        hasCheckedInitialAuth: state.hasCheckedInitialAuth,
-    }));
+    const user = useAuthStore(state => state.user);
+    const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+    const isChecking = useAuthStore(state => state.isChecking);
+    const hasCheckedInitialAuth = useAuthStore(state => state.hasCheckedInitialAuth);
 
     return { 
         user, 
