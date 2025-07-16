@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient, InfiniteData } from '@tanstack/react-query';
 import { apiClient } from '@/lib/axios-config';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +44,8 @@ export const useFollowUser = () => {
             toast({ title: "오류", description: `팔로우 중 오류가 발생했습니다.`, variant: "destructive" });
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['posts'] }); // Re-added
+            // 서버 상태와 동기화
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
         },
         onSuccess: () => {
             toast({ title: "성공", description: `사용자를 팔로우했습니다.` });
@@ -81,7 +81,8 @@ export const useFollowUser = () => {
             toast({ title: "오류", description: `언팔로우 중 오류가 발생했습니다.`, variant: "destructive" });
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['posts'] }); // Re-added
+            // 서버 상태와 동기화
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
         },
         onSuccess: () => {
             toast({ title: "성공", description: `사용자를 언팔로우했습니다.` });
