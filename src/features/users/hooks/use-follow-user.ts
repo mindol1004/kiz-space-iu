@@ -43,10 +43,6 @@ export const useFollowUser = () => {
             }
             toast({ title: "오류", description: `팔로우 중 오류가 발생했습니다.`, variant: "destructive" });
         },
-        onSettled: () => {
-            // 서버 상태와 동기화
-            queryClient.invalidateQueries({ queryKey: ['posts'] });
-        },
         onSuccess: () => {
             toast({ title: "성공", description: `사용자를 팔로우했습니다.` });
         },
@@ -79,10 +75,6 @@ export const useFollowUser = () => {
                 queryClient.setQueryData(['posts'], context.previousPostsData);
             }
             toast({ title: "오류", description: `언팔로우 중 오류가 발생했습니다.`, variant: "destructive" });
-        },
-        onSettled: () => {
-            // 서버 상태와 동기화
-            queryClient.invalidateQueries({ queryKey: ['posts'] });
         },
         onSuccess: () => {
             toast({ title: "성공", description: `사용자를 언팔로우했습니다.` });
