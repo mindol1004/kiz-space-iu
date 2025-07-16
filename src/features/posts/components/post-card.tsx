@@ -20,7 +20,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Trash2, Loader2, Edit } from "lucide-react"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useFollowUser } from "@/features/users/hooks/use-follow-user"
-import { useCallback } from "react"
 
 interface PostCardProps {
   post: Post
@@ -44,14 +43,21 @@ export function PostCard({ post }: PostCardProps) {
   const { user: currentUser } = useAuth()
   const { follow, unfollow, isFollowing, isUnfollowing } = useFollowUser()
 
-  const handleFollowToggle = useCallback((e: React.MouseEvent) => {
+  // 팔로우/언팔로우 핸들러 - 단순하게 처리
+  const handleFollowClick = (e: React.MouseEvent) => {
     e.stopPropagation()
+    
+    if (!currentUser) {
+      alert("로그인이 필요합니다.")
+      return
+    }
+
     if (post.isFollowedByCurrentUser) {
       unfollow(post.author.id)
     } else {
       follow(post.author.id)
     }
-  }, [post.author.id, unfollow, follow])
+  }
 
   const isMyPost = currentUser?.id === post.author.id
   const isProcessingFollow = isFollowing || isUnfollowing
@@ -71,35 +77,43 @@ export function PostCard({ post }: PostCardProps) {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Avatar className="h-10 w-10 cursor-pointer">
-                      <AvatarImage src={post.author.avatar || "/placeholder.svg"} />
-                      <AvatarFallback className="bg-gradient-to-r from-pink-500 to-purple-500 text-white">
-                        {post.author.nickname[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                  </DropdownMenuTrigger>
-                  {!isMyPost && (
-                    <DropdownMenuContent align="start">
-                      <DropdownMenuItem onClick={handleFollowToggle} disabled={isProcessingFollow}>
-                        {post.isFollowedByCurrentUser ? (
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={post.author.avatar || "/placeholder.svg"} />
+                  <AvatarFallback className="bg-gradient-to-r from-pink-500 to-purple-500 text-white">
+                    {post.author.nickname[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm">{post.author.nickname}</p>
+                    {!isMyPost && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleFollowClick}
+                        disabled={isProcessingFollow}
+                        className={`h-6 px-2 text-xs ${
+                          post.isFollowedByCurrentUser 
+                            ? "text-gray-600 hover:text-red-600" 
+                            : "text-blue-600 hover:text-blue-700"
+                        }`}
+                      >
+                        {isProcessingFollow ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : post.isFollowedByCurrentUser ? (
                           <>
-                            <UserMinus className="mr-2 h-4 w-4" />
-                            <span>언팔로우</span>
+                            <UserMinus className="h-3 w-3 mr-1" />
+                            언팔로우
                           </>
                         ) : (
                           <>
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            <span>팔로우</span>
+                            <UserPlus className="h-3 w-3 mr-1" />
+                            팔로우
                           </>
                         )}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  )}
-                </DropdownMenu>
-                <div>
-                  <p className="font-medium text-sm">{post.author.nickname}</p>
+                      </Button>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500">{formatDate(new Date(post.createdAt))}</p>
                 </div>
               </div>
