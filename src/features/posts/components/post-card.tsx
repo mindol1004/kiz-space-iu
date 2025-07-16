@@ -34,12 +34,12 @@ export const PostCard = React.memo(({ post }: PostCardProps) => {
     }
   }, [post.isFollowedByCurrentUser, post.author.id, unfollow, follow]);
   
-  // 파생된 상태를 메모이제이션하여 불필요한 재계산 방지
-  const isMyPost = useMemo(() => currentUser?.id === post.author.id, [currentUser?.id, post.author.id]);
-  const isProcessingFollow = useMemo(() => isFollowing || isUnfollowing, [isFollowing, isUnfollowing]);
+  // 단순한 계산으로 변경하여 무한 루프 방지
+  const isMyPost = currentUser?.id === post.author.id;
+  const isProcessingFollow = isFollowing || isUnfollowing;
 
-  // Date 객체 생성을 메모이제이션하여 불필요한 참조 변경 방지
-  const postDate = useMemo(() => new Date(post.createdAt), [post.createdAt]);
+  // Date 포맷팅을 직접 수행
+  const formattedDate = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ko });
 
   return (
     <Card>
@@ -72,7 +72,7 @@ export const PostCard = React.memo(({ post }: PostCardProps) => {
         <div className="flex-1">
           <p className="font-semibold">{post.author.nickname}</p>
           <p className="text-xs text-muted-foreground">
-            {formatDistanceToNow(postDate, { addSuffix: true, locale: ko })}
+            {formattedDate}
           </p>
         </div>
         <Button variant="ghost" size="icon">
