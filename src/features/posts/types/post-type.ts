@@ -5,6 +5,9 @@ export interface Post {
     id: string;
     content: string;
     images?: string[];
+    category: string;
+    ageGroup: string;
+    tags?: string[];
     author: {
         id: string;
         nickname: string;
