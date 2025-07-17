@@ -46,7 +46,7 @@ export function CreatePostDialog() {
           <Pencil className="h-6 w-6" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto rounded-lg">
+      <DialogContent className="sm:max-w-[500px] w-[95vw] sm:w-full max-h-[80vh] overflow-y-auto rounded-lg">
         <DialogHeader>
           <DialogTitle className="text-left">새 글 작성</DialogTitle>
         </DialogHeader>

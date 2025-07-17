@@ -35,7 +35,7 @@ export const NewChatDialog = ({ isOpen, onClose, onChatCreated }: NewChatDialogP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] rounded-lg">
+      <DialogContent className="sm:max-w-[425px] w-[95vw] sm:w-full rounded-lg">
         <DialogHeader>
           <DialogTitle className="text-left">새로운 채팅 시작하기</DialogTitle>
           <DialogDescription className="text-left">

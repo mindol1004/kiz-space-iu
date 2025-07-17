@@ -91,7 +91,7 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-lg">
+      <DialogContent className="max-w-lg w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto rounded-lg">
         <DialogHeader>
           <DialogTitle className="text-left">프로필 수정</DialogTitle>
         </DialogHeader>

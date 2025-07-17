@@ -174,7 +174,7 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-lg">
+      <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto rounded-lg">
         <DialogHeader>
           <DialogTitle className="text-left">설정</DialogTitle>
         </DialogHeader>

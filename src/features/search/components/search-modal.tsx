@@ -73,7 +73,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] p-0 rounded-lg">
+      <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[80vh] p-0 rounded-lg">
         <div className="p-6 border-b">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
