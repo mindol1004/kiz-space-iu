@@ -1,12 +1,22 @@
+
 import type React from "react"
+
 export interface ProfileUser {
   _id?: string
+  id?: string
   nickname: string
+  name?: string
+  email?: string
+  bio?: string
   location?: string
   createdAt: Date
   verified: boolean
   interests: string[]
   avatar?: string
+  postsCount?: number
+  followersCount?: number
+  followingCount?: number
+  isFollowing?: boolean
 }
 
 export interface ProfileStat {
@@ -16,8 +26,34 @@ export interface ProfileStat {
 }
 
 export interface ProfileChild {
+  id: string
   name: string
   age: number
   gender: "male" | "female"
   parentId: string
+  birthDate?: Date
+  avatar?: string
+}
+
+export interface UserPost {
+  id: string
+  content: string
+  author: {
+    id: string
+    nickname: string
+    avatar?: string
+  }
+  likes: number
+  comments: number
+  isLiked: boolean
+  isBookmarked: boolean
+  createdAt: Date
+  images?: string[]
+  tags?: string[]
+}
+
+export interface ProfileTabType {
+  value: string
+  label: string
+  count?: number
 }

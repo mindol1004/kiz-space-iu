@@ -1,8 +1,9 @@
+
 "use client"
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Edit, Heart, MessageCircle, Settings } from "lucide-react"
+import { Edit, Heart, MessageCircle, Settings, UserPlus, UserMinus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -10,38 +11,56 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProfileEditModal } from "./profile-edit-modal"
 import { SettingsModal } from "@/features/settings/components/settings-modal"
-import type { User } from "@/lib/schemas"
+import { useProfile } from "../hooks/use-profile"
+import { useProfileStats } from "../hooks/use-profile-stats"
+import { useUserPosts } from "../hooks/use-user-posts"
+import { useFollowUser } from "@/features/users/hooks/use-follow-user"
+import { useAuthStore } from "@/shared/stores/auth-store"
+import { PostCard } from "@/features/posts/components/post-card"
+import type { ProfileUser, ProfileChild } from "../types/profile-types"
 
 interface ProfileContentProps {
-  user: User
-  userChildren: any[]
-  stats: Array<{
-    label: string
-    value: number
-    icon: any
-  }>
+  userId: string
+  userChildren?: ProfileChild[]
 }
 
-export function ProfileContent({ user, userChildren, stats }: ProfileContentProps) {
+export function ProfileContent({ userId, userChildren = [] }: ProfileContentProps) {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+  
+  const { user: currentUser } = useAuthStore()
+  const { profile, isLoading } = useProfile(userId)
+  const { stats } = useProfileStats(userId)
+  const { posts, fetchNextPage, hasNextPage, isFetchingNextPage } = useUserPosts(userId)
+  const { followUser, isFollowing } = useFollowUser()
 
-  const myPosts = [
-    {
-      id: "1",
-      content: "신생아 수면 패턴에 대해 질문드려요. 우리 아기가 밤에 자주 깨는데 어떻게 해야 할까요?",
-      likes: 12,
-      comments: 8,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    },
-    {
-      id: "2",
-      content: "이유식 시작했는데 아기가 잘 안 먹어요. 다른 엄마들은 어떻게 하셨나요?",
-      likes: 24,
-      comments: 15,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    },
-  ]
+  const isOwnProfile = currentUser?.id === userId
+
+  if (isLoading) {
+    return (
+      <div className="max-w-md mx-auto p-4 text-center">
+        <div className="animate-pulse space-y-4">
+          <div className="h-24 w-24 bg-gray-200 rounded-full mx-auto"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+          <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="max-w-md mx-auto p-4 text-center">
+        <p className="text-gray-600">프로필을 찾을 수 없습니다.</p>
+      </div>
+    )
+  }
+
+  const handleFollow = () => {
+    if (currentUser && profile) {
+      followUser({ userId: currentUser.id, targetUserId: profile.id || profile._id || '' })
+    }
+  }
 
   return (
     <>
@@ -50,30 +69,56 @@ export function ProfileContent({ user, userChildren, stats }: ProfileContentProp
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
           <div className="relative inline-block">
             <Avatar className="h-24 w-24 mx-auto mb-4">
-              <AvatarImage src={user.avatar || "/placeholder.svg?height=96&width=96"} />
+              <AvatarImage src={profile.avatar || "/placeholder.svg?height=96&width=96"} />
               <AvatarFallback className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-2xl">
-                {user.nickname[0]}
+                {profile.nickname[0]}
               </AvatarFallback>
             </Avatar>
-            <Button
-              size="sm"
-              className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
-              onClick={() => setShowEditModal(true)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
+            {isOwnProfile && (
+              <Button
+                size="sm"
+                className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
+                onClick={() => setShowEditModal(true)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
           </div>
-          <h1 className="text-xl font-bold">{user.nickname}</h1>
+          <h1 className="text-xl font-bold">{profile.nickname}</h1>
+          {profile.bio && (
+            <p className="text-gray-600 text-sm mt-1">{profile.bio}</p>
+          )}
           <p className="text-gray-600 text-sm">
-            {user.location} • 가입일: {new Date(user.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+            {profile.location} • 가입일: {new Date(profile.createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })}
           </p>
           <div className="flex justify-center items-center space-x-2 mt-2">
-            <Badge className={user.verified ? "bg-gradient-to-r from-pink-500 to-purple-500" : "bg-gray-400"}>
-              {user.verified ? "인증 회원" : "일반 회원"}
+            <Badge className={profile.verified ? "bg-gradient-to-r from-pink-500 to-purple-500" : "bg-gray-400"}>
+              {profile.verified ? "인증 회원" : "일반 회원"}
             </Badge>
-            <Button variant="ghost" size="sm" onClick={() => setShowSettingsModal(true)}>
-              <Settings className="h-4 w-4" />
-            </Button>
+            {isOwnProfile ? (
+              <Button variant="ghost" size="sm" onClick={() => setShowSettingsModal(true)}>
+                <Settings className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button 
+                variant={profile.isFollowing ? "outline" : "default"} 
+                size="sm"
+                onClick={handleFollow}
+                disabled={isFollowing}
+              >
+                {profile.isFollowing ? (
+                  <>
+                    <UserMinus className="h-4 w-4 mr-1" />
+                    언팔로우
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4 mr-1" />
+                    팔로우
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </motion.div>
 
@@ -104,32 +149,41 @@ export function ProfileContent({ user, userChildren, stats }: ProfileContentProp
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Tabs defaultValue="posts" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="posts">게시글</TabsTrigger>
+              <TabsTrigger value="posts">게시글 ({posts.length})</TabsTrigger>
               <TabsTrigger value="children">아이 정보</TabsTrigger>
               <TabsTrigger value="interests">관심사</TabsTrigger>
             </TabsList>
 
             <TabsContent value="posts" className="space-y-4 mt-4">
-              {myPosts.map((post) => (
-                <Card key={post.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <p className="text-sm text-gray-700 mb-3">{post.content}</p>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{post.createdAt.toLocaleDateString()}</span>
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-1">
-                          <Heart className="h-3 w-3" />
-                          <span>{post.likes}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <MessageCircle className="h-3 w-3" />
-                          <span>{post.comments}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {posts.length > 0 ? (
+                <>
+                  {posts.map((post) => (
+                    <PostCard key={post.id} post={post} />
+                  ))}
+                  {hasNextPage && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                    >
+                      {isFetchingNextPage ? "로딩 중..." : "더 보기"}
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">작성한 게시글이 없습니다.</p>
+                  {isOwnProfile && (
+                    <Button
+                      className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+                      onClick={() => window.location.href = '/feed'}
+                    >
+                      첫 게시글 작성하기
+                    </Button>
+                  )}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="children" className="space-y-4 mt-4">
@@ -141,7 +195,7 @@ export function ProfileContent({ user, userChildren, stats }: ProfileContentProp
                         <div>
                           <h4 className="font-medium">{child.name}</h4>
                           <p className="text-sm text-gray-600">
-                            {child.age} • {child.gender === "boy" ? "남아" : "여아"}
+                            {child.age}세 • {child.gender === "male" ? "남아" : "여아"}
                           </p>
                         </div>
                         <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
@@ -154,31 +208,37 @@ export function ProfileContent({ user, userChildren, stats }: ProfileContentProp
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-500">등록된 아이 정보가 없습니다.</p>
-                  <Button
-                    className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                    onClick={() => setShowEditModal(true)}
-                  >
-                    아이 정보 추가
-                  </Button>
+                  {isOwnProfile && (
+                    <Button
+                      className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+                      onClick={() => setShowEditModal(true)}
+                    >
+                      아이 정보 추가
+                    </Button>
+                  )}
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="interests" className="space-y-4 mt-4">
               <div className="flex flex-wrap gap-2">
-                {user.interests?.map((interest, index) => (
-                  <Badge key={index} variant="secondary" className="text-sm">
-                    {interest}
-                  </Badge>
-                )) || (
+                {profile.interests?.length > 0 ? (
+                  profile.interests.map((interest, index) => (
+                    <Badge key={index} variant="secondary" className="text-sm">
+                      {interest}
+                    </Badge>
+                  ))
+                ) : (
                   <div className="text-center py-8 w-full">
                     <p className="text-gray-500">등록된 관심사가 없습니다.</p>
-                    <Button
-                      className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                      onClick={() => setShowEditModal(true)}
-                    >
-                      관심사 추가
-                    </Button>
+                    {isOwnProfile && (
+                      <Button
+                        className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+                        onClick={() => setShowEditModal(true)}
+                      >
+                        관심사 추가
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -187,9 +247,12 @@ export function ProfileContent({ user, userChildren, stats }: ProfileContentProp
         </motion.div>
       </div>
 
-      <ProfileEditModal user={user} open={showEditModal} onOpenChange={setShowEditModal} />
-
-      <SettingsModal open={showSettingsModal} onOpenChange={setShowSettingsModal} />
+      {isOwnProfile && (
+        <>
+          <ProfileEditModal user={profile} open={showEditModal} onOpenChange={setShowEditModal} />
+          <SettingsModal open={showSettingsModal} onOpenChange={setShowSettingsModal} />
+        </>
+      )}
     </>
   )
 }
