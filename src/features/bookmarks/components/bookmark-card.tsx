@@ -2,14 +2,18 @@
 "use client"
 
 import { useState } from "react"
-import { Heart, Share2, BookmarkX, MessageCircle, Eye } from "lucide-react"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Heart, Share2, BookmarkX, MessageCircle, Eye, MoreHorizontal } from "lucide-react"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useRemoveBookmark } from "../hooks/use-bookmarks"
 import { formatDistanceToNow } from "date-fns"
 import { ko } from "date-fns/locale"
+import { motion } from "framer-motion"
+import { formatDate } from "@/lib/utils"
+import { getCategoryLabel, getAgeGroupLabel } from "@/shared/constants/common-data"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface BookmarkCardProps {
   bookmark: any
@@ -29,11 +33,13 @@ export function BookmarkCard({ bookmark, viewMode, index }: BookmarkCardProps) {
     // TODO: API 호출로 좋아요 기능 구현
   }
 
-  const handleRemoveBookmark = () => {
+  const handleRemoveBookmark = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
     removeBookmarkMutation.mutate({ postId: post.id })
   }
 
-  const handleShare = () => {
+  const handleShare = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
     if (navigator.share) {
       navigator.share({
         title: post.title,
@@ -45,167 +51,280 @@ export function BookmarkCard({ bookmark, viewMode, index }: BookmarkCardProps) {
     }
   }
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      pregnancy: "bg-pink-100 text-pink-800",
-      newborn: "bg-blue-100 text-blue-800",
-      education: "bg-green-100 text-green-800",
-      health: "bg-red-100 text-red-800",
-      tips: "bg-yellow-100 text-yellow-800",
-    }
-    return colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800"
-  }
-
   const bookmarkedAt = formatDistanceToNow(new Date(bookmark.createdAt), {
     addSuffix: true,
     locale: ko,
   })
 
+  const getTruncatedContent = () => {
+    if (!post.content) return ""
+    const maxLength = viewMode === "list" ? 100 : 150
+    return post.content.length > maxLength 
+      ? post.content.substring(0, maxLength) + "..."
+      : post.content
+  }
+
   if (viewMode === "list") {
     return (
-      <Card className="hover:shadow-md transition-shadow">
-        <CardContent className="p-4">
-          <div className="flex gap-4">
-            {post.image && (
-              <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
-                <img
-                  src={post.image}
-                  alt={post.title}
-                  className="w-full h-full object-cover"
-                />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: index * 0.1 }}
+        whileHover={{ y: -2 }}
+        className="w-full cursor-pointer"
+      >
+        <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={post.author?.avatar || "/placeholder.svg"} />
+                  <AvatarFallback className="bg-gradient-to-r from-pink-500 to-purple-500 text-white">
+                    {post.author?.nickname?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium text-sm">{post.author?.nickname}</p>
+                  <p className="text-xs text-gray-500">{formatDate(new Date(post.createdAt))}</p>
+                </div>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={handleRemoveBookmark}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <BookmarkX className="h-4 w-4 mr-2" />
+                    북마크 해제
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <Badge variant="secondary">{getCategoryLabel(post.category)}</Badge>
+              <Badge variant="outline">{getAgeGroupLabel(post.ageGroup)}</Badge>
+              <Badge variant="outline" className="text-xs text-pink-600 bg-pink-50">
+                {bookmarkedAt} 저장
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-sm text-gray-700 mb-3 leading-relaxed">{getTruncatedContent()}</p>
+
+            {post.images && post.images.length > 0 && (
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {post.images.slice(0, 4).map((image: string, idx: number) => (
+                  <div key={idx} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                    <img src={image || "/placeholder.svg"} alt="" className="w-full h-full object-cover" />
+                    {idx === 3 && post.images && post.images.length > 4 && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <span className="text-white font-medium text-sm">+{post.images.length - 4}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2">
-                <Badge className={getCategoryColor(post.category)} variant="secondary">
-                  {post.category}
-                </Badge>
-                <span className="text-sm text-gray-500">{bookmarkedAt} 저장</span>
+
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-3">
+                {post.tags.slice(0, 3).map((tag: string, idx: number) => (
+                  <span key={idx} className="text-xs text-pink-600 bg-pink-50 px-2 py-1 rounded-full">
+                    #{tag}
+                  </span>
+                ))}
+                {post.tags.length > 3 && (
+                  <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
+                    +{post.tags.length - 3}
+                  </span>
+                )}
               </div>
-              <h3 className="font-semibold text-lg line-clamp-2">{post.title}</h3>
-              <p className="text-gray-600 text-sm line-clamp-2">{post.content}</p>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src={post.author?.avatar} />
-                    <AvatarFallback>{post.author?.nickname?.[0]}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm text-gray-600">{post.author?.nickname}</span>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <Eye className="h-4 w-4" />
-                    {post.viewsCount || 0}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Heart className="h-4 w-4" />
-                    {post._count?.likes || 0}
-                  </span>
-                  <span className="flex items-center gap-1">
+            )}
+
+            <div className="pt-3 border-t">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleLike()
+                    }}
+                    className={`flex items-center space-x-1 hover:bg-red-50 ${
+                      isLiked ? "text-red-500" : "text-gray-500"
+                    }`}
+                  >
+                    <motion.div 
+                      whileTap={{ scale: 0.8 }} 
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    >
+                      <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
+                    </motion.div>
+                    <span className="text-xs">{post._count?.likes || 0}</span>
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center space-x-1 text-gray-500 hover:bg-blue-50"
+                  >
                     <MessageCircle className="h-4 w-4" />
-                    {post._count?.comments || 0}
-                  </span>
+                    <span className="text-xs">{post._count?.comments || 0}</span>
+                  </Button>
+
+                  <div className="flex items-center space-x-1 text-gray-500">
+                    <Eye className="h-4 w-4" />
+                    <span className="text-xs">{post.viewsCount || 0}</span>
+                  </div>
                 </div>
+
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 hover:bg-gray-50" 
+                  onClick={handleShare}
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-          </div>
-        </CardContent>
-        <CardFooter className="p-4 pt-0">
-          <div className="flex justify-between w-full">
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLike}
-                className={isLiked ? "text-red-500" : ""}
-              >
-                <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleShare}>
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRemoveBookmark}
-              className="text-red-500 hover:text-red-700"
-            >
-              <BookmarkX className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardFooter>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
     )
   }
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      {post.image && (
-        <div className="aspect-video overflow-hidden rounded-t-lg">
-          <img
-            src={post.image}
-            alt={post.title}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <Badge className={getCategoryColor(post.category)} variant="secondary">
-            {post.category}
-          </Badge>
-          <span className="text-xs text-gray-500">{bookmarkedAt} 저장</span>
-        </div>
-        <h3 className="font-semibold text-lg line-clamp-2">{post.title}</h3>
-        <p className="text-gray-600 text-sm line-clamp-3">{post.content}</p>
-        <div className="flex items-center gap-2">
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={post.author?.avatar} />
-            <AvatarFallback>{post.author?.nickname?.[0]}</AvatarFallback>
-          </Avatar>
-          <span className="text-sm text-gray-600">{post.author?.nickname}</span>
-        </div>
-        <div className="flex items-center gap-4 text-sm text-gray-500">
-          <span className="flex items-center gap-1">
-            <Eye className="h-4 w-4" />
-            {post.viewsCount || 0}
-          </span>
-          <span className="flex items-center gap-1">
-            <Heart className="h-4 w-4" />
-            {post._count?.likes || 0}
-          </span>
-          <span className="flex items-center gap-1">
-            <MessageCircle className="h-4 w-4" />
-            {post._count?.comments || 0}
-          </span>
-        </div>
-      </CardContent>
-      <CardFooter className="p-4 pt-0">
-        <div className="flex justify-between w-full">
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLike}
-              className={isLiked ? "text-red-500" : ""}
-            >
-              <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleShare}>
-              <Share2 className="h-4 w-4" />
-            </Button>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.1 }}
+      whileHover={{ y: -2 }}
+      className="w-full cursor-pointer"
+    >
+      <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow">
+        {post.images && post.images.length > 0 && (
+          <div className="aspect-video overflow-hidden">
+            <img
+              src={post.images[0] || "/placeholder.svg"}
+              alt={post.title}
+              className="w-full h-full object-cover"
+            />
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRemoveBookmark}
-            className="text-red-500 hover:text-red-700"
-          >
-            <BookmarkX className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardFooter>
-    </Card>
+        )}
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={post.author?.avatar || "/placeholder.svg"} />
+                <AvatarFallback className="bg-gradient-to-r from-pink-500 to-purple-500 text-white">
+                  {post.author?.nickname?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium text-sm">{post.author?.nickname}</p>
+                <p className="text-xs text-gray-500">{formatDate(new Date(post.createdAt))}</p>
+              </div>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={handleRemoveBookmark}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <BookmarkX className="h-4 w-4 mr-2" />
+                  북마크 해제
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <Badge variant="secondary">{getCategoryLabel(post.category)}</Badge>
+            <Badge variant="outline">{getAgeGroupLabel(post.ageGroup)}</Badge>
+            <Badge variant="outline" className="text-xs text-pink-600 bg-pink-50">
+              {bookmarkedAt} 저장
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-3">
+          <p className="text-sm text-gray-700 leading-relaxed">{getTruncatedContent()}</p>
+
+          {post.tags && post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {post.tags.slice(0, 3).map((tag: string, idx: number) => (
+                <span key={idx} className="text-xs text-pink-600 bg-pink-50 px-2 py-1 rounded-full">
+                  #{tag}
+                </span>
+              ))}
+              {post.tags.length > 3 && (
+                <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
+                  +{post.tags.length - 3}
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className="pt-3 border-t">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleLike()
+                  }}
+                  className={`flex items-center space-x-1 hover:bg-red-50 ${
+                    isLiked ? "text-red-500" : "text-gray-500"
+                  }`}
+                >
+                  <motion.div 
+                    whileTap={{ scale: 0.8 }} 
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  >
+                    <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
+                  </motion.div>
+                  <span className="text-xs">{post._count?.likes || 0}</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center space-x-1 text-gray-500 hover:bg-blue-50"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span className="text-xs">{post._count?.comments || 0}</span>
+                </Button>
+
+                <div className="flex items-center space-x-1 text-gray-500">
+                  <Eye className="h-4 w-4" />
+                  <span className="text-xs">{post.viewsCount || 0}</span>
+                </div>
+              </div>
+
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-500 hover:bg-gray-50" 
+                onClick={handleShare}
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   )
 }
