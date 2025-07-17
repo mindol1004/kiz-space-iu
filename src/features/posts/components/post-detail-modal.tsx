@@ -47,9 +47,9 @@ export function PostDetailModal({ post, open, onOpenChange }: PostDetailModalPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col rounded-lg">
         <DialogHeader>
-          <DialogTitle>게시글 상세</DialogTitle>
+          <DialogTitle className="text-left">게시글 상세</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-4">
