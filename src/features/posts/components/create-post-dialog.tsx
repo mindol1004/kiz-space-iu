@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Plus, X, Upload } from "lucide-react"
+import { Plus, X, Upload, Pencil } from "lucide-react"
 import { useCreatePostDialog } from "../hooks/use-create-post-dialog"
 import { MAX_TAGS_PER_POST, MAX_IMAGES_PER_POST } from "@/shared/constants/common-data"
 
@@ -39,8 +39,11 @@ export function CreatePostDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white">
-          <Plus className="h-4 w-4 mr-2" />새 글 작성
+        <Button 
+          size="icon"
+          className="h-14 w-14 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+        >
+          <Pencil className="h-6 w-6" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
