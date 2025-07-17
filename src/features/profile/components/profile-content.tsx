@@ -32,7 +32,7 @@ export function ProfileContent({ userId, userChildren = [] }: ProfileContentProp
   const { profile, isLoading } = useProfile(userId)
   const { stats } = useProfileStats(userId)
   const { posts, fetchNextPage, hasNextPage, isFetchingNextPage } = useUserPosts(userId)
-  const { followUser, isFollowing } = useFollowUser()
+  const { follow, unfollow, isFollowing, isUnfollowing } = useFollowUser()
 
   const isOwnProfile = currentUser?.id === userId
 
@@ -58,7 +58,7 @@ export function ProfileContent({ userId, userChildren = [] }: ProfileContentProp
 
   const handleFollow = () => {
     if (currentUser && profile) {
-      followUser({ userId: currentUser.id, targetUserId: profile.id || profile._id || '' })
+      follow(currentUser.id)
     }
   }
 

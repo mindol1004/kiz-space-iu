@@ -1,4 +1,5 @@
 
+import { Post } from "@/features/posts/types/post-type"
 import type React from "react"
 
 export interface ProfileUser {
@@ -35,23 +36,6 @@ export interface ProfileChild {
   avatar?: string
 }
 
-export interface UserPost {
-  id: string
-  content: string
-  author: {
-    id: string
-    nickname: string
-    avatar?: string
-  }
-  likes: number
-  comments: number
-  isLiked: boolean
-  isBookmarked: boolean
-  createdAt: Date
-  images?: string[]
-  tags?: string[]
-}
-
 export interface ProfileTabType {
   value: string
   label: string
@@ -59,7 +43,7 @@ export interface ProfileTabType {
 }
 
 export interface UserPostsResponse {
-  posts: UserPost[]
+  posts: Post[]
   totalPosts: number
   totalPages: number
   currentPage: number
