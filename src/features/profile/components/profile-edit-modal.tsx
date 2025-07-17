@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -48,7 +48,7 @@ interface ProfileEditModalProps {
 }
 
 export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalProps) {
-  const [interests, setInterests] = useState<string[]>(user.interests || [])
+  const [interests, setInterests] = useState<string[]>(() => user.interests || [])
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
@@ -98,15 +98,17 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
     }
   }
 
-  const toggleInterest = (interest: string) => {
-    setInterests(prev => 
-      prev.includes(interest)
-        ? prev.filter(i => i !== interest)
-        : [...prev, interest]
-    )
-  }
+  const toggleInterest = useCallback((interest: string) => {
+    setInterests(prev => {
+      if (prev.includes(interest)) {
+        return prev.filter(i => i !== interest)
+      } else {
+        return [...prev, interest]
+      }
+    })
+  }, [])
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       // 파일 크기 체크 (5MB)
@@ -138,7 +140,7 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
       }
       reader.readAsDataURL(file)
     }
-  }
+  }, [toast])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -267,25 +269,28 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
               </p>
 
               <div className="grid grid-cols-2 gap-2">
-                {INTEREST_TAGS.map((interest) => (
-                  <div
-                    key={interest}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                      interests.includes(interest)
-                        ? "bg-pink-50 border-pink-200"
-                        : "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                    }`}
-                    onClick={() => toggleInterest(interest)}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={interests.includes(interest)}
-                        readOnly
-                      />
-                      <span className="text-sm">{interest}</span>
+                {INTEREST_TAGS.map((interest) => {
+                  const isSelected = interests.includes(interest)
+                  return (
+                    <div
+                      key={interest}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isSelected
+                          ? "bg-pink-50 border-pink-200"
+                          : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                      }`}
+                      onClick={() => toggleInterest(interest)}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={isSelected}
+                          readOnly
+                        />
+                        <span className="text-sm">{interest}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               {interests.length > 0 && (
