@@ -1,15 +1,12 @@
 
 "use client"
 
-import { useState } from "react"
-import { Heart, Share2, BookmarkX, MessageCircle, Eye, MoreHorizontal } from "lucide-react"
+import { BookmarkX, MoreHorizontal } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useRemoveBookmark } from "../hooks/use-bookmarks"
-import { formatDistanceToNow } from "date-fns"
-import { ko } from "date-fns/locale"
 import { motion } from "framer-motion"
 import { formatDate } from "@/lib/utils"
 import { getCategoryLabel, getAgeGroupLabel } from "@/shared/constants/common-data"
@@ -22,39 +19,15 @@ interface BookmarkCardProps {
 }
 
 export function BookmarkCard({ bookmark, viewMode, index }: BookmarkCardProps) {
-  const [isLiked, setIsLiked] = useState(false)
   const removeBookmarkMutation = useRemoveBookmark()
 
   const post = bookmark.post
   if (!post) return null
 
-  const handleLike = () => {
-    setIsLiked(!isLiked)
-    // TODO: API 호출로 좋아요 기능 구현
-  }
-
   const handleRemoveBookmark = (e?: React.MouseEvent) => {
     e?.stopPropagation()
     removeBookmarkMutation.mutate({ postId: post.id })
   }
-
-  const handleShare = (e?: React.MouseEvent) => {
-    e?.stopPropagation()
-    if (navigator.share) {
-      navigator.share({
-        title: post.title,
-        text: post.content,
-        url: window.location.origin + `/posts/${post.id}`,
-      })
-    } else {
-      navigator.clipboard.writeText(window.location.origin + `/posts/${post.id}`)
-    }
-  }
-
-  const bookmarkedAt = formatDistanceToNow(new Date(bookmark.createdAt), {
-    addSuffix: true,
-    locale: ko,
-  })
 
   const getTruncatedContent = () => {
     if (!post.content) return ""
@@ -108,9 +81,6 @@ export function BookmarkCard({ bookmark, viewMode, index }: BookmarkCardProps) {
             <div className="flex gap-2 mt-2">
               <Badge variant="secondary">{getCategoryLabel(post.category)}</Badge>
               <Badge variant="outline">{getAgeGroupLabel(post.ageGroup)}</Badge>
-              <Badge variant="outline" className="text-xs text-pink-600 bg-pink-50">
-                {bookmarkedAt} 저장
-              </Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
@@ -146,54 +116,7 @@ export function BookmarkCard({ bookmark, viewMode, index }: BookmarkCardProps) {
               </div>
             )}
 
-            <div className="pt-3 border-t">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleLike()
-                    }}
-                    className={`flex items-center space-x-1 hover:bg-red-50 ${
-                      isLiked ? "text-red-500" : "text-gray-500"
-                    }`}
-                  >
-                    <motion.div 
-                      whileTap={{ scale: 0.8 }} 
-                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                    >
-                      <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-                    </motion.div>
-                    <span className="text-xs">{post._count?.likes || 0}</span>
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center space-x-1 text-gray-500 hover:bg-blue-50"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    <span className="text-xs">{post._count?.comments || 0}</span>
-                  </Button>
-
-                  <div className="flex items-center space-x-1 text-gray-500">
-                    <Eye className="h-4 w-4" />
-                    <span className="text-xs">{post.viewsCount || 0}</span>
-                  </div>
-                </div>
-
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-gray-500 hover:bg-gray-50" 
-                  onClick={handleShare}
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            
           </CardContent>
         </Card>
       </motion.div>
@@ -252,9 +175,6 @@ export function BookmarkCard({ bookmark, viewMode, index }: BookmarkCardProps) {
           <div className="flex gap-2 mt-2">
             <Badge variant="secondary">{getCategoryLabel(post.category)}</Badge>
             <Badge variant="outline">{getAgeGroupLabel(post.ageGroup)}</Badge>
-            <Badge variant="outline" className="text-xs text-pink-600 bg-pink-50">
-              {bookmarkedAt} 저장
-            </Badge>
           </div>
         </CardHeader>
         <CardContent className="pt-0 space-y-3">
@@ -275,54 +195,7 @@ export function BookmarkCard({ bookmark, viewMode, index }: BookmarkCardProps) {
             </div>
           )}
 
-          <div className="pt-3 border-t">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleLike()
-                  }}
-                  className={`flex items-center space-x-1 hover:bg-red-50 ${
-                    isLiked ? "text-red-500" : "text-gray-500"
-                  }`}
-                >
-                  <motion.div 
-                    whileTap={{ scale: 0.8 }} 
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  >
-                    <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-                  </motion.div>
-                  <span className="text-xs">{post._count?.likes || 0}</span>
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center space-x-1 text-gray-500 hover:bg-blue-50"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <span className="text-xs">{post._count?.comments || 0}</span>
-                </Button>
-
-                <div className="flex items-center space-x-1 text-gray-500">
-                  <Eye className="h-4 w-4" />
-                  <span className="text-xs">{post.viewsCount || 0}</span>
-                </div>
-              </div>
-
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-gray-500 hover:bg-gray-50" 
-                onClick={handleShare}
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          
         </CardContent>
       </Card>
     </motion.div>
