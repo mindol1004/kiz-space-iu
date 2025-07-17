@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -48,13 +48,20 @@ interface ProfileEditModalProps {
 }
 
 export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalProps) {
-  const [interests, setInterests] = useState<string[]>(() => user.interests || [])
+  const [interests, setInterests] = useState<string[]>([])
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { updateProfile, isUpdating } = useProfile(user.id)
   const { toast } = useToast()
+
+  // 모달이 열릴 때만 interests 초기화
+  useEffect(() => {
+    if (open && user.interests) {
+      setInterests([...user.interests])
+    }
+  }, [open, user.interests])
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -64,6 +71,19 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
       location: user.location || "",
     },
   })
+
+  // 모달이 열릴 때 폼 값 초기화
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        nickname: user.nickname,
+        bio: user.bio || "",
+        location: user.location || "",
+      })
+      setAvatarFile(null)
+      setAvatarPreview(null)
+    }
+  }, [open, user, form])
 
   const onSubmit = async (values: z.infer<typeof profileSchema>) => {
     try {
@@ -284,6 +304,7 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           checked={isSelected}
+                          onChange={() => {}} // 빈 onChange 핸들러 추가
                           readOnly
                         />
                         <span className="text-sm">{interest}</span>
