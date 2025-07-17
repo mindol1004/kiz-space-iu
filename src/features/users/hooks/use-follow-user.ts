@@ -1,79 +1,46 @@
+"use client"
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios-config';
-import { useToast } from '@/hooks/use-toast';
-import { Post } from '@/features/posts/types/post-type';
+import { useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { axiosInstance } from "@/lib/axios-config"
+import { useToast } from "@/hooks/use-toast"
 
-interface InfinitePostsData {
-  pages: {
-    posts: Post[];
-    hasMore: boolean;
-    nextPage?: number;
-    total: number;
-  }[];
-  pageParams: unknown[];
+export function useFollowUser() {
+  const [isFollowing, setIsFollowing] = useState(false)
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  const followMutation = useMutation({
+    mutationFn: async ({ userId, targetUserId }: { userId: string; targetUserId: string }) => {
+      const response = await axiosInstance.post(`/users/${targetUserId}/follow`, {
+        userId,
+      })
+      return response.data
+    },
+    onMutate: () => {
+      setIsFollowing(true)
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] })
+      toast({
+        title: data.isFollowing ? "팔로우 완료" : "언팔로우 완료",
+        description: data.isFollowing ? "사용자를 팔로우했습니다." : "사용자를 언팔로우했습니다.",
+      })
+    },
+    onError: () => {
+      toast({
+        title: "오류 발생",
+        description: "팔로우 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
+    },
+    onSettled: () => {
+      setIsFollowing(false)
+    },
+  })
+
+  return {
+    followUser: followMutation.mutate,
+    isFollowing,
+  }
 }
-
-export const useFollowUser = () => {
-    const queryClient = useQueryClient();
-    const { toast } = useToast();
-
-    // 팔로우 뮤테이션
-    const followMutation = useMutation({
-        mutationFn: async (userId: string) => {
-            const response = await apiClient.post(`/users/${userId}/follow`);
-            return response.data;
-        },
-        onSuccess: (data, targetUserId) => {
-            // 성공 시 posts 쿼리 무효화하여 새로운 데이터 가져오기
-            queryClient.invalidateQueries({ queryKey: ['posts'] });
-            
-            toast({ 
-                title: "성공", 
-                description: "사용자를 팔로우했습니다." 
-            });
-        },
-        onError: (error: any) => {
-            console.error('Follow error:', error);
-            
-            toast({ 
-                title: "오류", 
-                description: "팔로우 중 오류가 발생했습니다.", 
-                variant: "destructive" 
-            });
-        },
-    });
-
-    // 언팔로우 뮤테이션
-    const unfollowMutation = useMutation({
-        mutationFn: async (userId: string) => {
-            const response = await apiClient.delete(`/users/${userId}/follow`);
-            return response.data;
-        },
-        onSuccess: (data, targetUserId) => {
-            // 성공 시 posts 쿼리 무효화하여 새로운 데이터 가져오기
-            queryClient.invalidateQueries({ queryKey: ['posts'] });
-            
-            toast({ 
-                title: "성공", 
-                description: "사용자를 언팔로우했습니다." 
-            });
-        },
-        onError: (error: any) => {
-            console.error('Unfollow error:', error);
-            
-            toast({ 
-                title: "오류", 
-                description: "언팔로우 중 오류가 발생했습니다.", 
-                variant: "destructive" 
-            });
-        },
-    });
-
-    return {
-        follow: followMutation.mutate,
-        unfollow: unfollowMutation.mutate,
-        isFollowing: followMutation.isPending,
-        isUnfollowing: unfollowMutation.isPending,
-    };
-};

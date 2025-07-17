@@ -7,15 +7,27 @@ import { ProfileAPI } from "../api/profile-api"
 import type { ProfileStat } from "../types/profile-types"
 
 export function useProfileStats(userId?: string) {
-  const { data: stats, isLoading, error } = useQuery({
+  const { data: statsData, isLoading, error } = useQuery({
     queryKey: ["profile-stats", userId],
     queryFn: () => ProfileAPI.getProfileStats(userId!),
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5분간 캐시
   })
 
-  // 기본 통계값 (API에서 데이터가 없을 때 사용)
-  const defaultStats: ProfileStat[] = [
+  // 아이콘 매핑
+  const iconMap = {
+    Edit,
+    Heart,
+    MessageCircle,
+    Bookmark,
+  }
+
+  // API 응답을 ProfileStat 형태로 변환
+  const stats: ProfileStat[] = statsData?.map((stat: any) => ({
+    label: stat.label,
+    value: stat.value,
+    icon: iconMap[stat.icon as keyof typeof iconMap] || Edit,
+  })) || [
     { label: "게시글", value: 0, icon: Edit },
     { label: "좋아요", value: 0, icon: Heart },
     { label: "댓글", value: 0, icon: MessageCircle },
@@ -23,7 +35,7 @@ export function useProfileStats(userId?: string) {
   ]
 
   return { 
-    stats: stats || defaultStats, 
+    stats, 
     isLoading, 
     error 
   }

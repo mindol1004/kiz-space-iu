@@ -1,8 +1,6 @@
-
 import { NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
-import { Post } from "@/lib/schemas"
-import { verifyAuth } from "@/lib/auth-middleware"
+import { User, Post, Comment, Like } from "@/lib/schemas"
 
 export async function GET(
   request: NextRequest,
@@ -10,32 +8,22 @@ export async function GET(
 ) {
   try {
     await connectDB()
-    
+
     const userId = params.id
 
-    // 게시글 수
-    const postsCount = await Post.countDocuments({ author: userId })
+    // 사용자 존재 확인
+    const user = await User.findById(userId)
+    if (!user) {
+      return NextResponse.json({ error: "사용자를 찾을 수 없습니다" }, { status: 404 })
+    }
 
-    // 받은 좋아요 수 (모든 게시글의 좋아요 합계)
-    const likesResult = await Post.aggregate([
-      { $match: { author: userId } },
-      { $group: { _id: null, totalLikes: { $sum: { $size: "$likes" } } } }
+    // 통계 데이터 계산
+    const [postsCount, likesCount, commentsCount, bookmarksCount] = await Promise.all([
+      Post.countDocuments({ authorId: userId }),
+      Like.countDocuments({ userId, targetType: 'post' }),
+      Comment.countDocuments({ authorId: userId }),
+      Post.countDocuments({ bookmarks: userId })
     ])
-    const likesCount = likesResult[0]?.totalLikes || 0
-
-    // 댓글 수 (모든 게시글의 댓글 합계)
-    const commentsResult = await Post.aggregate([
-      { $match: { author: userId } },
-      { $group: { _id: null, totalComments: { $sum: { $size: "$comments" } } } }
-    ])
-    const commentsCount = commentsResult[0]?.totalComments || 0
-
-    // 북마크 수 (다른 사용자들이 이 사용자의 게시글을 북마크한 수)
-    const bookmarksResult = await Post.aggregate([
-      { $match: { author: userId } },
-      { $group: { _id: null, totalBookmarks: { $sum: { $size: "$bookmarks" } } } }
-    ])
-    const bookmarksCount = bookmarksResult[0]?.totalBookmarks || 0
 
     const stats = [
       { label: "게시글", value: postsCount, icon: "Edit" },
@@ -44,9 +32,9 @@ export async function GET(
       { label: "북마크", value: bookmarksCount, icon: "Bookmark" },
     ]
 
-    return NextResponse.json({ stats })
+    return NextResponse.json(stats)
   } catch (error) {
-    console.error("Error fetching user stats:", error)
+    console.error("Error fetching profile stats:", error)
     return NextResponse.json(
       { error: "통계 조회 실패" },
       { status: 500 }

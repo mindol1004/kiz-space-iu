@@ -1,7 +1,8 @@
+
 "use client"
 
-import { useAuthStore } from "@/shared/stores/auth-store"
 import { ProfileContent } from "@/features/profile/components/profile-content"
+import { useAuthStore } from "@/shared/stores/auth-store"
 
 export default function ProfilePage() {
   const { user } = useAuthStore()
@@ -14,5 +15,5 @@ export default function ProfilePage() {
     )
   }
 
-  return <ProfileContent userId={user.id || user._id || ''} />
+  return <ProfileContent userId={user.id} />
 }
