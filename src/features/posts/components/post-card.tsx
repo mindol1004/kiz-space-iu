@@ -20,7 +20,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Trash2, Loader2, Edit } from "lucide-react"
 import { useAuth } from "@/features/auth/hooks/use-auth"
 import { useFollowUser } from "@/features/users/hooks/use-follow-user"
-import { useAddBookmark, useRemoveBookmark } from "@/features/bookmarks/hooks/use-bookmarks"
 
 interface PostCardProps {
   post: Post
@@ -43,11 +42,6 @@ export function PostCard({ post }: PostCardProps) {
 
   const { user: currentUser } = useAuth()
   const { follow, unfollow, isFollowing, isUnfollowing } = useFollowUser()
-  const addBookmarkMutation = useAddBookmark()
-  const removeBookmarkMutation = useRemoveBookmark()
-  
-  // 북마크 상태 관리
-  const [localBookmarkState, setLocalBookmarkState] = React.useState(post.isBookmarkedByCurrentUser)
   
   // 로컬 상태로 팔로우 상태 관리
   const [localFollowState, setLocalFollowState] = React.useState(post.isFollowedByCurrentUser)
@@ -56,36 +50,6 @@ export function PostCard({ post }: PostCardProps) {
   React.useEffect(() => {
     setLocalFollowState(post.isFollowedByCurrentUser)
   }, [post.isFollowedByCurrentUser])
-
-  // post.isBookmarkedByCurrentUser가 변경될 때 로컬 상태 동기화
-  React.useEffect(() => {
-    setLocalBookmarkState(post.isBookmarkedByCurrentUser)
-  }, [post.isBookmarkedByCurrentUser])
-
-  // 북마크/북마크 해제 핸들러
-  const handleBookmarkClick = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    
-    if (!currentUser) {
-      alert("로그인이 필요합니다.")
-      return
-    }
-
-    try {
-      if (localBookmarkState) {
-        // 북마크 해제
-        setLocalBookmarkState(false)
-        removeBookmarkMutation.mutate({ postId: post.id })
-      } else {
-        // 북마크 추가
-        setLocalBookmarkState(true)
-        addBookmarkMutation.mutate({ postId: post.id, category: post.category })
-      }
-    } catch (error) {
-      // 에러 시 상태 되돌리기
-      setLocalBookmarkState(post.isBookmarkedByCurrentUser)
-    }
-  }
 
   // 팔로우/언팔로우 핸들러
   const handleFollowClick = async (e: React.MouseEvent) => {
@@ -100,11 +64,11 @@ export function PostCard({ post }: PostCardProps) {
       if (localFollowState) {
         // 언팔로우
         setLocalFollowState(false)
-        unfollow(post.author.id)
+        await unfollow(post.author.id)
       } else {
         // 팔로우
         setLocalFollowState(true)
-        follow(post.author.id)
+        await follow(post.author.id)
       }
     } catch (error) {
       // 에러 시 상태 되돌리기
@@ -114,7 +78,6 @@ export function PostCard({ post }: PostCardProps) {
 
   const isMyPost = currentUser?.id === post.author.id
   const isProcessingFollow = isFollowing || isUnfollowing
-  const isProcessingBookmark = addBookmarkMutation.isPending || removeBookmarkMutation.isPending
   const truncatedContent = getTruncatedContent()
 
   return (
@@ -245,9 +208,6 @@ export function PostCard({ post }: PostCardProps) {
                 post={post} 
                 variant="card"
                 onCommentClick={(e) => e?.stopPropagation()}
-                onBookmarkClick={handleBookmarkClick}
-                isBookmarked={localBookmarkState}
-                isProcessingBookmark={isProcessingBookmark}
               />
             </div>
           </CardContent>
