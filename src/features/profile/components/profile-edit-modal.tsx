@@ -6,36 +6,38 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { motion, AnimatePresence } from "framer-motion"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
 } from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { X, Plus, Upload, User, MapPin, Heart, Camera, Loader2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form"
+import { useToast } from "@/hooks/use-toast"
 import { useProfile } from "../hooks/use-profile"
 import { ProfileAPI } from "../api/profile-api"
-import { useToast } from "@/hooks/use-toast"
-import { REGIONS } from "@/shared/constants/common-data"
+import { Camera, User, MapPin, Heart, Loader2 } from "lucide-react"
+import { INTEREST_TAGS, REGIONS } from "@/shared/constants/common-data"
 import type { UserProfile } from "../types/profile-types"
 
 const profileSchema = z.object({
   nickname: z.string().min(2, "닉네임은 2자 이상이어야 합니다").max(20, "닉네임은 20자 이하여야 합니다"),
-  bio: z.string().max(200, "소개는 200자 이하여야 합니다").optional(),
+  bio: z.string().max(200, "자기소개는 200자 이하여야 합니다").optional(),
   location: z.string().max(50, "지역은 50자 이하여야 합니다").optional(),
 })
 
@@ -47,7 +49,6 @@ interface ProfileEditModalProps {
 
 export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalProps) {
   const [interests, setInterests] = useState<string[]>(user.interests || [])
-  const [newInterest, setNewInterest] = useState("")
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
@@ -97,15 +98,12 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
     }
   }
 
-  const addInterest = () => {
-    if (newInterest.trim() && !interests.includes(newInterest.trim()) && interests.length < 10) {
-      setInterests([...interests, newInterest.trim()])
-      setNewInterest("")
-    }
-  }
-
-  const removeInterest = (interest: string) => {
-    setInterests(interests.filter(i => i !== interest))
+  const toggleInterest = (interest: string) => {
+    setInterests(prev => 
+      prev.includes(interest)
+        ? prev.filter(i => i !== interest)
+        : [...prev, interest]
+    )
   }
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,7 +119,7 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
         return
       }
 
-      // 이미지 파일 체크
+      // 파일 타입 체크
       if (!file.type.startsWith('image/')) {
         toast({
           title: "잘못된 파일 형식",
@@ -144,207 +142,193 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto rounded-xl">
-        <DialogHeader className="text-center">
-          <DialogTitle className="text-xl font-bold text-gray-900">프로필 편집</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-center">
+            프로필 편집
+          </DialogTitle>
         </DialogHeader>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* 프로필 이미지 섹션 */}
-          <div className="text-center">
-            <div className="relative inline-block">
-              <Avatar className="h-24 w-24 mx-auto mb-4">
-                <AvatarImage src={avatarPreview || user.avatar || "/placeholder.svg?height=96&width=96"} />
-                <AvatarFallback className="bg-gradient-to-r from-pink-500 to-purple-500 text-white text-2xl">
-                  {user.nickname[0]}
-                </AvatarFallback>
-              </Avatar>
-              <Button
-                type="button"
-                size="sm"
-                className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Camera className="h-4 w-4" />
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden"
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-2">클릭하여 프로필 사진 변경</p>
-          </div>
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {/* 닉네임 */}
-              <FormField
-                control={form.control}
-                name="nickname"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>닉네임</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input {...field} placeholder="닉네임을 입력하세요" className="pl-10" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* 지역 */}
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>지역</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <div className="flex items-center">
-                            <MapPin className="h-4 w-4 text-gray-400 mr-2" />
-                            <SelectValue placeholder="거주 지역을 선택해주세요" />
-                          </div>
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {REGIONS.map((region) => (
-                          <SelectItem key={region} value={region}>
-                            {region}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* 자기소개 */}
-              <FormField
-                control={form.control}
-                name="bio"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>자기소개</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="간단한 자기소개를 작성해주세요"
-                        rows={3}
-                        className="resize-none"
-                      />
-                    </FormControl>
-                    <div className="text-xs text-gray-500 text-right">
-                      {field.value?.length || 0}/200
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* 관심사 */}
-              <div className="space-y-3">
-                <FormLabel className="flex items-center">
-                  <Heart className="h-4 w-4 text-pink-500 mr-2" />
-                  관심사
-                </FormLabel>
-                <div className="flex gap-2">
-                  <Input
-                    value={newInterest}
-                    onChange={(e) => setNewInterest(e.target.value)}
-                    placeholder="관심사 추가"
-                    className="flex-1"
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addInterest())}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* 프로필 사진 */}
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                <Avatar className="w-24 h-24">
+                  <AvatarImage 
+                    src={avatarPreview || user.avatar || "/placeholder-user.jpg"} 
+                    alt={user.nickname}
                   />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={addInterest}
-                    disabled={!newInterest.trim() || interests.length >= 10}
-                    className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <AnimatePresence>
-                  {interests.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex flex-wrap gap-2"
-                    >
-                      {interests.map((interest, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.8 }}
-                        >
-                          <Badge variant="secondary" className="text-sm bg-pink-50 text-pink-700 border-pink-200">
-                            {interest}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-auto p-0 ml-2 hover:bg-transparent"
-                              onClick={() => removeInterest(interest)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </Badge>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                
-                <p className="text-xs text-gray-500">
-                  {interests.length}/10개의 관심사를 등록할 수 있습니다.
-                </p>
-              </div>
-
-              {/* 버튼 */}
-              <div className="flex gap-3 pt-6">
+                  <AvatarFallback className="text-2xl bg-gradient-to-r from-pink-500 to-purple-500 text-white">
+                    {user.nickname[0]}
+                  </AvatarFallback>
+                </Avatar>
                 <Button
                   type="button"
+                  size="sm"
                   variant="outline"
-                  className="flex-1"
-                  onClick={() => onOpenChange(false)}
+                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0 bg-white border-2 hover:bg-gray-50"
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  취소
+                  <Camera className="h-4 w-4" />
                 </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
-                  disabled={isUpdating || isUploadingAvatar}
-                >
-                  {isUpdating || isUploadingAvatar ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      {isUploadingAvatar ? "업로드 중..." : "저장 중..."}
-                    </>
-                  ) : (
-                    "저장"
-                  )}
-                </Button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAvatarChange}
+                  accept="image/*"
+                  className="hidden"
+                />
               </div>
-            </form>
-          </Form>
-        </motion.div>
+              <p className="text-sm text-gray-500">
+                프로필 사진 변경 (5MB 이하)
+              </p>
+            </div>
+
+            {/* 닉네임 */}
+            <FormField
+              control={form.control}
+              name="nickname"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center">
+                    <User className="h-4 w-4 text-pink-500 mr-2" />
+                    닉네임
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="닉네임을 입력하세요"
+                      className="focus:border-pink-500 focus:ring-pink-500"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* 지역 */}
+            <div className="space-y-2">
+              <Label className="flex items-center">
+                <MapPin className="h-4 w-4 text-pink-500 mr-2" />
+                지역
+              </Label>
+              <Select 
+                value={form.watch("location")} 
+                onValueChange={(value) => form.setValue("location", value)}
+              >
+                <SelectTrigger className="focus:border-pink-500 focus:ring-pink-500">
+                  <SelectValue placeholder="거주 지역을 선택해주세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {REGIONS.map((region) => (
+                    <SelectItem key={region} value={region}>
+                      {region}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 자기소개 */}
+            <FormField
+              control={form.control}
+              name="bio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center">
+                    <Heart className="h-4 w-4 text-pink-500 mr-2" />
+                    자기소개
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="간단한 자기소개를 작성해주세요"
+                      rows={3}
+                      className="resize-none focus:border-pink-500 focus:ring-pink-500"
+                    />
+                  </FormControl>
+                  <div className="text-xs text-gray-500 text-right">
+                    {field.value?.length || 0}/200
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* 관심사 */}
+            <div className="space-y-4">
+              <Label className="flex items-center">
+                <Heart className="h-4 w-4 text-pink-500 mr-2" />
+                관심사
+              </Label>
+              <p className="text-sm text-gray-600">
+                관심 있는 주제를 선택하면 맞춤 콘텐츠를 추천받을 수 있어요.
+              </p>
+
+              <div className="grid grid-cols-2 gap-2">
+                {INTEREST_TAGS.map((interest) => (
+                  <div
+                    key={interest}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      interests.includes(interest)
+                        ? "bg-pink-50 border-pink-200"
+                        : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                    }`}
+                    onClick={() => toggleInterest(interest)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={interests.includes(interest)}
+                        onChange={() => toggleInterest(interest)}
+                      />
+                      <span className="text-sm">{interest}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {interests.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium mb-2">선택된 관심사:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {interests.map((interest) => (
+                      <Badge key={interest} variant="secondary" className="bg-pink-50 text-pink-700 border-pink-200">
+                        {interest}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 버튼 */}
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isUpdating || isUploadingAvatar}
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                disabled={isUpdating || isUploadingAvatar}
+                className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+              >
+                {isUpdating || isUploadingAvatar ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {isUploadingAvatar ? "업로드 중..." : "저장 중..."}
+                  </>
+                ) : (
+                  "저장하기"
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )
