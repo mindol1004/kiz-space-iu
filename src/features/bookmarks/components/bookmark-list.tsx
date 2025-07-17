@@ -14,8 +14,8 @@ import { useAuthStore } from "@/shared/stores/auth-store"
 
 export function BookmarkList() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<BookmarkCategory | "all">("all")
-  const [selectedAgeGroup, setSelectedAgeGroup] = useState<BookmarkAgeGroup | "all">("all")
+  const [selectedCategories, setSelectedCategories] = useState<BookmarkCategory[]>([])
+  const [selectedAgeGroups, setSelectedAgeGroups] = useState<BookmarkAgeGroup[]>([])
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [showFilters, setShowFilters] = useState(false)
 
@@ -35,23 +35,23 @@ export function BookmarkList() {
 
       const matchesSearch = searchQuery === '' || searchableContent.includes(searchQuery.toLowerCase());
       
-      // 카테고리 필터링
+      // 카테고리 필터링 (다중 선택)
       let matchesCategory = true;
-      if (selectedCategory !== "all") {
+      if (selectedCategories.length > 0) {
         const postCategory = bookmark.post?.category;
-        matchesCategory = postCategory === selectedCategory;
+        matchesCategory = postCategory ? selectedCategories.includes(postCategory as BookmarkCategory) : false;
       }
 
-      // 연령대 필터링
+      // 연령대 필터링 (다중 선택)
       let matchesAgeGroup = true;
-      if (selectedAgeGroup !== "all") {
+      if (selectedAgeGroups.length > 0) {
         const postAgeGroup = bookmark.post?.ageGroup;
-        matchesAgeGroup = postAgeGroup === selectedAgeGroup;
+        matchesAgeGroup = postAgeGroup ? selectedAgeGroups.includes(postAgeGroup as BookmarkAgeGroup) : false;
       }
 
       return matchesSearch && matchesCategory && matchesAgeGroup;
     });
-  }, [bookmarks, searchQuery, selectedCategory, selectedAgeGroup]);
+  }, [bookmarks, searchQuery, selectedCategories, selectedAgeGroups]);
 
   if (isLoading) {
     return (
@@ -82,6 +82,11 @@ export function BookmarkList() {
             <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
               <Filter className="h-4 w-4 mr-2" />
               필터
+              {(selectedCategories.length > 0 || selectedAgeGroups.length > 0) && (
+                <span className="ml-1 bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 text-xs">
+                  {selectedCategories.length + selectedAgeGroups.length}
+                </span>
+              )}
             </Button>
             <div className="flex items-center border rounded-lg">
               <Button variant={viewMode === "grid" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("grid")}>
@@ -108,10 +113,10 @@ export function BookmarkList() {
         {/* Filters */}
         {showFilters && (
           <BookmarkFilters 
-            selectedCategory={selectedCategory} 
-            selectedAgeGroup={selectedAgeGroup}
-            onCategoryChange={setSelectedCategory}
-            onAgeGroupChange={setSelectedAgeGroup}
+            selectedCategories={selectedCategories} 
+            selectedAgeGroups={selectedAgeGroups}
+            onCategoriesChange={setSelectedCategories}
+            onAgeGroupsChange={setSelectedAgeGroups}
           />
         )}
       </div>

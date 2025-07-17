@@ -4,40 +4,45 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { X } from "lucide-react"
 import type { BookmarkCategory, BookmarkAgeGroup } from "../types/bookmark-types"
 import { CATEGORIES, AGE_GROUPS, getCategoryLabel, getAgeGroupLabel } from "@/shared/constants/common-data"
 
 interface BookmarkFiltersProps {
-  selectedCategory: BookmarkCategory | "all"
-  selectedAgeGroup: BookmarkAgeGroup | "all"
-  onCategoryChange: (category: BookmarkCategory | "all") => void
-  onAgeGroupChange: (ageGroup: BookmarkAgeGroup | "all") => void
+  selectedCategories: BookmarkCategory[]
+  selectedAgeGroups: BookmarkAgeGroup[]
+  onCategoriesChange: (categories: BookmarkCategory[]) => void
+  onAgeGroupsChange: (ageGroups: BookmarkAgeGroup[]) => void
 }
 
 export function BookmarkFilters({ 
-  selectedCategory, 
-  selectedAgeGroup,
-  onCategoryChange, 
-  onAgeGroupChange 
+  selectedCategories, 
+  selectedAgeGroups,
+  onCategoriesChange, 
+  onAgeGroupsChange 
 }: BookmarkFiltersProps) {
-  const hasActiveFilters = selectedCategory !== "all" || selectedAgeGroup !== "all"
+  const hasActiveFilters = selectedCategories.length > 0 || selectedAgeGroups.length > 0
 
   const resetFilters = () => {
-    onCategoryChange("all")
-    onAgeGroupChange("all")
+    onCategoriesChange([])
+    onAgeGroupsChange([])
   }
 
-  const categories = [
-    { value: "all", label: "전체" },
-    ...CATEGORIES
-  ]
+  const toggleCategory = (category: BookmarkCategory) => {
+    if (selectedCategories.includes(category)) {
+      onCategoriesChange(selectedCategories.filter(c => c !== category))
+    } else {
+      onCategoriesChange([...selectedCategories, category])
+    }
+  }
 
-  const ageGroups = [
-    { value: "all", label: "전체" },
-    ...AGE_GROUPS.filter(group => group.value !== "ALL")
-  ]
+  const toggleAgeGroup = (ageGroup: BookmarkAgeGroup) => {
+    if (selectedAgeGroups.includes(ageGroup)) {
+      onAgeGroupsChange(selectedAgeGroups.filter(a => a !== ageGroup))
+    } else {
+      onAgeGroupsChange([...selectedAgeGroups, ageGroup])
+    }
+  }
 
   return (
     <Card>
@@ -53,58 +58,72 @@ export function BookmarkFilters({
         </div>
 
         <div className="space-y-4">
-          {/* Category and Age Group Selectors */}
-          <div className="flex flex-wrap gap-2">
-            <Select value={selectedCategory} onValueChange={onCategoryChange}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="카테고리" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
+          {/* Category Badges */}
+          <div>
+            <h4 className="text-sm font-medium mb-2">카테고리</h4>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((category) => {
+                const isSelected = selectedCategories.includes(category.value as BookmarkCategory)
+                return (
+                  <Badge
+                    key={category.value}
+                    variant={isSelected ? "default" : "outline"}
+                    className="cursor-pointer transition-colors hover:bg-primary/80"
+                    onClick={() => toggleCategory(category.value as BookmarkCategory)}
+                  >
                     {category.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedAgeGroup} onValueChange={onAgeGroupChange}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="연령대" />
-              </SelectTrigger>
-              <SelectContent>
-                {ageGroups.map((ageGroup) => (
-                  <SelectItem key={ageGroup.value} value={ageGroup.value}>
-                    {ageGroup.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  </Badge>
+                )
+              })}
+            </div>
           </div>
 
-          {/* Active filters badges */}
-          {hasActiveFilters && (
+          {/* Age Group Badges */}
+          <div>
+            <h4 className="text-sm font-medium mb-2">연령대</h4>
             <div className="flex flex-wrap gap-2">
-              {selectedCategory !== "all" && (
-                <Badge 
-                  variant="secondary" 
-                  className="flex items-center gap-1 cursor-pointer"
-                  onClick={() => onCategoryChange("all")}
-                >
-                  {getCategoryLabel(selectedCategory)}
-                  <X className="h-3 w-3" />
-                </Badge>
-              )}
-              {selectedAgeGroup !== "all" && (
-                <Badge 
-                  variant="secondary" 
-                  className="flex items-center gap-1 cursor-pointer"
-                  onClick={() => onAgeGroupChange("all")}
-                >
-                  {getAgeGroupLabel(selectedAgeGroup)}
-                  <X className="h-3 w-3" />
-                </Badge>
-              )}
+              {AGE_GROUPS.filter(group => group.value !== "ALL").map((ageGroup) => {
+                const isSelected = selectedAgeGroups.includes(ageGroup.value as BookmarkAgeGroup)
+                return (
+                  <Badge
+                    key={ageGroup.value}
+                    variant={isSelected ? "default" : "outline"}
+                    className="cursor-pointer transition-colors hover:bg-primary/80"
+                    onClick={() => toggleAgeGroup(ageGroup.value as BookmarkAgeGroup)}
+                  >
+                    {ageGroup.label}
+                  </Badge>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Selected Filters Summary */}
+          {hasActiveFilters && (
+            <div className="pt-2 border-t">
+              <div className="text-xs text-gray-500 mb-2">
+                선택된 필터: {selectedCategories.length + selectedAgeGroups.length}개
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {selectedCategories.map((category) => (
+                  <Badge 
+                    key={`selected-category-${category}`}
+                    variant="secondary" 
+                    className="text-xs"
+                  >
+                    {getCategoryLabel(category)}
+                  </Badge>
+                ))}
+                {selectedAgeGroups.map((ageGroup) => (
+                  <Badge 
+                    key={`selected-age-${ageGroup}`}
+                    variant="secondary" 
+                    className="text-xs"
+                  >
+                    {getAgeGroupLabel(ageGroup)}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
         </div>
