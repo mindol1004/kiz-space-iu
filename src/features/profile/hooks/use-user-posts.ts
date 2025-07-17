@@ -2,7 +2,7 @@
 "use client"
 
 import { useInfiniteQuery } from "@tanstack/react-query"
-import { axiosInstance } from "@/lib/axios-config"
+import { apiClient } from "@/lib/axios-config"
 import type { UserPost } from "../types/profile-types"
 
 export function useUserPosts(userId?: string) {
@@ -16,7 +16,7 @@ export function useUserPosts(userId?: string) {
   } = useInfiniteQuery({
     queryKey: ["user-posts", userId],
     queryFn: async ({ pageParam = 1 }) => {
-      const response = await axiosInstance.get(`/users/${userId}/posts`, {
+      const response = await apiClient.get(`/users/${userId}/posts`, {
         params: { page: pageParam, limit: 10 }
       })
       return response.data
