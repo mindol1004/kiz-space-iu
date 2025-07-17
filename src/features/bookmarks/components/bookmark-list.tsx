@@ -1,20 +1,21 @@
+
 "use client"
 
 import { useState, useMemo } from "react"
 import { Search, Filter, Grid, List } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BookmarkCard } from "./bookmark-card"
 import { BookmarkEmptyState } from "./bookmark-empty-state"
 import { BookmarkFilters } from "./bookmark-filters"
 import { useBookmarks } from "../hooks/use-bookmarks"
-import type { BookmarkCategory } from "../types/bookmark-types"
+import type { BookmarkCategory, BookmarkAgeGroup } from "../types/bookmark-types"
 import { useAuthStore } from "@/shared/stores/auth-store"
 
 export function BookmarkList() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<BookmarkCategory | "all">("all")
+  const [selectedAgeGroup, setSelectedAgeGroup] = useState<BookmarkAgeGroup | "all">("all")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [showFilters, setShowFilters] = useState(false)
 
@@ -34,17 +35,23 @@ export function BookmarkList() {
 
       const matchesSearch = searchQuery === '' || searchableContent.includes(searchQuery.toLowerCase());
       
-      // 카테고리 필터링 로직 수정
+      // 카테고리 필터링
       let matchesCategory = true;
       if (selectedCategory !== "all") {
-        // bookmark.post.category를 확인하여 필터링
-        const postCategory = bookmark.post?.category?.toLowerCase();
+        const postCategory = bookmark.post?.category;
         matchesCategory = postCategory === selectedCategory;
       }
 
-      return matchesSearch && matchesCategory;
+      // 연령대 필터링
+      let matchesAgeGroup = true;
+      if (selectedAgeGroup !== "all") {
+        const postAgeGroup = bookmark.post?.ageGroup;
+        matchesAgeGroup = postAgeGroup === selectedAgeGroup;
+      }
+
+      return matchesSearch && matchesCategory && matchesAgeGroup;
     });
-  }, [bookmarks, searchQuery, selectedCategory]);
+  }, [bookmarks, searchQuery, selectedCategory, selectedAgeGroup]);
 
   if (isLoading) {
     return (
@@ -99,37 +106,33 @@ export function BookmarkList() {
         </div>
 
         {/* Filters */}
-        {showFilters && <BookmarkFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />}
+        {showFilters && (
+          <BookmarkFilters 
+            selectedCategory={selectedCategory} 
+            selectedAgeGroup={selectedAgeGroup}
+            onCategoryChange={setSelectedCategory}
+            onAgeGroupChange={setSelectedAgeGroup}
+          />
+        )}
       </div>
 
-      {/* Category Tabs */}
-      <Tabs value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as BookmarkCategory | "all")}>
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="all">전체</TabsTrigger>
-          <TabsTrigger value="pregnancy">임신</TabsTrigger>
-          <TabsTrigger value="newborn">신생아</TabsTrigger>
-          <TabsTrigger value="education">교육</TabsTrigger>
-          <TabsTrigger value="health">건강</TabsTrigger>
-          <TabsTrigger value="tips">팁</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={selectedCategory} className="mt-6">
-          {filteredBookmarks.length === 0 ? (
-            <BookmarkEmptyState hasSearch={searchQuery.length > 0} searchQuery={searchQuery} />
-          ) : (
-            <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
-              {filteredBookmarks.map((bookmark, index) => (
-                <BookmarkCard 
-                  key={bookmark.id} 
-                  bookmark={bookmark} 
-                  viewMode={viewMode} 
-                  index={index} 
-                />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+      {/* Content */}
+      <div className="mt-6">
+        {filteredBookmarks.length === 0 ? (
+          <BookmarkEmptyState hasSearch={searchQuery.length > 0} searchQuery={searchQuery} />
+        ) : (
+          <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
+            {filteredBookmarks.map((bookmark, index) => (
+              <BookmarkCard 
+                key={bookmark.id} 
+                bookmark={bookmark} 
+                viewMode={viewMode} 
+                index={index} 
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Stats */}
       {filteredBookmarks.length > 0 && (

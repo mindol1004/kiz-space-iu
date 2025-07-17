@@ -1,4 +1,5 @@
-export type BookmarkCategory = "pregnancy" | "newborn" | "education" | "health" | "tips"
+export type BookmarkCategory = "PLAY" | "HEALTH" | "EDUCATION" | "FOOD" | "PRODUCTS" | "ADVICE" | "PREGNANCY" | "NEWBORN" | "LIFESTYLE"
+export type BookmarkAgeGroup = "PREGNANCY" | "NEWBORN_0_6M" | "INFANT_6_12M" | "TODDLER_1_3Y" | "PRESCHOOL_3_5Y" | "SCHOOL_5_8Y" | "TWEEN_8_12Y"
 
 export interface BookmarkAuthor {
   id: string
@@ -22,5 +23,6 @@ export interface BookmarkItem {
 
 export interface BookmarkFilters {
   category: BookmarkCategory | "all"
+  ageGroup: BookmarkAgeGroup | "all"
   searchQuery: string
 }
