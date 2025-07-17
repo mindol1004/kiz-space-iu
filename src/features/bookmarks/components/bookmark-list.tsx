@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo } from "react"
@@ -25,7 +24,7 @@ export function BookmarkList() {
   // 필터링된 북마크를 useMemo로 최적화
   const filteredBookmarks = useMemo(() => {
     if (!bookmarks || bookmarks.length === 0) return [];
-    
+
     return bookmarks.filter((bookmark) => {
       const searchableContent = [
         bookmark.post?.title || '',

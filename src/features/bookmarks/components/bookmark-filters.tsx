@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Badge } from "@/components/ui/badge"
@@ -46,13 +47,6 @@ export function BookmarkFilters({ selectedCategory, onCategoryChange }: Bookmark
               <span className="ml-1 text-xs opacity-70">({category.count})</span>
             </Badge>
           ))}
-        </div>
-
-        <div className="mt-4 pt-4 border-t">
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <span>총 북마크 수</span>
-            <span className="font-semibold">24개</span>
-          </div>
         </div>
       </CardContent>
     </Card>
