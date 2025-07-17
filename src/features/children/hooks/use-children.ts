@@ -6,6 +6,7 @@ interface CreateChildData {
   age: string
   gender: "boy" | "girl"
   parentId: string
+  birthDate?: string
 }
 
 interface UpdateChildData {
@@ -18,7 +19,7 @@ export function useChildren(parentId: string) {
   return useQuery({
     queryKey: ["children", parentId],
     queryFn: async () => {
-      const response = await fetch(`/api/children?parentId=${parentId}`)
+      const response = await fetch(`/api/children`)
       const result = await response.json()
 
       if (!response.ok) {

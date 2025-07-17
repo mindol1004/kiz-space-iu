@@ -10,11 +10,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProfileEditModal } from "./profile-edit-modal"
+import { ChildAddModal } from "./child-add-modal"
 import { SettingsModal } from "@/features/settings/components/settings-modal"
 import { useProfile } from "../hooks/use-profile"
 import { useProfileStats } from "../hooks/use-profile-stats"
 import { useUserPosts } from "../hooks/use-user-posts"
 import { useFollowUser } from "@/features/users/hooks/use-follow-user"
+import { useChildren } from "@/features/children/hooks/use-children"
 import { useAuthStore } from "@/shared/stores/auth-store"
 import { PostCard } from "@/features/posts/components/post-card"
 import type { ProfileUser, ProfileChild } from "../types/profile-types"
@@ -33,6 +35,7 @@ export function ProfileContent({ userId, userChildren = [] }: ProfileContentProp
   const { stats } = useProfileStats(userId)
   const { posts, fetchNextPage, hasNextPage, isFetchingNextPage } = useUserPosts(userId)
   const { follow, unfollow, isFollowing, isUnfollowing } = useFollowUser()
+  const { data: children = [], refetch: refetchChildren } = useChildren(userId)
 
   const isOwnProfile = currentUser?.id === userId
 
@@ -187,38 +190,51 @@ export function ProfileContent({ userId, userChildren = [] }: ProfileContentProp
             </TabsContent>
 
             <TabsContent value="children" className="space-y-4 mt-4">
-              {userChildren.length > 0 ? (
-                userChildren.map((child) => (
-                  <Card key={child.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">{child.name}</h4>
-                          <p className="text-sm text-gray-600">
-                            {child.age}세 • {child.gender === "male" ? "남아" : "여아"}
-                          </p>
+              {children.length > 0 ? (
+                <>
+                  {children.map((child: any) => (
+                    <Card key={child.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">{child.name}</h4>
+                            <p className="text-sm text-gray-600">
+                              {child.age}세 • {child.gender === "MALE" ? "남아" : "여아"}
+                            </p>
+                            {child.birthDate && (
+                              <p className="text-xs text-gray-500">
+                                생년월일: {new Date(child.birthDate).toLocaleDateString('ko-KR')}
+                              </p>
+                            )}
+                          </div>
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                            child.gender === "FEMALE" ? "bg-gradient-to-r from-pink-500 to-purple-500" : "bg-gradient-to-r from-blue-500 to-cyan-500"
+                          }`}>
+                            <span className="text-white font-bold">{child.name[0]}</span>
+                          </div>
                         </div>
-                        <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold">{child.name[0]}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {isOwnProfile && (
+                    <div className="flex justify-center">
+                      <ChildAddModal onSuccess={refetchChildren} />
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-500">등록된 아이 정보가 없습니다.</p>
                   {isOwnProfile && (
-                    <Button
-                      className="mt-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                      onClick={() => setShowEditModal(true)}
-                    >
-                      아이 정보 추가
-                    </Button>
+                    <div className="mt-4">
+                      <ChildAddModal onSuccess={refetchChildren} />
+                    </div>
                   )}
                 </div>
               )}
             </TabsContent>
+                      onClick={() => setShowEditModal(true)}
+                    
 
             <TabsContent value="interests" className="space-y-4 mt-4">
               <div className="flex flex-wrap gap-2">
