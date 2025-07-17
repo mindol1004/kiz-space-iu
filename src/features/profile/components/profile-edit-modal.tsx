@@ -91,9 +91,9 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-lg">
         <DialogHeader>
-          <DialogTitle>프로필 수정</DialogTitle>
+          <DialogTitle className="text-left">프로필 수정</DialogTitle>
         </DialogHeader>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">

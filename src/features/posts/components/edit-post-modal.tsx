@@ -1,4 +1,3 @@
-
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
@@ -41,9 +40,9 @@ export function EditPostModal({ post, open, onOpenChange }: EditPostModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-lg">
         <DialogHeader>
-          <DialogTitle>게시글 수정</DialogTitle>
+          <DialogTitle className="text-left">게시글 수정</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

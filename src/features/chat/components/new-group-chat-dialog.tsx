@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -47,10 +46,10 @@ export const NewGroupChatDialog = ({ isOpen, onClose, onChatCreated }: NewGroupC
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] rounded-lg">
         <DialogHeader>
-          <DialogTitle>새로운 그룹 채팅</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-left">새로운 그룹 채팅</DialogTitle>
+          <DialogDescription className="text-left">
             채팅방 이름을 정하고, 함께할 친구들을 초대하세요.
           </DialogDescription>
         </DialogHeader>

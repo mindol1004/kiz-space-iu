@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -36,10 +35,10 @@ export const NewChatDialog = ({ isOpen, onClose, onChatCreated }: NewChatDialogP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] rounded-lg">
         <DialogHeader>
-          <DialogTitle>새로운 채팅 시작하기</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-left">새로운 채팅 시작하기</DialogTitle>
+          <DialogDescription className="text-left">
             서로 팔로우하는 친구들과 대화를 시작해보세요.
           </DialogDescription>
         </DialogHeader>

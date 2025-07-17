@@ -174,9 +174,9 @@ export function SettingsModal({ open, onOpenChange }: SettingsModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-lg">
         <DialogHeader>
-          <DialogTitle>설정</DialogTitle>
+          <DialogTitle className="text-left">설정</DialogTitle>
         </DialogHeader>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">

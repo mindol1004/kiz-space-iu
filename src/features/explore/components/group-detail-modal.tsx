@@ -85,9 +85,9 @@ export function GroupDetailModal({ group, open, onOpenChange }: GroupDetailModal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-lg p-0">
         <DialogHeader className="p-6 pb-0">
-          <DialogTitle>그룹 정보</DialogTitle>
+          <DialogTitle className="text-left">그룹 정보</DialogTitle>
         </DialogHeader>
         <button onClick={() => onOpenChange(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
           <X className="h-5 w-5" />
