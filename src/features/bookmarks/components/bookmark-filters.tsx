@@ -50,7 +50,12 @@ export function BookmarkFilters({
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold">필터</h3>
           {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={resetFilters}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={resetFilters}
+              className="text-pink-600 hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50"
+            >
               <X className="h-4 w-4 mr-1" />
               초기화
             </Button>
@@ -68,7 +73,11 @@ export function BookmarkFilters({
                   <Badge
                     key={category.value}
                     variant={isSelected ? "default" : "outline"}
-                    className="cursor-pointer transition-colors hover:bg-primary/80"
+                    className={`cursor-pointer transition-colors ${
+                      isSelected 
+                        ? "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none" 
+                        : "hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 hover:text-pink-600"
+                    }`}
                     onClick={() => toggleCategory(category.value as BookmarkCategory)}
                   >
                     {category.label}
@@ -88,7 +97,11 @@ export function BookmarkFilters({
                   <Badge
                     key={ageGroup.value}
                     variant={isSelected ? "default" : "outline"}
-                    className="cursor-pointer transition-colors hover:bg-primary/80"
+                    className={`cursor-pointer transition-colors ${
+                      isSelected 
+                        ? "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white border-none" 
+                        : "hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 hover:text-pink-600"
+                    }`}
                     onClick={() => toggleAgeGroup(ageGroup.value as BookmarkAgeGroup)}
                   >
                     {ageGroup.label}
