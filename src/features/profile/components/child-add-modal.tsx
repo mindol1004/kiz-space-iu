@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -27,21 +28,20 @@ export function ChildAddModal({ isOpen, onClose, onChildAdded }: ChildAddModalPr
     age: "",
     birthDate: "",
     gender: "" as "boy" | "girl" | ""
-  });
+  })
 
   const handleInputChange = (name: string, value: string | "boy" | "girl") => {
     setFormData(prev => ({
       ...prev,
       [name]: value
-    }));
-  };
-
+    }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
       if (!formData.name || !formData.age || !formData.gender || !user?.id) {
-        return;
+        return
       }
 
       await createChildMutation.mutateAsync({
@@ -50,30 +50,30 @@ export function ChildAddModal({ isOpen, onClose, onChildAdded }: ChildAddModalPr
         gender: formData.gender,
         parentId: user.id,
         birthDate: formData.birthDate || undefined,
-      });
+      })
 
       setFormData({
         name: "",
         age: "",
         birthDate: "",
         gender: "" as "boy" | "girl" | ""
-      });
-      onChildAdded();
-      onClose();
+      })
+      onChildAdded()
+      onClose()
     } catch (error) {
-      console.error("Failed to add child:", error);
+      console.error("Failed to add child:", error)
     }
-  };
+  }
 
   const handleModalClose = () => {
-    onClose();
+    onClose()
     setFormData({
       name: "",
       age: "",
       birthDate: "",
       gender: "" as "boy" | "girl" | ""
-    });
-  };
+    })
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleModalClose}>
@@ -89,75 +89,75 @@ export function ChildAddModal({ isOpen, onClose, onChildAdded }: ChildAddModalPr
               </div>
             )}
 
-          <p className="text-sm text-gray-600">
-            자녀 정보를 등록하면 연령대에 맞는 콘텐츠를 추천받을 수 있어요.
-          </p>
+            <p className="text-sm text-gray-600">
+              자녀 정보를 등록하면 연령대에 맞는 콘텐츠를 추천받을 수 있어요.
+            </p>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+            <Card>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>이름</Label>
+                      <Input
+                        placeholder="자녀 이름"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange("name", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>나이</Label>
+                      <Input
+                        type="number"
+                        placeholder="나이"
+                        value={formData.age}
+                        onChange={(e) => handleInputChange("age", e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <Label>이름</Label>
+                    <Label>생년월일</Label>
                     <Input
-                      placeholder="자녀 이름"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
-                      required
+                      type="date"
+                      value={formData.birthDate}
+                      onChange={(e) => handleInputChange("birthDate", e.target.value)}
                     />
                   </div>
+
                   <div>
-                    <Label>나이</Label>
-                    <Input
-                      type="number"
-                      placeholder="나이"
-                      value={formData.age}
-                      onChange={(e) => handleInputChange("age", e.target.value)}
-                      required
-                    />
+                    <Label>성별</Label>
+                    <Select 
+                      value={formData.gender} 
+                      onValueChange={(value) => handleInputChange("gender", value as "boy" | "girl")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="성별 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="boy">남자</SelectItem>
+                        <SelectItem value="girl">여자</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                <div>
-                  <Label>생년월일</Label>
-                  <Input
-                    type="date"
-                    value={formData.birthDate}
-                    onChange={(e) => handleInputChange("birthDate", e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <Label>성별</Label>
-                  <Select 
-                    value={formData.gender} 
-                    onValueChange={(value) => handleInputChange("gender", value as "boy" | "girl")}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="성별 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="boy">남자</SelectItem>
-                      <SelectItem value="girl">여자</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={handleModalClose}>
-              취소
-            </Button>
-            <Button 
-              type="submit"
-              disabled={createChildMutation.isPending || !formData.name || !formData.age || !formData.gender}
-              className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600
-hover:to-purple-600"
-            >
-              {createChildMutation.isPending ? "추가 중..." : "추가하기"}
-            </Button>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={handleModalClose}>
+                취소
+              </Button>
+              <Button 
+                type="submit"
+                disabled={createChildMutation.isPending || !formData.name || !formData.age || !formData.gender}
+                className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
+              >
+                {createChildMutation.isPending ? "추가 중..." : "추가하기"}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>
