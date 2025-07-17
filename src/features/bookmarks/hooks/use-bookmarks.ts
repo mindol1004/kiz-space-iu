@@ -24,16 +24,7 @@ export function useBookmarks(userIdFromProps?: string) {
     retry: 1,
   })
 
-  // 에러 처리를 useEffect로 분리하여 무한 렌더링 방지
-  useEffect(() => {
-    if (error && !isLoading) {
-      toast({
-        title: "북마크 불러오기 실패",
-        description: error.message,
-        variant: "destructive",
-      })
-    }
-  }, [error, isLoading, toast])
+  // 에러 처리 제거 - 컴포넌트에서 직접 처리
 
   return {
     bookmarks: bookmarksData?.bookmarks || [],

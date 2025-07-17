@@ -13,12 +13,12 @@ interface BookmarkFiltersProps {
 }
 
 const categories = [
-  { value: "all", label: "전체", count: 24 },
-  { value: "pregnancy", label: "임신", count: 8 },
-  { value: "newborn", label: "신생아", count: 6 },
-  { value: "education", label: "교육", count: 5 },
-  { value: "health", label: "건강", count: 3 },
-  { value: "tips", label: "팁", count: 2 },
+  { value: "all", label: "전체" },
+  { value: "pregnancy", label: "임신" },
+  { value: "newborn", label: "신생아" },
+  { value: "education", label: "교육" },
+  { value: "health", label: "건강" },
+  { value: "tips", label: "팁" },
 ] as const
 
 export function BookmarkFilters({ selectedCategory, onCategoryChange }: BookmarkFiltersProps) {
@@ -44,7 +44,6 @@ export function BookmarkFilters({ selectedCategory, onCategoryChange }: Bookmark
               onClick={() => onCategoryChange(category.value as BookmarkCategory | "all")}
             >
               {category.label}
-              <span className="ml-1 text-xs opacity-70">({category.count})</span>
             </Badge>
           ))}
         </div>

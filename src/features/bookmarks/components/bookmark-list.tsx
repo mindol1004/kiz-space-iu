@@ -33,7 +33,14 @@ export function BookmarkList() {
       ].join(' ').toLowerCase();
 
       const matchesSearch = searchQuery === '' || searchableContent.includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === "all" || bookmark.category === selectedCategory;
+      
+      // 카테고리 필터링 로직 수정
+      let matchesCategory = true;
+      if (selectedCategory !== "all") {
+        // bookmark.post.category를 확인하여 필터링
+        const postCategory = bookmark.post?.category?.toLowerCase();
+        matchesCategory = postCategory === selectedCategory;
+      }
 
       return matchesSearch && matchesCategory;
     });
