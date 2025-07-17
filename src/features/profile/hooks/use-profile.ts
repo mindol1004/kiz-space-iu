@@ -4,7 +4,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
 import { ProfileAPI } from "../api/profile-api"
-import type { ProfileUser } from "../types/profile-types"
+import type { UserProfile } from "../types/profile-types"
 
 export function useProfile(userId?: string) {
   const queryClient = useQueryClient()
@@ -18,7 +18,7 @@ export function useProfile(userId?: string) {
   })
 
   const updateProfileMutation = useMutation({
-    mutationFn: (data: Partial<ProfileUser>) => ProfileAPI.updateProfile(userId!, data),
+    mutationFn: (data: Partial<UserProfile>) => ProfileAPI.updateProfile(userId!, data),
     onSuccess: (updatedProfile) => {
       queryClient.setQueryData(["profile", userId], updatedProfile)
       queryClient.invalidateQueries({ queryKey: ["profile", userId] })

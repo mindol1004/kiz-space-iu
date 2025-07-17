@@ -12,6 +12,11 @@ export const ProfileAPI = {
     return response.data
   },
 
+  // 사용자 프로필 조회 (use-profile.ts와 호환성을 위한 별칭)
+  async getProfile(userId: string): Promise<UserProfile> {
+    return this.getUserProfile(userId)
+  },
+
   // 프로필 통계 조회
   async getProfileStats(userId: string): Promise<ProfileStats[]> {
     const response = await apiClient.get(`/users/${userId}/stats`)
