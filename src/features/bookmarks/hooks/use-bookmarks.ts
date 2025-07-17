@@ -20,8 +20,10 @@ export function useBookmarks(userIdFromProps?: string) {
   } = useQuery({
     queryKey: ["bookmarks", currentUserId],
     queryFn: () => BookmarkAPI.getBookmarks({}),
-    enabled: !!currentUserId,
+    enabled: !!currentUserId && !!user,
     retry: 1,
+    staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
+    refetchOnWindowFocus: false,
   })
 
   // 에러 처리 제거 - 컴포넌트에서 직접 처리

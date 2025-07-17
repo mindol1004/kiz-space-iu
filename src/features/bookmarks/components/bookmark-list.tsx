@@ -22,6 +22,15 @@ export function BookmarkList() {
   const { user } = useAuthStore();
   const { bookmarks, isLoading, error } = useBookmarks(user?.id);
 
+  // 사용자가 로그인하지 않은 경우 처리
+  if (!user) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500">로그인이 필요합니다.</p>
+      </div>
+    )
+  }
+
   // 필터링된 북마크를 useMemo로 최적화
   const filteredBookmarks = useMemo(() => {
     if (!bookmarks || bookmarks.length === 0) return [];
