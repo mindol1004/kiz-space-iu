@@ -68,13 +68,28 @@ export function useChildAddModal({ parentId, onSuccess }: UseChildAddModalProps)
     })
   }
 
+  const addChild = async (children: any[]) => {
+    if (children.length > 0) {
+      const child = children[0]
+      await createChildMutation.mutateAsync({
+        name: child.name,
+        age: child.age,
+        gender: child.gender,
+        parentId,
+        birthDate: child.birthDate || undefined,
+      })
+    }
+  }
+
   return {
     isOpen,
     formData,
     isLoading: createChildMutation.isPending,
+    error: createChildMutation.error,
     openModal,
     closeModal,
     handleInputChange,
     handleSubmit,
+    addChild,
   }
 }

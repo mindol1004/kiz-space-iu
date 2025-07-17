@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { useChildAddModal } from "@/features/children/hooks/use-child-add-modal"
+import { useCreateChild } from "@/features/children/hooks/use-children"
+import { useAuthStore } from "@/shared/stores/auth-store"
 import { AGE_GROUPS } from "@/shared/constants/common-data"
 import type { Child } from "@/features/auth/types/auth-types"
 
@@ -18,7 +19,8 @@ interface ChildAddModalProps {
 }
 
 export function ChildAddModal({ isOpen, onClose, onChildAdded }: ChildAddModalProps) {
-  const { addChild, isLoading, error } = useChildAddModal()
+  const { user } = useAuthStore()
+  const createChildMutation = useCreateChild()
 
   const [formData, setFormData] = useState({
     name: "",
@@ -38,20 +40,24 @@ export function ChildAddModal({ isOpen, onClose, onChildAdded }: ChildAddModalPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (!formData.name || !formData.age || !formData.gender) {
+      if (!formData.name || !formData.age || !formData.gender || !user?.id) {
         return;
       }
 
-      await addChild([
-        {
-          id: Date.now().toString(),
-          name: formData.name,
-          birthDate: formData.birthDate,
-          gender: formData.gender,
-          ageGroup: "",
-          age: formData.age
-        }
-      ]);
+      await createChildMutation.mutateAsync({
+        name: formData.name,
+        age: formData.age,
+        gender: formData.gender,
+        parentId: user.id,
+        birthDate: formData.birthDate || undefined,
+      });
+
+      setFormData({
+        name: "",
+        age: "",
+        birthDate: "",
+        gender: "" as "boy" | "girl" | ""
+      });
       onChildAdded();
       onClose();
     } catch (error) {
@@ -77,9 +83,9 @@ export function ChildAddModal({ isOpen, onClose, onChildAdded }: ChildAddModalPr
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
-            {error && (
+            {createChildMutation.error && (
               <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-                {error.message}
+                {createChildMutation.error.message}
               </div>
             )}
 
@@ -146,11 +152,11 @@ export function ChildAddModal({ isOpen, onClose, onChildAdded }: ChildAddModalPr
             </Button>
             <Button 
               type="submit"
-              disabled={isLoading || !formData.name || !formData.age || !formData.gender}
+              disabled={createChildMutation.isPending || !formData.name || !formData.age || !formData.gender}
               className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600
 hover:to-purple-600"
             >
-              {isLoading ? "추가 중..." : "추가하기"}
+              {createChildMutation.isPending ? "추가 중..." : "추가하기"}
             </Button>
           </div>
         </form>
