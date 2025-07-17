@@ -46,9 +46,9 @@ export function CreatePostDialog() {
           <Pencil className="h-6 w-6" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto rounded-lg">
         <DialogHeader>
-          <DialogTitle>새 글 작성</DialogTitle>
+          <DialogTitle className="text-left">새 글 작성</DialogTitle>
         </DialogHeader>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
           <div>
