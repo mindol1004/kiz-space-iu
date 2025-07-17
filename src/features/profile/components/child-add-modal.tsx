@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -20,196 +19,141 @@ interface ChildAddModalProps {
 
 export function ChildAddModal({ isOpen, onClose, onChildAdded }: ChildAddModalProps) {
   const { addChild, isLoading, error } = useChildAddModal()
-  
-  const [children, setChildren] = useState<Child[]>([
-    {
-      id: Date.now().toString(),
-      name: "",
-      birthDate: "",
-      gender: "",
-      ageGroup: "",
-      age: ""
-    }
-  ])
 
-  const addChildToList = () => {
-    const newChild: Child = {
-      id: Date.now().toString(),
-      name: "",
-      birthDate: "",
-      gender: "",
-      ageGroup: "",
-      age: ""
-    }
-    setChildren(prev => [...prev, newChild])
-  }
+  const [formData, setFormData] = useState({
+    name: "",
+    age: "",
+    birthDate: "",
+    gender: "" as "boy" | "girl" | ""
+  });
 
-  const updateChild = (id: string, field: keyof Child, value: string) => {
-    setChildren(prev =>
-      prev.map(child => (child.id === id ? { ...child, [field]: value } : child))
-    )
-  }
+  const handleInputChange = (name: string, value: string | "boy" | "girl") => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-  const removeChild = (id: string) => {
-    setChildren(prev => prev.filter(child => child.id !== id))
-  }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      // 빈 필드가 있는 자녀는 제외하고 제출
-      const validChildren = children.filter(child => 
-        child.name && child.birthDate && child.gender && child.ageGroup
-      )
-      
-      if (validChildren.length === 0) {
-        return
+      if (!formData.name || !formData.age || !formData.gender) {
+        return;
       }
 
-      await addChild(validChildren)
-      onChildAdded()
-      onClose()
-      
-      // 폼 초기화
-      setChildren([{
-        id: Date.now().toString(),
-        name: "",
-        birthDate: "",
-        gender: "",
-        ageGroup: "",
-        age: ""
-      }])
+      await addChild([
+        {
+          id: Date.now().toString(),
+          name: formData.name,
+          birthDate: formData.birthDate,
+          gender: formData.gender,
+          ageGroup: "",
+          age: formData.age
+        }
+      ]);
+      onChildAdded();
+      onClose();
     } catch (error) {
-      console.error("Failed to add children:", error)
+      console.error("Failed to add child:", error);
     }
-  }
+  };
 
-  const handleClose = () => {
-    onClose()
-    // 폼 초기화
-    setChildren([{
-      id: Date.now().toString(),
+  const handleModalClose = () => {
+    onClose();
+    setFormData({
       name: "",
+      age: "",
       birthDate: "",
-      gender: "",
-      ageGroup: "",
-      age: ""
-    }])
-  }
+      gender: "" as "boy" | "girl" | ""
+    });
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={handleModalClose}>
       <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>아이 정보 추가</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4">
-          {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-              {error.message}
-            </div>
-          )}
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                {error.message}
+              </div>
+            )}
 
           <p className="text-sm text-gray-600">
             자녀 정보를 등록하면 연령대에 맞는 콘텐츠를 추천받을 수 있어요.
           </p>
 
-          {children.map((child, index) => (
-            <Card key={child.id} className="p-4">
+          <Card>
+            <CardContent className="p-4">
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">자녀 {index + 1}</h4>
-                  {children.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeChild(child.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      삭제
-                    </Button>
-                  )}
-                </div>
-
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>이름</Label>
                     <Input
                       placeholder="자녀 이름"
-                      value={child.name}
-                      onChange={(e) => updateChild(child.id, "name", e.target.value)}
+                      value={formData.name}
+                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      required
                     />
                   </div>
                   <div>
-                    <Label>생년월일</Label>
+                    <Label>나이</Label>
                     <Input
-                      type="date"
-                      value={child.birthDate}
-                      onChange={(e) => updateChild(child.id, "birthDate", e.target.value)}
+                      type="number"
+                      placeholder="나이"
+                      value={formData.age}
+                      onChange={(e) => handleInputChange("age", e.target.value)}
+                      required
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>성별</Label>
-                    <Select 
-                      value={child.gender} 
-                      onValueChange={(value) => updateChild(child.id, "gender", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="성별 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">남자</SelectItem>
-                        <SelectItem value="female">여자</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>연령대</Label>
-                    <Select
-                      value={child.ageGroup}
-                      onValueChange={(value) => updateChild(child.id, "ageGroup", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="연령대 선택" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {AGE_GROUPS.map((group) => (
-                          <SelectItem key={group.value} value={group.value}>
-                            {group.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label>생년월일</Label>
+                  <Input
+                    type="date"
+                    value={formData.birthDate}
+                    onChange={(e) => handleInputChange("birthDate", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>성별</Label>
+                  <Select 
+                    value={formData.gender} 
+                    onValueChange={(value) => handleInputChange("gender", value as "boy" | "girl")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="성별 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="boy">남자</SelectItem>
+                      <SelectItem value="girl">여자</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            </Card>
-          ))}
-
-          <Button 
-            variant="outline" 
-            onClick={addChildToList} 
-            className="w-full border-dashed bg-transparent"
-          >
-            자녀 추가
-          </Button>
+            </CardContent>
+          </Card>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={handleModalClose}>
               취소
             </Button>
             <Button 
-              onClick={handleSubmit}
-              disabled={isLoading || children.every(child => !child.name || !child.birthDate || !child.gender || !child.ageGroup)}
-              className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
+              type="submit"
+              disabled={isLoading || !formData.name || !formData.age || !formData.gender}
+              className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600
+hover:to-purple-600"
             >
-              {isLoading ? "추가 중..." : "추가"}
+              {isLoading ? "추가 중..." : "추가하기"}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   )
