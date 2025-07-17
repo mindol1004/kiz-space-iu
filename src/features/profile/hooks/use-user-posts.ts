@@ -2,8 +2,8 @@
 "use client"
 
 import { useInfiniteQuery } from "@tanstack/react-query"
-import { apiClient } from "@/lib/axios-config"
-import type { UserPost } from "../types/profile-types"
+import { ProfileAPI } from "../api/profile-api"
+import type { UserPostsResponse } from "../types/profile-types"
 
 export function useUserPosts(userId?: string) {
   const {
@@ -15,21 +15,22 @@ export function useUserPosts(userId?: string) {
     error,
   } = useInfiniteQuery({
     queryKey: ["user-posts", userId],
-    queryFn: async ({ pageParam = 1 }) => {
-      const response = await apiClient.get(`/users/${userId}/posts`, {
-        params: { page: pageParam, limit: 10 }
-      })
-      return response.data
+    queryFn: ({ pageParam = 1 }) =>
+      ProfileAPI.getUserPosts(userId!, pageParam, 10),
+    getNextPageParam: (lastPage: UserPostsResponse) => {
+      if (lastPage.currentPage < lastPage.totalPages) {
+        return lastPage.currentPage + 1
+      }
+      return undefined
     },
-    getNextPageParam: (lastPage, pages) => {
-      return lastPage.hasNextPage ? pages.length + 1 : undefined
-    },
+    initialPageParam: 1,
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5분간 캐시
+    gcTime: 1000 * 60 * 10, // 10분간 가비지 컬렉션
   })
 
   // 모든 페이지의 게시글을 하나의 배열로 합치기
-  const posts: UserPost[] = data?.pages.flatMap(page => page.posts) || []
+  const posts = data?.pages.flatMap(page => page.posts) || []
 
   return {
     posts,

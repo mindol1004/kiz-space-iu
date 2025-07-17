@@ -57,3 +57,33 @@ export interface ProfileTabType {
   label: string
   count?: number
 }
+
+export interface UserPostsResponse {
+  posts: UserPost[]
+  totalPosts: number
+  totalPages: number
+  currentPage: number
+}
+
+export interface UserProfile {
+  id: string
+  nickname: string
+  name?: string
+  email?: string
+  bio?: string
+  location?: string
+  createdAt: Date
+  verified: boolean
+  interests: string[]
+  avatar?: string
+  postsCount?: number
+  followersCount?: number
+  followingCount?: number
+  isFollowing?: boolean
+}
+
+export interface ProfileStats {
+  label: string
+  value: number
+  icon: React.ComponentType<{ className?: string }>
+}
