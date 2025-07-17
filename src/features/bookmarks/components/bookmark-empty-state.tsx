@@ -3,6 +3,7 @@
 import { Bookmark, Search } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface BookmarkEmptyStateProps {
   hasSearch: boolean
@@ -44,10 +45,12 @@ export function BookmarkEmptyState({ hasSearch, searchQuery }: BookmarkEmptyStat
           <br />
           나중에 쉽게 찾아볼 수 있어요.
         </p>
-        <Button variant="outline">
-          <Bookmark className="h-4 w-4 mr-2" />
-          포스트 둘러보기
-        </Button>
+        <Link href="/feed">
+          <Button variant="outline">
+            <Bookmark className="h-4 w-4 mr-2" />
+            포스트 둘러보기
+          </Button>
+        </Link>
       </CardContent>
     </Card>
   )
