@@ -64,11 +64,11 @@ export function PostCard({ post }: PostCardProps) {
       if (localFollowState) {
         // 언팔로우
         setLocalFollowState(false)
-        await unfollow(post.author.id)
+        unfollow(post.author.id)
       } else {
         // 팔로우
         setLocalFollowState(true)
-        await follow(post.author.id)
+        follow(post.author.id)
       }
     } catch (error) {
       // 에러 시 상태 되돌리기
