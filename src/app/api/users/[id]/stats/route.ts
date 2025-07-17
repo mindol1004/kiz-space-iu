@@ -1,28 +1,29 @@
+
 import { NextRequest, NextResponse } from "next/server"
-import { connectDB } from "@/lib/mongodb"
-import { User, Post, Comment, Like } from "@/lib/schemas"
+import { prisma } from "@/lib/prisma"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB()
-
     const userId = params.id
 
     // 사용자 존재 확인
-    const user = await User.findById(userId)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    })
+
     if (!user) {
       return NextResponse.json({ error: "사용자를 찾을 수 없습니다" }, { status: 404 })
     }
 
     // 통계 데이터 계산
     const [postsCount, likesCount, commentsCount, bookmarksCount] = await Promise.all([
-      Post.countDocuments({ authorId: userId }),
-      Like.countDocuments({ userId, targetType: 'post' }),
-      Comment.countDocuments({ authorId: userId }),
-      Post.countDocuments({ bookmarks: userId })
+      prisma.post.count({ where: { authorId: userId } }),
+      prisma.like.count({ where: { userId, type: 'POST' } }),
+      prisma.comment.count({ where: { authorId: userId } }),
+      prisma.bookmark.count({ where: { userId } })
     ])
 
     const stats = [

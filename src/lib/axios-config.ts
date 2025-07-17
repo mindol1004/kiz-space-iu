@@ -113,5 +113,5 @@ export const apiClient = {
     api.delete<T>(url, config),
 }
 
-export const axiosInstance = api
+export { axiosInstance }
 export default api
