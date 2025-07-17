@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const page = Number.parseInt(searchParams.get("page") || "1")
-    const limit = Number.parseInt(searchParams.get("limit") || "10")
+    const limit = Number.parseInt(searchParams.get("limit") || "20")
     const category = searchParams.get("category")
 
     const where: any = {
@@ -20,7 +20,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (category && category !== "all") {
-      where.category = category
+      where.post = {
+        category: category
+      }
     }
 
     const bookmarks = await prisma.bookmark.findMany({
@@ -77,7 +79,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "포스트 ID가 필요합니다" }, { status: 400 })
     }
 
-    // Check if already bookmarked
+    // 포스트 존재 확인
+    const post = await prisma.post.findUnique({
+      where: { id: postId }
+    })
+
+    if (!post) {
+      return NextResponse.json({ error: "존재하지 않는 포스트입니다" }, { status: 404 })
+    }
+
+    // 기존 북마크 확인
     const existingBookmark = await prisma.bookmark.findUnique({
       where: {
         userId_postId: {
@@ -95,12 +106,25 @@ export async function POST(request: NextRequest) {
       data: {
         userId: userId,
         postId: postId,
-        category: category || null,
+        category: category || post.category, // 포스트의 카테고리를 기본값으로 사용
         notes: notes || null,
+      },
+      include: {
+        post: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                nickname: true,
+                avatar: true,
+              },
+            },
+          },
+        },
       },
     })
 
-    // Update post bookmark count
+    // 포스트 북마크 수 증가
     await prisma.post.update({
       where: { id: postId },
       data: {
@@ -131,6 +155,20 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "포스트 ID가 필요합니다" }, { status: 400 })
     }
 
+    // 북마크 존재 확인
+    const existingBookmark = await prisma.bookmark.findUnique({
+      where: {
+        userId_postId: {
+          userId: userId,
+          postId: postId,
+        },
+      },
+    })
+
+    if (!existingBookmark) {
+      return NextResponse.json({ error: "북마크를 찾을 수 없습니다" }, { status: 404 })
+    }
+
     const bookmark = await prisma.bookmark.delete({
       where: {
         userId_postId: {
@@ -140,7 +178,7 @@ export async function DELETE(request: NextRequest) {
       },
     })
 
-    // Update post bookmark count
+    // 포스트 북마크 수 감소
     await prisma.post.update({
       where: { id: postId },
       data: {

@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Search, Filter, Grid, List } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -19,18 +20,25 @@ export function BookmarkList() {
   const [showFilters, setShowFilters] = useState(false)
 
   const { user } = useAuthStore();
-  const { bookmarks, isLoading } = useBookmarks(user?.id);
+  const { bookmarks, isLoading, error } = useBookmarks(user?.id);
 
-  const filteredBookmarks = bookmarks?.filter((bookmark) => {
-    const matchesSearch =
-      bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bookmark.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bookmark.author.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // 필터링된 북마크를 useMemo로 최적화
+  const filteredBookmarks = useMemo(() => {
+    if (!bookmarks || bookmarks.length === 0) return [];
+    
+    return bookmarks.filter((bookmark) => {
+      const searchableContent = [
+        bookmark.post?.title || '',
+        bookmark.post?.content || '',
+        bookmark.post?.author?.nickname || ''
+      ].join(' ').toLowerCase();
 
-    const matchesCategory = selectedCategory === "all" || bookmark.category === selectedCategory
+      const matchesSearch = searchQuery === '' || searchableContent.includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "all" || bookmark.category === selectedCategory;
 
-    return matchesSearch && matchesCategory
-  })
+      return matchesSearch && matchesCategory;
+    });
+  }, [bookmarks, searchQuery, selectedCategory]);
 
   if (isLoading) {
     return (
@@ -38,6 +46,15 @@ export function BookmarkList() {
         {[...Array(6)].map((_, i) => (
           <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
         ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500 mb-4">북마크를 불러오는데 실패했습니다.</p>
+        <Button onClick={() => window.location.reload()}>다시 시도</Button>
       </div>
     )
   }
@@ -96,7 +113,12 @@ export function BookmarkList() {
           ) : (
             <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
               {filteredBookmarks.map((bookmark, index) => (
-                <BookmarkCard key={bookmark.id} bookmark={bookmark} viewMode={viewMode} index={index} />
+                <BookmarkCard 
+                  key={bookmark.id} 
+                  bookmark={bookmark} 
+                  viewMode={viewMode} 
+                  index={index} 
+                />
               ))}
             </div>
           )}
