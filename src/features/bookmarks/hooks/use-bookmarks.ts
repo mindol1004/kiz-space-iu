@@ -22,8 +22,8 @@ export function useBookmarks(userIdFromProps?: string) {
     queryFn: () => BookmarkAPI.getBookmarks({}),
     enabled: !!currentUserId && !!user,
     retry: 1,
-    staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
-    refetchOnWindowFocus: false,
+    staleTime: 1000 * 30, // 30초간 캐시 유지
+    refetchOnWindowFocus: true,
   })
 
   // 에러 처리 제거 - 컴포넌트에서 직접 처리
@@ -92,7 +92,8 @@ export function useToggleBookmark() {
   return useMutation({
     mutationFn: ({ postId }: { postId: string }) => BookmarkAPI.toggleBookmark(postId),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["bookmarks", user?.id] })
+      // 모든 북마크 관련 쿼리 무효화
+      queryClient.invalidateQueries({ queryKey: ["bookmarks"] })
       queryClient.invalidateQueries({ queryKey: ["posts"] })
 
       toast({
