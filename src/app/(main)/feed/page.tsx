@@ -106,7 +106,6 @@ export default function FeedPage() {
           >
             <RefreshCw className={`h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`} />
           </Button>
-          <CreatePostDialog />
         </div>
       </div>
 
@@ -179,6 +178,11 @@ export default function FeedPage() {
           )}
         </div>
       )}
+
+      {/* Floating Create Post Button */}
+      <div className="fixed bottom-20 right-4 z-50">
+        <CreatePostDialog />
+      </div>
     </div>
   )
 }
