@@ -22,8 +22,9 @@ export function useBookmarks(userIdFromProps?: string) {
     queryFn: () => BookmarkAPI.getBookmarks({}),
     enabled: !!currentUserId && !!user,
     retry: 1,
-    staleTime: 1000 * 30, // 30초간 캐시 유지
+    staleTime: 0, // 항상 최신 데이터 가져오기
     refetchOnWindowFocus: true,
+    refetchOnMount: true,
   })
 
   // 에러 처리 제거 - 컴포넌트에서 직접 처리
@@ -95,6 +96,14 @@ export function useToggleBookmark() {
       // 모든 북마크 관련 쿼리 무효화
       queryClient.invalidateQueries({ queryKey: ["bookmarks"] })
       queryClient.invalidateQueries({ queryKey: ["posts"] })
+      
+      // 현재 사용자의 북마크 쿼리도 명시적으로 무효화
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ["bookmarks", user.id] })
+      }
+
+      // 캐시된 데이터도 즉시 업데이트
+      queryClient.refetchQueries({ queryKey: ["bookmarks"] })
 
       toast({
         title: data.isBookmarked ? "북마크 추가" : "북마크 제거",
