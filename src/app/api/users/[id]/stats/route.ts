@@ -1,12 +1,19 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getUserFromCookies } from "@/lib/auth-utils"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // 인증 확인
+    const currentUser = await getUserFromCookies(request)
+    if (!currentUser) {
+      return NextResponse.json({ error: "인증이 필요합니다" }, { status: 401 })
+    }
+
     const userId = params.id
 
     // 사용자 존재 확인
