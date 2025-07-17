@@ -280,7 +280,7 @@ export function ProfileEditModal({ user, open, onOpenChange }: ProfileEditModalP
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         checked={interests.includes(interest)}
-                        onChange={() => toggleInterest(interest)}
+                        readOnly
                       />
                       <span className="text-sm">{interest}</span>
                     </div>
